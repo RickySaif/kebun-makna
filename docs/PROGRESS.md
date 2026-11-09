@@ -2,7 +2,7 @@
 
 Beta: https://rickysaif.github.io/kebun-makna/beta/ · Classic (live, untouched): https://rickysaif.github.io/kebun-makna/
 
-## 2026-11-09 — Phase 0 and Phase 1 shipped (autonomous Claude session)
+## 2026-11-09 — Phases 0–8 shipped (autonomous Claude session)
 
 ### Phase 0 — monolith split (done)
 - `beta/index.html` + `css/game.css` + ES modules `data, state, audio, ui, render, farm, lesson, bosses, progress, main, config`.
@@ -46,12 +46,12 @@ Beta: https://rickysaif.github.io/kebun-makna/beta/ · Classic (live, untouched)
 - `#/lomba`: create a 4-digit room or join by code; followed friends who are online can be invited (a banner on their screen, never auto-navigation). Same seeded questions from ayat both have learned; first to 10 correct answers wins; both log `boss_done {mode:'pvp'}`.
 - **Verified** (`phase5-race.mjs`).
 
-### Phase 6 — groups (built; waiting on the migration)
+### Phase 6 — groups (done)
 - `#/grup`: join by code; parents create groups for children or parents and manage child groups without being members; weekly goal, progress bar, in-group leaderboard (`rpc group_progress`), remove member, leave, delete.
 - **Verified** (`phase6-groups.mjs`, with the migration applied): the parent creates a child group in the UI, which shows the join code; a child joins; a parent can't join a child group; the leaderboard shows 2 ayat this week; progress reads 2/50; the owner changes the goal. Before the migration, the pages degraded gracefully.
 
 ### Phase 7 — support, badges, admin (done)
-- Badges next to names everywhere, including the game HUD. Support page verified. `#/admin` (only for users in `admins`) lists unmatched payments with "Hubungkan" by family code.
+- Badges next to names everywhere, including the game HUD. Support page verified. `#/admin` (only for users in `admins`) lists unmatched payments with "Hubungkan" by family name.
 - **Verified** (`phase7-support.mjs`).
 
 ### Phase 8 — akhlak chapter (done; for the ustaz to review)
@@ -101,4 +101,7 @@ Ricky can overrule any of these.
 - Game order: the original 10 surahs and 4 bosses come first, unchanged. The akhlak arc unlocks after `boss4` plus all 10 surahs. Social features are reachable from the start but never interrupt the original progression.
 
 ## How to run the tests
-Serve the repo root (`python3 -m http.server 8765`). In a scratch folder with `playwright` and `@supabase/supabase-js@2.45.4` installed, copy `beta/tests/*.mjs` there and run `node phase0-playthrough.mjs`, then `KM_EMAIL=… KM_PASS=… node phase1-accounts.mjs` (use the test parent account; never commit its credentials).
+Serve the repo root (`python3 -m http.server 8765`). In a scratch folder with `playwright@1.57.0` and `@supabase/supabase-js@2.45.4` installed (the tests use the system Chrome via `channel: 'chrome'`), copy `beta/tests/*.mjs` there and run them with `KM_EMAIL=… KM_PASS=…` (the test parent account; never commit its credentials). Each test creates its own `Uji …` children and deletes them at the end.
+- `node check-syntax.mjs <repo>/beta`: runs `node --check` on every module.
+- `phase0-playthrough.mjs` (root vs beta, no backend) · `phase1-accounts` · `phase1b-parent` · `phase1c-google` (needs `BASE=https://rickysaif.github.io/kebun-makna`, because GIS only renders on the authorized origin) · `phase2-recite` (needs `recite.wav` = `ffmpeg -i audio/a/114001.mp3 -af apad=pad_dur=2.5 -ar 16000 -ac 1 recite.wav` and `silence.wav` = `ffmpeg -f lavfi -i anullsrc=r=16000:cl=mono -t 10 silence.wav`; downloads the real model) · `phase3-feed` · `phase4-visit` · `phase5-race` · `phase6-groups` · `phase7-support` · `phase8-akhlak` (`CONTENT=<repo>/content/akhlak`).
+- Last full run (2026-11-09): all pass.
