@@ -1,0 +1,193 @@
+<meta charset="utf-8">
+<title>Tes Whisper Quran</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#2B1D12;--paper:#FDF6E3;--grass:#5E9E3F;--gold:#E8B53A;--ok:#2E7D32;--okbg:#DDF3D3;--near:#8A5A00;--nearbg:#FFE9A8;--bad:#B3261E;--badbg:#FBD9D5;--miss:#6B6157;--missbg:#E7E0D4;--f-ar:'Scheherazade New',serif;--f:'Pixelify Sans','Scheherazade New',system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;background:#5E9E3F;color:var(--ink);font-family:var(--f)}
+body{background-image:radial-gradient(#6BAA4B 1px,transparent 1px);background-size:10px 10px;min-height:100vh}
+.wrap{max-width:560px;margin:0 auto;padding:16px}
+h1{margin:4px 0 12px;font-size:26px;color:var(--paper);text-shadow:2px 2px 0 var(--ink)}
+.frame{background:var(--paper);border:4px solid var(--ink);border-radius:8px;box-shadow:0 5px 0 rgba(0,0,0,.35);padding:14px;margin-bottom:14px}
+label{font-weight:700;font-size:14px;display:block;margin-bottom:4px}
+select,input,textarea{font:inherit;font-size:16px;width:100%;padding:8px;border:3px solid var(--ink);border-radius:5px;background:#fff;color:var(--ink)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>*{flex:1;min-width:0}
+.btn{font:inherit;font-weight:700;font-size:18px;border:3px solid var(--ink);border-radius:6px;background:var(--gold);color:var(--ink);padding:10px 16px;box-shadow:0 4px 0 var(--ink);cursor:pointer}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.btn.green{background:#7CD35E}.btn.ghost{background:#fff}.btn.red{background:#F28B82}
+.btn:disabled{opacity:.5;cursor:default}
+.mic{display:block;width:100%;font-size:22px;padding:16px}
+.ayah{font-family:var(--f-ar);font-size:34px;line-height:2.1;direction:rtl;text-align:center;margin:6px 0}
+.w{display:inline-block;padding:0 6px;margin:2px;border-radius:6px;border:2px solid transparent;cursor:pointer}
+.w.ok{background:var(--okbg);border-color:var(--ok)}
+.w.near{background:var(--nearbg);border-color:var(--near)}
+.w.bad{background:var(--badbg);border-color:var(--bad)}
+.w.miss{background:var(--missbg);border-color:var(--miss);border-style:dashed;opacity:.8}
+.tr{font-size:15px;text-align:center;color:#5A4A3A}
+.status{font-size:15px;text-align:center;min-height:22px;margin-top:8px}
+.heard{font-family:var(--f-ar);font-size:22px;direction:rtl;background:#fff;border:2px dashed #C9B98F;border-radius:6px;padding:6px 10px;min-height:42px;margin-top:8px}
+.verdict{font-size:20px;font-weight:700;text-align:center;margin:4px 0 8px}
+.legend{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;font-size:13px;margin-top:8px}
+.legend span{padding:2px 8px;border-radius:5px;border:2px solid}
+.tip{font-size:15px;background:#FFF4C2;border:2px solid #B8860B;border-radius:6px;padding:8px 10px;margin-top:10px}
+details summary{cursor:pointer;font-weight:700}
+.small{font-size:13px;color:#5A4A3A;line-height:1.45}
+.seg{display:flex;border:3px solid var(--ink);border-radius:6px;overflow:hidden}
+.seg button{flex:1;font:inherit;font-weight:700;border:0;background:#fff;padding:8px;cursor:pointer;color:var(--ink)}
+.seg button.on{background:var(--gold)}
+.pulse{animation:p 1s infinite}@keyframes p{50%{opacity:.6}}
+</style><style>.meter{height:14px;border:3px solid var(--ink);border-radius:4px;background:#fff;overflow:hidden;margin-top:6px}.meter i{display:block;height:100%;width:0;background:#7CD35E;transition:width .2s}
+pre.log{white-space:pre-wrap;font-size:12px;background:#fff;border:2px dashed #C9B98F;border-radius:6px;padding:8px;margin:8px 0 0;max-height:180px;overflow:auto}</style><div class="wrap">
+  <h1>🧪 Tes Whisper Quran</h1>
+  <div class="frame">
+    <p class="small" style="margin-top:0">Halaman tes: model <b>tarteel-ai/whisper-base-ar-quran</b> (versi ONNX) berjalan <b>di perangkat ini</b>. Audio tidak dikirim ke mana pun. Model diunduh sekali, lalu tersimpan di browser.</p>
+    <label for="prof">Ukuran model</label>
+    <select id="prof"></select>
+    <div style="margin-top:10px"><button class="btn green mic" id="load" style="font-size:18px;padding:12px">⬇️ Muat model</button></div>
+    <div class="meter"><i id="bar"></i></div>
+    <div class="status" id="lstat">Belum dimuat. Pakai Wi-Fi: unduhan 140–205 MB.</div>
+  </div>
+  <div class="frame">
+    <div class="row"><div><label for="sur">Surat</label><select id="sur"></select></div><div><label for="ay">Ayat</label><select id="ay"></select></div></div>
+    <div class="ayah" id="ayah" style="margin-top:10px"></div>
+    <div class="tr" id="tr"></div>
+    <div style="margin-top:12px"><button class="btn mic" id="mic" disabled>🎙️ Mulai baca</button></div>
+    <div class="status" id="status">Muat model dulu.</div>
+    <div id="result" hidden>
+      <div class="verdict" id="verdict"></div>
+      <div class="tip" id="tip" hidden></div>
+      <div class="small" style="margin-top:8px">Terdengar oleh mesin:</div><div class="heard" id="heard"></div>
+      <div class="small" id="metrics" style="margin-top:8px"></div>
+    </div>
+  </div>
+  <div class="frame"><b>Catatan tes</b><pre class="log" id="log"></pre></div>
+</div><script>
+const DATA=[{"no":114,"name":"An-Nas","arName":"النَّاس","ayat":[{"n":1,"tr":"Katakanlah, \"Aku berlindung kepada Tuhannya manusia,","w":[["قُلۡ","katakanlah"],["اَعُوۡذُ","aku berlindung"],["بِرَبِّ","kepada Tuhan"],["النَّاسِ","manusia"]]},{"n":2,"tr":"Raja manusia,","w":[["مَلِكِ","Raja"],["النَّاسِ","manusia"]]},{"n":3,"tr":"sembahan manusia,","w":[["اِلٰهِ","sembahan"],["النَّاسِ","manusia"]]},{"n":4,"tr":"dari kejahatan (bisikan) setan yang bersembunyi,","w":[["مِنۡ","dari"],["شَرِّ","kejahatan"],["الۡوَسۡوَاسِ","bisikan (setan)"],["الۡخَـنَّاسِ","yang bersembunyi"]]},{"n":5,"tr":"yang membisikkan (kejahatan) ke dalam dada manusia,","w":[["الَّذِىۡ","yang"],["يُوَسۡوِسُ","membisikkan"],["فِىۡ","ke dalam"],["صُدُوۡرِ","dada"],["النَّاسِ","manusia"]]},{"n":6,"tr":"dari (golongan) jin dan manusia.\"","w":[["مِنَ","dari"],["الۡجِنَّةِ","jin"],["وَالنَّاسِ","dan manusia"]]}]},{"no":113,"name":"Al-Falaq","arName":"الفَلَق","ayat":[{"n":1,"tr":"Katakanlah, \"Aku berlindung kepada Tuhan yang menguasai subuh (fajar),","w":[["قُلۡ","katakanlah"],["اَعُوۡذُ","aku berlindung"],["بِرَبِّ","kepada Tuhan"],["الۡفَلَقِ","subuh (fajar)"]]},{"n":2,"tr":"dari kejahatan (makhluk yang) Dia ciptakan,","w":[["مِنۡ","dari"],["شَرِّ","kejahatan"],["مَا","apa"],["خَلَقَ","Dia ciptakan"]]},{"n":3,"tr":"dan dari kejahatan malam apabila telah gelap gulita,","w":[["وَمِنۡ","dan dari"],["شَرِّ","kejahatan"],["غَاسِقٍ","malam yang gelap"],["اِذَا","apabila"],["وَقَبَ","telah gelap gulita"]]},{"n":4,"tr":"dan dari kejahatan (perempuan-perempuan) penyihir yang meniup pada buhul-buhul (talinya),","w":[["وَمِنۡ","dan dari"],["شَرِّ","kejahatan"],["النَّفّٰثٰتِ","orang yang meniup-niup"],["فِى","dalam"],["الۡعُقَدِ","buhul (simpul tali)"]]},{"n":5,"tr":"dan dari kejahatan orang yang dengki apabila dia dengki.\"","w":[["وَمِنۡ","dan dari"],["شَرِّ","kejahatan"],["حَاسِدٍ","orang yang dengki"],["اِذَا","apabila"],["حَسَدَ","ia dengki"]]}]},{"no":112,"name":"Al-Ikhlas","arName":"الإِخْلَاص","ayat":[{"n":1,"tr":"Katakanlah (Muhammad), \"Dialah Allah, Yang Maha Esa.","w":[["قُلۡ","katakanlah"],["هُوَ","Dia"],["اللّٰهُ","Allah"],["اَحَدٌ","Esa"]]},{"n":2,"tr":"Allah tempat meminta segala sesuatu.","w":[["اَللّٰهُ","Allah"],["الصَّمَدُ","tempat bergantung"]]},{"n":3,"tr":"(Allah) tidak beranak dan tidak pula diperanakkan.","w":[["لَمۡ","tidak"],["يَلِدۡ","beranak"],["وَلَمۡ","dan tidak"],["يُوۡلَدۡ","diperanakkan"]]},{"n":4,"tr":"Dan tidak ada sesuatu yang setara dengan Dia.\"","w":[["وَلَمۡ","dan tidak"],["يَكُنۡ","ada"],["لَّهٗ","baginya"],["كُفُوًا","setara"],["اَحَدٌ","seorang"]]}]},{"no":111,"name":"Al-Lahab","arName":"اللَّهَب","ayat":[{"n":1,"tr":"Binasalah kedua tangan Abu Lahab dan benar-benar binasa dia!","w":[["تَبَّتۡ","binasalah"],["يَدَاۤ","kedua tangan"],["اَبِىۡ","Abu"],["لَهَبٍ","Lahab"],["وَّتَبَّ","dan benar-benar binasa"]]},{"n":2,"tr":"Tidaklah berguna baginya hartanya dan apa yang dia usahakan.","w":[["مَاۤ","tidak"],["اَغۡنٰى","berguna"],["عَنۡهُ","darinya"],["مَالُهٗ","hartanya"],["وَمَا","dan apa"],["كَسَبَ","yang ia usahakan"]]},{"n":3,"tr":"Kelak dia akan masuk ke dalam api yang bergejolak (neraka).","w":[["سَيَصۡلٰى","kelak ia akan masuk"],["نَارًا","api"],["ذَاتَ","mempunyai"],["لَهَبٍ","bergejolak"]]},{"n":4,"tr":"Dan (begitu pula) istrinya, pembawa kayu bakar (penyebar fitnah).","w":[["وَّامۡرَاَتُهٗ","dan istrinya"],["حَمَّالَةَ","pembawa"],["الۡحَطَبِ","kayu bakar"]]},{"n":5,"tr":"Di lehernya ada tali dari sabut yang dipintal.","w":[["فِىۡ","pada"],["جِيۡدِهَا","lehernya"],["حَبۡلٌ","tali"],["مِّنۡ","dari"],["مَّسَدٍ","sabut (yang dipintal)"]]}]},{"no":110,"name":"An-Nasr","arName":"النَّصْر","ayat":[{"n":1,"tr":"Apabila telah datang pertolongan Allah dan kemenangan,","w":[["اِذَا","apabila"],["جَآءَ","datang"],["نَصۡرُ","pertolongan"],["اللّٰهِ","Allah"],["وَالۡفَتۡحُ","dan kemenangan"]]},{"n":2,"tr":"dan engkau melihat manusia berbondong-bondong masuk agama Allah.","w":[["وَرَاَيۡتَ","dan kamu lihat"],["النَّاسَ","manusia"],["يَدۡخُلُوۡنَ","masuk"],["فِىۡ","ke dalam"],["دِيۡنِ","agama"],["اللّٰهِ","Allah"],["اَفۡوَاجًا","berbondong-bondong"]]},{"n":3,"tr":"maka bertasbihlah dengan memuji Tuhanmu dan mohonlah ampunan kepada-Nya. Sungguh, Dia Maha Penerima tobat.","w":[["فَسَبِّحۡ","maka bertasbihlah"],["بِحَمۡدِ","dengan memuji"],["رَبِّكَ","Tuhanmu"],["وَاسۡتَغۡفِرۡهُ","dan mohonlah ampun kepada-Nya"],["اِنَّهٗ","sesungguhnya Dia"],["كَانَ","adalah"],["تَوَّابًا","Maha Penerima Taubat"]]}]},{"no":109,"name":"Al-Kafirun","arName":"الكَافِرُون","ayat":[{"n":1,"tr":"Katakanlah (Muhammad), \"Wahai orang-orang kafir!","w":[["قُلۡ","katakanlah"],["يٰۤاَيُّهَا","wahai"],["الۡكٰفِرُوۡنَ","orang-orang kafir"]]},{"n":2,"tr":"aku tidak akan menyembah apa yang kamu sembah,","w":[["لَاۤ","tidak"],["اَعۡبُدُ","aku menyembah"],["مَا","apa"],["تَعۡبُدُوۡنَ","kamu sembah"]]},{"n":3,"tr":"dan kamu bukan penyembah apa yang aku sembah,","w":[["وَلَاۤ","dan tidak"],["اَنۡـتُمۡ","kamu"],["عٰبِدُوۡنَ","penyembah"],["مَاۤ","apa"],["اَعۡبُدُ","aku sembah"]]},{"n":4,"tr":"dan aku tidak pernah menjadi penyembah apa yang kamu sembah,","w":[["وَلَاۤ","dan tidak"],["اَنَا","aku"],["عَابِدٌ","menjadi penyembah"],["مَّا","apa"],["عَبَدۡتُّمۡ","kamu sembah"]]},{"n":5,"tr":"dan kamu tidak pernah (pula) menjadi penyembah apa yang aku sembah.","w":[["وَلَاۤ","dan tidak"],["اَنۡـتُمۡ","kamu"],["عٰبِدُوۡنَ","penyembah"],["مَاۤ","apa"],["اَعۡبُدُ","aku sembah"]]},{"n":6,"tr":"Untukmu agamamu, dan untukku agamaku.\"","w":[["لَـكُمۡ","untukmu"],["دِيۡنُكُمۡ","agamamu"],["وَلِىَ","dan untukku"],["دِيۡنِ","agamaku"]]}]},{"no":108,"name":"Al-Kautsar","arName":"الكَوْثَر","ayat":[{"n":1,"tr":"Sungguh, Kami telah memberimu (Muhammad) nikmat yang banyak.","w":[["اِنَّاۤ","sesungguhnya"],["اَعۡطَيۡنٰكَ","Kami telah memberimu"],["الۡكَوۡثَرَ","nikmat yang banyak"]]},{"n":2,"tr":"Maka laksanakanlah salat karena Tuhanmu, dan berkurbanlah (sebagai ibadah dan mendekatkan diri kepada Allah).","w":[["فَصَلِّ","maka laksanakanlah salat"],["لِرَبِّكَ","karena Tuhanmu"],["وَانۡحَرۡ","dan berkurbanlah"]]},{"n":3,"tr":"Sungguh, orang-orang yang membencimu dialah yang terputus (dari rahmat Allah).","w":[["اِنَّ","sesungguhnya"],["شَانِئَكَ","orang yang membencimu"],["هُوَ","dia"],["الۡاَبۡتَرُ","yang terputus"]]}]},{"no":107,"name":"Al-Ma'un","arName":"المَاعُون","ayat":[{"n":1,"tr":"Tahukah kamu (orang) yang mendustakan agama?","w":[["اَرَءَيۡتَ","tahukah kamu"],["الَّذِىۡ","yang"],["يُكَذِّبُ","mendustakan"],["بِالدِّيۡنِ","dengan agama"]]},{"n":2,"tr":"Maka itulah orang yang menghardik anak yatim,","w":[["فَذٰلِكَ","maka itulah"],["الَّذِىۡ","yang"],["يَدُعُّ","menghardik"],["الۡيَتِيۡمَ","anak yatim"]]},{"n":3,"tr":"dan tidak mengajak memberi makan orang miskin.","w":[["وَلَا","dan tidak"],["يَحُضُّ","menganjurkan"],["عَلٰى","untuk"],["طَعَامِ","memberi makan"],["الۡمِسۡكِيۡنِ","orang miskin"]]},{"n":4,"tr":"Maka celakalah orang yang salat,","w":[["فَوَيۡلٌ","maka celakalah"],["لِّلۡمُصَلِّيۡنَ","bagi orang yang salat"]]},{"n":5,"tr":"(yaitu) orang-orang yang lalai terhadap salatnya,","w":[["الَّذِيۡنَ","(yaitu) orang-orang yang"],["هُمۡ","mereka"],["عَنۡ","terhadap"],["صَلَاتِهِمۡ","salat mereka"],["سَاهُوۡنَ","lalai"]]},{"n":6,"tr":"yang berbuat riya`,","w":[["الَّذِيۡنَ","yang"],["هُمۡ","mereka"],["يُرَآءُوۡنَ","berbuat riya"]]},{"n":7,"tr":"dan enggan (memberikan) bantuan.","w":[["وَيَمۡنَعُوۡنَ","dan enggan (memberi)"],["الۡمَاعُوۡنَ","bantuan"]]}]},{"no":106,"name":"Quraisy","arName":"قُرَيْش","ayat":[{"n":1,"tr":"Karena kebiasaan orang-orang Quraisy,","w":[["لِاِيۡلٰفِ","karena kebiasaan"],["قُرَيۡشٍ","orang-orang Quraisy"]]},{"n":2,"tr":"(yaitu) kebiasaan mereka bepergian pada musim dingin dan musim panas.","w":[["اٖلٰفِهِمۡ","kebiasaan mereka"],["رِحۡلَةَ","perjalanan"],["الشِّتَآءِ","musim dingin"],["وَالصَّيۡفِ","dan musim panas"]]},{"n":3,"tr":"Maka hendaklah mereka menyembah Tuhan (pemilik) rumah ini (Ka'bah),","w":[["فَلۡيَـعۡبُدُوۡا","maka hendaklah mereka menyembah"],["رَبَّ","Tuhan"],["هٰذَا","ini"],["الۡبَيۡتِ","rumah (Ka'bah)"]]},{"n":4,"tr":"yang telah memberi makanan kepada mereka untuk menghilangkan lapar dan mengamankan mereka dari rasa ketakutan.","w":[["الَّذِىۡۤ","yang"],["اَطۡعَمَهُمۡ","memberi mereka makan"],["مِّنۡ","dari"],["جُوۡعٍ","kelaparan"],["وَّاٰمَنَهُمۡ","dan mengamankan mereka"],["مِّنۡ","dari"],["خَوۡفٍ","ketakutan"]]}]},{"no":105,"name":"Al-Fil","arName":"الفِيل","ayat":[{"n":1,"tr":"Tidakkah engkau (Muhammad) perhatikan bagaimana Tuhanmu telah bertindak terhadap pasukan bergajah?","w":[["اَلَمۡ","tidakkah"],["تَرَ","engkau perhatikan"],["كَيۡفَ","bagaimana"],["فَعَلَ","bertindak"],["رَبُّكَ","Tuhanmu"],["بِاَصۡحٰبِ","terhadap pasukan"],["الۡفِيۡلِ","gajah"]]},{"n":2,"tr":"Bukankah Dia telah menjadikan tipu daya mereka itu sia-sia?","w":[["اَلَمۡ","bukankah"],["يَجۡعَلۡ","Dia menjadikan"],["كَيۡدَهُمۡ","tipu daya mereka"],["فِىۡ","dalam"],["تَضۡلِيۡلٍ","sia-sia"]]},{"n":3,"tr":"dan Dia mengirimkan kepada mereka burung yang berbondong-bondong,","w":[["وَّاَرۡسَلَ","dan Dia mengirimkan"],["عَلَيۡهِمۡ","kepada mereka"],["طَيۡرًا","burung"],["اَبَابِيۡلَ","yang berbondong-bondong"]]},{"n":4,"tr":"yang melempari mereka dengan batu dari tanah liat yang dibakar,","w":[["تَرۡمِيۡهِمۡ","yang melempari mereka"],["بِحِجَارَةٍ","dengan batu-batu"],["مِّنۡ","dari"],["سِجِّيۡلٍ","tanah liat yang dibakar"]]},{"n":5,"tr":"sehingga mereka dijadikan-Nya seperti daun-daun yang dimakan (ulat).","w":[["فَجَعَلَهُمۡ","lalu Dia menjadikan mereka"],["كَعَصۡفٍ","seperti daun-daun"],["مَّاۡكُوۡلٍ","yang dimakan (ulat)"]]}]}];
+/* ---------- pencocok bacaan (tanpa tajwid, hanya kata) ---------- */
+const MARKS=/[ؐ-ًؚ-ٰٟۖ-ۭـ࣓-ࣿ]/g;
+function norm(s){
+  return s.replace(MARKS,'')
+    .replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/ئ/g,'ي').replace(/ؤ/g,'و').replace(/ة/g,'ه').replace(/ء/g,'')
+    .replace(/[^ء-ي\s]/g,' ').replace(/\s+/g,' ').trim();
+}
+function lev(a,b){ const m=a.length,n=b.length; if(!m) return n; if(!n) return m;
+  let p=Array.from({length:n+1},(_,j)=>j);
+  for(let i=1;i<=m;i++){ const c=[i]; for(let j=1;j<=n;j++) c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1)); p=c; }
+  return p[n]; }
+/* kata pendek (anta/ana/antum) harus persis: beda 1 huruf bisa beda arti */
+function grade(e,h){ const d=lev(e,h), L=e.length;
+  if(d===0||(L>=4&&d===1)||(L>=7&&d===2)) return 'ok';
+  if(d===1||(L>=5&&sim(e,h)>=0.6)) return 'near';
+  return 'bad'; }
+function sim(a,b){ if(!a||!b) return 0; return 1-lev(a,b)/Math.max(a.length,b.length); }
+/* expected: array of word strings; heard: transcript string.
+   returns [{i, word, heard, s, st:'ok'|'near'|'bad'|'miss'}], extra:[...] */
+function check(expected,heard){
+  const E=expected.map(norm), R=norm(heard).split(' ').filter(Boolean);
+  const n=E.length,m=R.length, NEG=-1e9;
+  const D=Array.from({length:n+1},()=>Array(m+1).fill(NEG)), B=Array.from({length:n+1},()=>Array(m+1).fill(null));
+  D[0][0]=0;
+  const upd=(i,j,v,bk)=>{ if(v>D[i][j]){D[i][j]=v;B[i][j]=bk;} };
+  for(let i=0;i<=n;i++) for(let j=0;j<=m;j++){ const v=D[i][j]; if(v===NEG) continue;
+    if(i<n) upd(i+1,j,v-0.35,{t:'miss',i,j});                     // kata terlewat
+    if(j<m) upd(i,j+1,v-0.15,{t:'extra',i,j});                    // kata tambahan
+    if(i<n&&j<m){ const s=sim(E[i],R[j]); upd(i+1,j+1,v+s-0.5,{t:'m',i,j,s,h:R[j]}); }
+    if(i<n&&j+1<m){ const h=R[j]+R[j+1]; const s=sim(E[i],h); upd(i+1,j+2,v+s-0.55,{t:'m',i,j,s,h:R[j]+' '+R[j+1],k:2}); }   // satu kata terpecah dua
+    if(i+1<n&&j<m){ const s=sim(E[i]+E[i+1],R[j]); if(s>=0.8) upd(i+2,j+1,v+2*s-1.3,{t:'m2',i,j,s,h:R[j]}); } // dua kata menyatu
+  }
+  const res=expected.map((w,i)=>({i,word:w,heard:'',s:0,st:'miss'})), extra=[];
+  let i=n,j=m;
+  while(i>0||j>0){ const b=B[i][j]; if(!b) break;
+    if(b.t==='miss'){} else if(b.t==='extra'){ extra.unshift(R[b.j]); }
+    else { const st=grade(b.t==='m2'?E[b.i]+E[b.i+1]:E[b.i],b.h.replace(/ /g,''));
+      res[b.i]={i:b.i,word:expected[b.i],heard:b.h,s:b.s,st};
+      if(b.t==='m2') res[b.i+1]={i:b.i+1,word:expected[b.i+1],heard:b.h,s:b.s,st}; }
+    i=b.i; j=b.j; }
+  return {res,extra};
+}
+
+
+const $=id=>document.getElementById(id);
+const log=m=>{const l=$('log');l.textContent+=m+'\n';l.scrollTop=1e9;};
+const MODEL='eventhorizon0/tarteel-ai-onnx-whisper-base-ar-quran';
+const HAS_GPU=!!navigator.gpu;
+const SO={graphOptimizationLevel:'basic',enableCpuMemArena:false,enableMemPattern:false};
+const PROFILES=[
+ {id:'q4',label:'Kecil · q4 · sekitar 140 MB (coba ini dulu)',dtype:{encoder_model:'q4',decoder_model_merged:'q4'},device:'wasm'},
+ {id:'mix',label:'Kualitas · encoder penuh + decoder q4 · sekitar 205 MB',dtype:{encoder_model:'fp32',decoder_model_merged:'q4'},device:'wasm'},
+
+];
+PROFILES.forEach(p=>$('prof').append(new Option(p.label,p.id)));
+if(HAS_GPU) navigator.gpu.requestAdapter().then(ad=>{
+  if(!ad){ log('WebGPU: tidak ada adapter'); return; }
+  const f16=ad.features.has('shader-f16'); log('WebGPU shader-f16: '+(f16?'ada':'tidak ada'));
+  const add=p=>{PROFILES.push(p);$('prof').append(new Option(p.label,p.id));};
+  add({id:'gpu',label:'Eksperimen · WebGPU · encoder penuh + decoder q4 · sekitar 205 MB',dtype:{encoder_model:'fp32',decoder_model_merged:'q4'},device:'webgpu'});
+  if(f16) add({id:'fp16',label:'Eksperimen · WebGPU · fp16 · sekitar 145 MB',dtype:{encoder_model:'fp16',decoder_model_merged:'fp16'},device:'webgpu'});
+}).catch(e=>log('WebGPU adapter gagal: '+e));
+log('WebGPU: '+(HAS_GPU?'ada':'tidak ada')+' · '+navigator.userAgent);
+DATA.forEach(s=>$('sur').append(new Option(`${s.no}. ${s.name}`,s.no)));
+function fillAy(){const s=DATA.find(x=>x.no==$('sur').value);$('ay').replaceChildren(...s.ayat.map(a=>new Option('Ayat '+a.n,a.n)));render();}
+function target(){const s=DATA.find(x=>x.no==$('sur').value);const ay=s.ayat.find(a=>a.n==$('ay').value)||s.ayat[0];return {s,ay,words:ay.w};}
+let cur=null,lastRes=null;
+function render(res){cur=target();const box=$('ayah');box.replaceChildren();cur.words.forEach((w,k)=>{const r=res&&res[k];const sp=document.createElement('span');sp.className='w'+(r?' '+r.st:'');sp.textContent=w[0];box.append(sp,' ');});$('tr').textContent=cur.ay.tr;if(!res)$('result').hidden=true;}
+$('sur').onchange=fillAy;$('ay').onchange=()=>render();fillAy();
+
+let asr=null,loading=false;
+$('load').onclick=async()=>{
+  if(loading) return; loading=true; $('load').disabled=true; asr=null; $('mic').disabled=true;
+  const p=PROFILES.find(x=>x.id===$('prof').value); const t0=performance.now(); const files={};
+  try{
+    $('lstat').textContent='Memuat pustaka…';
+    const T=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1');
+    T.env.allowLocalModels=false;
+    log('Pustaka dimuat '+((performance.now()-t0)/1000).toFixed(1)+' dtk');
+    if(T.env.backends&&T.env.backends.onnx&&T.env.backends.onnx.wasm) T.env.backends.onnx.wasm.numThreads=1;
+    asr=await T.pipeline('automatic-speech-recognition',MODEL,{dtype:p.dtype,device:p.device,session_options:SO,
+      progress_callback:e=>{ if(e.status==='progress'&&e.file){files[e.file]={l:e.loaded,t:e.total};const L=Object.values(files).reduce((a,b)=>a+b.l,0),Tt=Object.values(files).reduce((a,b)=>a+b.t,0);$('bar').style.width=(100*L/Tt)+'%';$('lstat').textContent=`Mengunduh… ${(L/1e6).toFixed(0)} / ${(Tt/1e6).toFixed(0)} MB`;}
+        else if(e.status==='ready') $('lstat').textContent='Menyiapkan model…'; }});
+    const s=((performance.now()-t0)/1000).toFixed(1);
+    $('bar').style.width='100%'; $('lstat').textContent='Siap ✅ (dimuat '+s+' dtk)'; log('Model siap: '+p.id+' / '+p.device+' / '+s+' dtk');
+    $('mic').disabled=false; $('status').textContent='Pilih ayat, ketuk tombol, baca, lalu ketuk lagi.';
+  }catch(e){ let msg=String((e&&e.message)||e); if(/^\d+$/.test(msg)) msg='kode galat WebAssembly '+msg+' (biasanya fitur GPU/memori tidak didukung). Coba profil q4.'; $('lstat').textContent='Gagal memuat: '+msg.slice(0,300); $('log').textContent=''; log('GAGAL muat ('+p.id+'): '+msg); log((e&&e.stack||'').split('\n').slice(0,4).join('\n')); log('---'); }
+  loading=false; $('load').disabled=false; };
+
+async function toPCM(blob){
+  const buf=await blob.arrayBuffer(); const AC=window.AudioContext||window.webkitAudioContext; const ac=new AC();
+  const dec=await new Promise((ok,no)=>ac.decodeAudioData(buf,ok,no)); ac.close&&ac.close();
+  const n=Math.ceil(dec.duration*16000), off=new OfflineAudioContext(1,n,16000); const src=off.createBufferSource(); src.buffer=dec; src.connect(off.destination); src.start();
+  const out=await off.startRendering(); return {pcm:out.getChannelData(0),dur:dec.duration};
+}
+function voiceStats(pcm){ const W=1600; let peak=0,voiced=0; const rms=[]; for(let i=0;i+W<=pcm.length;i+=W){ let s=0; for(let j=0;j<W;j++){ const v=pcm[i+j]; s+=v*v; const a=Math.abs(v); if(a>peak) peak=a; } rms.push(Math.sqrt(s/W)); }
+  const sorted=[...rms].sort((a,b)=>a-b); const floor=sorted[Math.floor(sorted.length*0.2)]||0; const thr=Math.max(0.012,floor*3);
+  rms.forEach(r=>{ if(r>thr) voiced+=0.1; }); return {peak,voiced}; }
+let mr=null,stream=null;
+$('mic').onclick=async()=>{
+  if(mr){ mr.stop(); return; }
+  try{ stream=await navigator.mediaDevices.getUserMedia({audio:true}); }catch(e){ $('status').textContent='Mikrofon tidak diizinkan ('+e.name+'). Izinkan mikrofon untuk halaman ini di pengaturan browser.'; return; }
+  const chunks=[]; mr=new MediaRecorder(stream); mr.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+  mr.onstop=async()=>{ stream.getTracks().forEach(t=>t.stop()); const type=mr.mimeType; mr=null; $('mic').textContent='🎙️ Mulai baca'; $('mic').className='btn mic'; $('mic').disabled=true; $('status').textContent='Mendengarkan…';
+    try{ const {pcm,dur}=await toPCM(new Blob(chunks,{type}));
+      const vd=voiceStats(pcm); log(`Suara: puncak ${vd.peak.toFixed(3)}, bersuara ${vd.voiced.toFixed(1)} dtk dari ${dur.toFixed(1)} dtk`);
+      if(vd.voiced<0.6){ $('status').textContent='Tidak ada suara yang terdengar. Dekatkan perangkat ke mulut dan coba lagi.'; $('mic').disabled=false; return; }
+      const t0=performance.now(); let out;
+      try{ out=await asr(pcm,{language:'arabic',task:'transcribe',is_multilingual:true,chunk_length_s:30}); }
+      catch(e1){ log('Percobaan 1 gagal: '+e1.message); out=await asr(pcm,{chunk_length_s:30}); }
+      const sec=(performance.now()-t0)/1000;
+      const text=(out.text||'').trim(); log(`Rekaman ${dur.toFixed(1)} dtk (${type}) → ${sec.toFixed(1)} dtk proses → "${text}"`);
+      show(text,dur,sec);
+    }catch(e){ $('status').textContent='Gagal memproses: '+(e&&e.message||e); log('GAGAL proses: '+(e&&e.stack||e)); }
+    $('mic').disabled=false; };
+  mr.start(); $('mic').textContent='⏹️ Selesai'; $('mic').className='btn mic red pulse'; $('status').textContent='Merekam… silakan baca.';
+};
+function show(text,dur,sec){
+  lastRes=check(cur.words.map(w=>w[0]),text); const r=lastRes.res,n=r.length,ok=r.filter(x=>x.st==='ok').length,near=r.filter(x=>x.st==='near').length;
+  render(r); $('result').hidden=false; $('heard').textContent=text||'(tidak ada)'; $('status').textContent='Selesai.';
+  $('verdict').textContent=ok===n?`MasyaAllah! Semua ${n} kata terdengar pas 🌟`:ok+near===n?`Bagus! ${ok} dari ${n} kata pas, sisanya hampir.`:`${ok} dari ${n} kata terdengar pas.`;
+  const bad=r.filter(x=>x.st==='bad'||x.st==='miss'); const tip=$('tip'); tip.hidden=!bad.length; tip.textContent=bad.length?'Perhatikan: '+bad.map(x=>x.st==='miss'?`${x.word} belum terdengar`:`${x.word} terdengar seperti ${x.heard}`).join(' · '):'';
+  $('metrics').textContent=`Rekaman ${dur.toFixed(1)} dtk · diproses ${sec.toFixed(1)} dtk · cocok ${ok}/${n}`;
+}
+</script>
