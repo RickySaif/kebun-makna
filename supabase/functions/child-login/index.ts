@@ -1,4 +1,5 @@
 // Child sign-in without email. verify_jwt = false (does its own checks).
+// family_code accepts the family name (e.g. "saif2") or a legacy KM-XXXXXX code.
 // Step 1: POST { family_code }              -> { children: [{id, display_name, avatar}] }
 // Step 2: POST { family_code, child_id, pin } -> { token_hash }  (client: supabase.auth.verifyOtp({ token_hash, type: "magiclink" }))
 import { admin, childEmail, cors, json } from "../_shared/util.ts";
@@ -8,10 +9,17 @@ Deno.serve(async (req) => {
   try {
     const db = admin();
     const body = await req.json();
-    const code = String(body.family_code ?? "").trim().toUpperCase().replace(/^KM-?/, "");
-    if (!/^[0-9A-F]{6}$/.test(code)) return json({ error: "Kode keluarga 6 karakter" }, 400);
-    const { data: fam } = await db.from("families").select("parent_id").eq("code", code).maybeSingle();
-    if (!fam) { await new Promise((r) => setTimeout(r, 600)); return json({ error: "Kode keluarga tidak ditemukan" }, 404); }
+    const raw = String(body.family_code ?? "").trim();
+    const name = raw.toLowerCase();
+    const code = raw.toUpperCase().replace(/^KM-?/, "");
+    let fam: { parent_id: string } | null = null;
+    if (/^[a-z][a-z0-9]{2,19}$/.test(name)) {
+      ({ data: fam } = await db.from("families").select("parent_id").eq("handle", name).maybeSingle());
+    }
+    if (!fam && /^[0-9A-F]{6}$/.test(code)) {
+      ({ data: fam } = await db.from("families").select("parent_id").eq("code", code).maybeSingle());
+    }
+    if (!fam) { await new Promise((r) => setTimeout(r, 600)); return json({ error: "Nama keluarga tidak ditemukan" }, 404); }
 
     const { data: links } = await db.from("family_members").select("child_id").eq("parent_id", fam.parent_id);
     const ids = (links ?? []).map((l) => l.child_id);

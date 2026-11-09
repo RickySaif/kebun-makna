@@ -2,7 +2,8 @@
 //   Trakteer: POST ?provider=trakteer, header X-Webhook-Token == TRAKTEER_WEBHOOK_TOKEN
 //   Saweria : POST ?provider=saweria,  header Saweria-Callback-Signature == HMAC-SHA256(SAWERIA_STREAM_KEY,
 //             version+id+amount_raw+donator_name+donator_email) hex
-// The supporter writes their family code (e.g. "KM-3FA9C1") in the support message so we can match the account.
+// The supporter writes "#familyname" (e.g. "#saif2") in the support message so we can match the account
+// (legacy "KM-3FA9C1" codes are still recognised).
 // Unmatched payments are still stored (parent_id null) and can be linked by an admin.
 import { admin, cors, json } from "../_shared/util.ts";
 
@@ -15,7 +16,8 @@ const safeEq = (a: string, b: string) => {
   if (a.length !== b.length) return false;
   let r = 0; for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i); return r === 0;
 };
-const findCode = (msg: string) => (msg.match(/\bKM-?([0-9A-F]{6})\b/i)?.[1] ?? null)?.toUpperCase() ?? null;
+const findName = (msg: string) => msg.match(/#([a-z][a-z0-9]{2,19})\b/i)?.[1]?.toLowerCase() ?? null;
+const findCode = (msg: string) => msg.match(/\bKM-?([0-9A-F]{6})\b/i)?.[1]?.toUpperCase() ?? null;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -41,8 +43,13 @@ Deno.serve(async (req) => {
 
   if (!ref || !(amount > 0)) return json({ error: "missing fields" }, 400);
   const db = admin();
-  const code = findCode(message);
   let parentId: string | null = null;
+  const famName = findName(message);
+  if (famName) {
+    const { data } = await db.from("families").select("parent_id").eq("handle", famName).maybeSingle();
+    parentId = data?.parent_id ?? null;
+  }
+  const code = parentId ? null : findCode(message);
   if (code) {
     const { data } = await db.from("families").select("parent_id").eq("code", code).maybeSingle();
     parentId = data?.parent_id ?? null;
