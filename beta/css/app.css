@@ -1,0 +1,39 @@
+/* app.css — v2 additions: start screen, PIN pad, parent dashboard, tabs, feed. Uses game.css tokens. */
+.start-choices{display:grid;gap:12px;margin-top:6px}
+.start-choices .btn{font-size:20px;padding:14px 16px}
+.start-note{color:#fff;text-shadow:1px 1px 0 var(--ink);text-align:center;font-size:14px;margin:14px 4px 0}
+.err{color:#B3261E;font-weight:700;min-height:1.4em;margin:8px 0 0;font-size:15px}
+.ok{color:#2E7D32;font-weight:700}
+.linkbtn{background:none;border:0;padding:4px 0;font:inherit;font-size:15px;color:#1F5FA8;text-decoration:underline;cursor:pointer}
+.kidgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:12px;margin:10px 0}
+.kidgrid .av{min-height:140px}
+.kidgrid .av span{font-weight:700;font-size:16px;word-break:break-word;text-align:center}
+.pinshow{display:flex;justify-content:center;gap:10px;margin:10px 0 12px}
+.pinshow i{width:22px;height:22px;border:3px solid var(--ink);border-radius:50%;background:#fff}
+.pinshow i.on{background:var(--ink)}
+.pinpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:300px;margin:0 auto}
+.pinpad button{font:inherit;font-size:28px;font-weight:700;padding:12px 0;border:3px solid var(--ink);border-radius:6px;background:#fff;box-shadow:0 4px 0 var(--ink);touch-action:manipulation}
+.pinpad button:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.pinpad button.fn{font-size:18px;background:var(--paper)}
+.code{font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:22px;letter-spacing:2px;background:#fff;border:3px dashed var(--ink);padding:6px 10px;border-radius:4px;display:inline-block}
+.dash{padding-bottom:40px}
+.dash h2{color:#fff;text-shadow:2px 2px 0 var(--ink);margin:6px 0 10px}
+.kidcard{background:#fff;border:3px solid var(--ink);border-radius:6px;padding:12px;margin-bottom:12px}
+.kidcard .head{display:flex;gap:10px;align-items:center}
+.kidcard .head canvas{width:36px;height:48px;image-rendering:pixelated;flex:none}
+.kidcard .head b{font-size:20px}
+.kidcard .stats{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.pill{display:inline-block;background:var(--paper);border:2px solid var(--ink);border-radius:999px;padding:2px 10px;font-size:14px;font-weight:700}
+.timeline{list-style:none;margin:6px 0 0;padding:0;font-size:14px;max-height:260px;overflow:auto}
+.timeline li{padding:5px 0;border-bottom:1px dashed #D8CBA8;display:flex;gap:8px}
+.timeline time{color:#6B5B3E;flex:none;min-width:86px}
+.sec{margin-top:10px}
+.sec>summary{font-weight:700;cursor:pointer;padding:6px 0}
+.mini{font-size:14px;padding:6px 10px;box-shadow:0 3px 0 var(--ink)}
+.formrow{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.formrow .field{flex:1;min-width:140px;margin:6px 0}
+.field select{font:inherit;font-size:18px;padding:8px;border:3px solid var(--ink);border-radius:4px;background:#fff}
+.badge{font-size:.9em;margin-left:4px}
+.banner{background:#FFF6CC;border:3px solid var(--ink);border-radius:6px;padding:10px 12px;margin:8px 0;font-size:15px}
+.spinner{display:inline-block;width:18px;height:18px;border:3px solid var(--ink);border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}

@@ -20,6 +20,7 @@ async function run(url, label) {
   page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));
   await page.addInitScript(INIT);
   await page.goto(url);
+  if (url.includes('/beta/')) { await page.waitForSelector('#guest'); await page.click('#guest'); }
   await page.waitForSelector('#nm');
   await page.fill('#nm', 'Amtar');
   await page.click('#go');
@@ -111,7 +112,8 @@ async function run(url, label) {
       }
     }
   }
-  const S = await page.evaluate(() => JSON.parse(localStorage.getItem('kebun-makna-v3')));
+  const S = await page.evaluate(b => JSON.parse(localStorage.getItem(b ? 'kebun-makna-v3:beta-guest' : 'kebun-makna-v3')), isBeta);
+  if (isBeta && await page.evaluate(() => localStorage.getItem('kebun-makna-v3') !== null)) errors.push('beta wrote the classic save key');
   await page.screenshot({ path: `shot-${label}.png` });
   await browser.close();
   for (const k of ['min', 'day', 'pos']) delete S[k];

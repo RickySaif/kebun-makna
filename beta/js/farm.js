@@ -1,4 +1,5 @@
 // farm.js — split verbatim from the classic single-file game (Phase 0).
+import { hooks } from './hooks.js';
 import { play, sfx, stopAudio, voice } from './audio.js';
 import { cartGame, chase, pestGame, race } from './bosses.js';
 import { AW, BOSS, BY, DATA, EVENTS, HOUSE_TIERS, KAKEK, LV_XP, ORDER, QUEST, SLV_NAMES, seedPrice } from './data.js';
@@ -397,7 +398,7 @@ export function parentView(){
         b.querySelector('#voi').onchange=e=>{S.voice=e.target.checked;save();if(S.voice)voice('ready');};
         b.querySelector('#rn').onclick=()=>{closePanel();onboarding();};
         b.querySelector('#rs').onclick=()=>{const cf=b.querySelector('#cf');cf.replaceChildren($(`<div class="confirm small">Kebun, koin, dan progres akan hilang. Yakin? <div class="row" style="margin-top:8px"><button class="btn" id="y" style="background:#F8D2C6">Ya, mulai ulang</button><button class="btn ghost" id="n">Batal</button></div></div>`));cf.querySelector('#y').onclick=()=>{setS(fresh());save();closePanel();onboarding();};cf.querySelector('#n').onclick=()=>cf.replaceChildren();};
-        inner.replaceChildren(b);}
+        inner.replaceChildren(b); if(hooks.atur) hooks.atur(b);}
     };
     tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;render();}); render();
   });

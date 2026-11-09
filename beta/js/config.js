@@ -27,8 +27,6 @@ export const FLAGS = {
   cloudSave: true,
   social: true,
   recitationGate: true,
-  // Pending (unreviewed) story content is NEVER shown to children; parents may preview it.
-  showPendingToParents: true,
 };
 
 export const SAVE_DEBOUNCE_MS = 3000;
