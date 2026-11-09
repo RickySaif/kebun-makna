@@ -1,5 +1,12 @@
-// farm.js — split verbatim from the classic single-file game (Phase 0).
+// farm.js — split verbatim from the classic single-file game (Phase 0). v2 additions are marked "v2".
 import { hooks } from './hooks.js';
+
+/* ---------- v2: read-only farm for visits (same renderer, no game input) ---------- */
+export function startVisitView(canvas,pos){ cv=canvas; ctx=canvas.getContext('2d'); ctx.imageSmoothingEnabled=false;
+  me.x=me.fx=pos.x; me.y=me.fy=pos.y; me.path=[]; me.onArrive=null; walkers=[]; selPlot=-1;
+  cancelAnimationFrame(raf); lastT=performance.now(); loop(lastT); }
+export function visitWalk(x,y){ if(blocked(x,y)) return; const p=bfs(me.x,me.y,[[x,y]]); if(p){ me.path=p; me.onArrive=null; } }
+export const visitCam=()=>({camX,camY});
 import { play, sfx, stopAudio, voice } from './audio.js';
 import { cartGame, chase, pestGame, race } from './bosses.js';
 import { AW, BOSS, BY, DATA, EVENTS, HOUSE_TIERS, KAKEK, LV_XP, ORDER, QUEST, SLV_NAMES, seedPrice } from './data.js';

@@ -77,6 +77,8 @@ async function bootPlayer(p) {
       f.querySelector('#n').onclick = () => res();
     });
   }
+  // friends' waterings and salam since the last visit (Phase 4)
+  try { const v = await import('./visit.js'); const { note } = await import('./progress.js'); await v.applyVisits(note); } catch (e) {}
   if (!S.name) {
     S.name = String(p.display_name || '').slice(0, 16); S.avatar = (p.avatar | 0) % 2;
     migrate(); save(); intro();
