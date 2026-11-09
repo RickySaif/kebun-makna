@@ -2,7 +2,7 @@
 // admin page gate (non-admin sees a refusal). Env: KM_EMAIL, KM_PASS.
 import { BASE, newPage, close, parentClient, assert } from './lib.mjs';
 const parent = await parentClient();
-const { data: fam } = await parent.from('families').select('code').single();
+const { data: fname } = await parent.rpc('my_family_name');
 try {
   const P = await newPage('parent');
   await P.goto(BASE + '/beta/'); await P.click('#ortu');
@@ -12,7 +12,7 @@ try {
   await P.locator('text=Sahabat Kebun Makna').waitFor({ timeout: 15000 });
   const t = await P.locator('.dash').innerText();
   assert(/Penanam/.test(t) && /Rp25\.000/.test(t), 'tiers listed with amounts');
-  assert(/Cendol/.test(t) && t.includes('KM-' + fam.code), 'Cendol note and the family code to paste');
+  assert(/Cendol/.test(t) && t.includes('#' + fname), 'Cendol note and the #familyname to paste');
   assert(await P.locator('a[href="https://trakteer.id/nurul_bahirah"]').count() === 1, 'Trakteer button links to the live page');
   assert(await P.locator('a', { hasText: 'Saweria' }).count() === 0, 'Saweria hidden');
   await P.screenshot({ path: 'shot-support.png', fullPage: true });

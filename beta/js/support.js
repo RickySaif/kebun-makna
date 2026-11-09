@@ -1,6 +1,6 @@
-// support.js — "Dukung Kebun Makna" page (#/dukung): tiers, Trakteer link, the parent's family code to paste.
+// support.js — "Dukung Kebun Makna" page (#/dukung): tiers, Trakteer link, the parent's #familyname to paste.
 import { $, esc, root, toast } from './ui.js';
-import { sb, session, loadProfile, fmtCode } from './api.js';
+import { sb, session, loadProfile } from './api.js';
 import { loadTiers, badgeFor } from './badges.js';
 import { SUPPORT } from './config.js';
 
@@ -12,7 +12,7 @@ export async function supportPage() {
   const p = session.profile;
   let code = null;
   if (p && p.role === 'parent') {
-    try { const c = await sb(); const { data } = await c.from('families').select('code').eq('parent_id', p.id).maybeSingle(); code = data && data.code; } catch (e) {}
+    try { const c = await sb(); const { data } = await c.rpc('my_family_name'); code = data || null; } catch (e) {}
   }
   const links = [
     SUPPORT.trakteer && `<a class="btn green block" href="${esc(SUPPORT.trakteer)}" target="_blank" rel="noopener">Dukung lewat Trakteer ▸</a>`,
@@ -26,20 +26,20 @@ export async function supportPage() {
     </ul><p class="small" style="margin:8px 0 0">Total dukungan keluarga dijumlahkan. Lencana muncul di samping nama orang tua dan anak-anak.</p></div>
     <div class="frame" style="margin-bottom:12px"><b>Cara mendukung</b>
       <ol style="padding-left:20px;margin:8px 0">
-        <li>Salin kode keluarga Anda.</li>
+        <li>Salin nama keluarga Anda (dengan tanda #).</li>
         <li>Buka halaman Trakteer. Di sana dukungan dihitung dalam satuan <b>Cendol</b>.</li>
-        <li><b>Tulis kode keluarga (KM-XXXXXX) di pesan dukungan.</b> Tanpa kode, lencana tidak bisa dicocokkan ke akun Anda.</li>
+        <li><b>Tulis #namakeluarga di pesan dukungan</b>, misalnya <b>#saif</b>. Tanpa itu, lencana tidak bisa dicocokkan ke akun Anda.</li>
       </ol>
       <div id="code"></div>
       <div style="display:grid;gap:10px;margin-top:10px">${links || '<p class="small">Tautan dukungan belum tersedia.</p>'}</div></div>
     <p class="start-note"><a class="linkbtn" style="color:#fff" href="${p && p.role === 'parent' ? '#/ortu' : '#'}">◂ Kembali</a></p></div>`);
   const box = f.querySelector('#code');
   if (code) {
-    const r = $(`<div class="row" style="align-items:center"><span class="code">${esc(fmtCode(code))}</span><button class="btn mini">Salin</button></div>`);
-    r.querySelector('button').onclick = () => { const t = fmtCode(code); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Disalin: ' + t), () => prompt('Salin kode ini:', t)); };
+    const r = $(`<div class="row" style="align-items:center"><span class="code">#${esc(code)}</span><button class="btn mini">Salin</button></div>`);
+    r.querySelector('button').onclick = () => { const t = '#' + code; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Disalin: ' + t), () => prompt('Salin kode ini:', t)); };
     box.append(r);
   } else {
-    box.append($(`<div class="banner">Kode keluarga ada di <a href="#/ortu">Halaman Orang Tua</a>. Masuk sebagai orang tua untuk menyalinnya.</div>`));
+    box.append($(`<div class="banner">Nama keluarga ada di <a href="#/ortu">Halaman Orang Tua</a>. Masuk sebagai orang tua untuk menyalinnya.</div>`));
   }
   root.replaceChildren(f);
 }

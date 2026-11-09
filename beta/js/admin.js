@@ -1,4 +1,4 @@
-// admin.js — #/admin, only for users in `admins`: unmatched supporter payments and a manual link by family code
+// admin.js — #/admin, only for users in `admins`: unmatched supporter payments and a manual link by family name
 // (rpc admin_link_payment from migration 20261109060000).
 import { $, esc, root, toast } from './ui.js';
 import { sb, session, friendly } from './api.js';
@@ -23,11 +23,11 @@ export async function adminPage() {
   else data.forEach(p => {
     const r = $(`<div class="post"><div class="small">${esc(p.provider)} · ${new Date(p.created_at).toLocaleString('id-ID')} · ${esc(p.provider_ref)}</div>
       <b>${rp(p.amount_idr)}</b> dari <span class="nm"></span><p class="msg small" style="white-space:pre-wrap"></p>
-      <div class="formrow"><div class="field"><input class="fc" placeholder="KM-XXXXXX" maxlength="9" autocapitalize="characters"></div><button class="btn mini">Hubungkan</button></div><p class="err"></p></div>`);
+      <div class="formrow"><div class="field"><input class="fc" placeholder="nama keluarga, mis. saif" maxlength="21" autocapitalize="none"></div><button class="btn mini">Hubungkan</button></div><p class="err"></p></div>`);
     r.querySelector('.nm').textContent = p.supporter_name || '(tanpa nama)';
     r.querySelector('.msg').textContent = p.message || '';
     r.querySelector('button').onclick = async () => {
-      const code = r.querySelector('.fc').value.trim();
+      const code = r.querySelector('.fc').value.trim().toLowerCase().replace(/^#/, '');
       const { error: e } = await c.rpc('admin_link_payment', { payment_id: p.id, family_code: code });
       if (e) { r.querySelector('.err').textContent = /Could not find the function/i.test(e.message) ? 'Fungsi admin belum dipasang di server (migrasi 20261109060000).' : friendly(e); return; }
       toast('Terhubung, lencana diperbarui'); r.remove();

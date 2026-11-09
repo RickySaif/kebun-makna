@@ -13,9 +13,9 @@ try {
   await P.waitForSelector('#code', { timeout: 20000 });
   await P.locator('text=Hubungkan akun Ayah dan Ibu').waitFor({ timeout: 10000 });
   assert(true, 'Pasangan box shows the invite form (no spouse yet)');
-  await P.locator('.sc').fill('KM-' + (await P.locator('#code').innerText()).trim().slice(3));
+  await P.locator('.sc').fill((await P.locator('#code').innerText()).trim());
   await P.click('.sb');
-  await P.locator('.se', { hasText: 'kode keluarga Anda sendiri' }).waitFor({ timeout: 10000 });
+  await P.locator('.se', { hasText: 'nama keluarga Anda sendiri' }).waitFor({ timeout: 10000 });
   assert(true, 'inviting your own code is rejected with a friendly message');
   await P.click('#play');
   await P.waitForSelector('#dlg', { timeout: 20000 });

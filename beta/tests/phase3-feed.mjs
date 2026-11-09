@@ -5,8 +5,7 @@
 import { BASE, newPage, close, parentClient, childClient, familyFn, assert } from './lib.mjs';
 
 const parent = await parentClient();
-const { data: fam } = await parent.from('families').select('code').single();
-const code = 'KM-' + fam.code;
+const { data: code } = await parent.rpc('my_family_name'); // family name
 const tag = Math.random().toString(36).slice(2, 6);
 const kids = [];
 async function login(page, name, pin) {

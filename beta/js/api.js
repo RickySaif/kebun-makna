@@ -15,8 +15,10 @@ export async function sb() {
   return _loading;
 }
 
-export const fmtCode = c => 'KM-' + String(c || '').toUpperCase();
-export const normCode = c => String(c || '').trim().toUpperCase().replace(/^KM-?/, '').replace(/[^0-9A-F]/g, '');
+// Family name: lowercase handle such as "saif" or "saif2" (3–20 chars, a-z0-9, starts with a letter).
+// Legacy KM-XXXXXX codes are still accepted by the server; the UI never shows them.
+export const normFamily = c => String(c || '').trim().toLowerCase().replace(/^#/, '').replace(/\s+/g, '');
+export const isFamilyName = n => /^[a-z][a-z0-9]{2,19}$/.test(n) || /^(km-?)?[0-9a-f]{6}$/.test(n);
 
 // Friendly Indonesian text for backend errors.
 export function friendly(err) {
@@ -63,7 +65,8 @@ async function fn(name, body, auth) {
   return j;
 }
 
-// ---- Google sign-in for parents (shown only when the provider is enabled in Supabase) ----
+// ---- Google sign-in for parents via Google Identity Services (the chooser shows Kebun Makna, not supabase.co) ----
+export const GOOGLE_CLIENT_ID = '1066063708944-g4o9rf0sirmi09oicpktq618phnl5vjv.apps.googleusercontent.com';
 let _google = null;
 export async function googleEnabled() {
   if (_google !== null) return _google;
@@ -74,16 +77,47 @@ export async function googleEnabled() {
   } catch (e) { _google = false; }
   return _google;
 }
-export async function signInGoogle() {
-  const c = await sb();
-  const { error } = await c.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } });
-  if (error) { if (/not enabled|unsupported provider/i.test(error.message)) _google = false; throw error; }
+let _gis = null;
+export function loadGIS() {
+  if (window.google && window.google.accounts && window.google.accounts.id) return Promise.resolve(window.google);
+  if (_gis) return _gis;
+  _gis = new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
+    s.onload = () => (window.google && window.google.accounts) ? res(window.google) : rej(new Error('GIS unavailable'));
+    s.onerror = () => { _gis = null; rej(new Error('GIS unavailable')); };
+    document.head.append(s);
+    setTimeout(() => rej(new Error('GIS timeout')), 10000);
+  });
+  return _gis;
+}
+async function sha256hex(t) {
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t));
+  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+/** Render the official Google button into `el`. onDone(profile) after sign-in; onError(err). Resolves false if unavailable. */
+export async function renderGoogleButton(el, onDone, onError) {
+  if (!(await googleEnabled())) return false;
+  let g; try { g = await loadGIS(); } catch (e) { return false; }
+  const raw = [...crypto.getRandomValues(new Uint8Array(16))].map(x => x.toString(16).padStart(2, '0')).join('');
+  g.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID, nonce: await sha256hex(raw), ux_mode: 'popup', use_fedcm_for_prompt: true,
+    callback: async resp => {
+      try {
+        const c = await sb();
+        const { error } = await c.auth.signInWithIdToken({ provider: 'google', token: resp.credential, nonce: raw });
+        if (error) throw error;
+        onDone(await loadProfile());
+      } catch (e) { onError(e); }
+    },
+  });
+  g.accounts.id.renderButton(el, { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular', locale: 'id', width: Math.min(320, Math.max(200, el.clientWidth || 300)) });
+  return true;
 }
 
 // ---- child login (no email) ----
-export const childList = code => fn('child-login', { family_code: normCode(code) });
+export const childList = name => fn('child-login', { family_code: normFamily(name) });
 export async function childSignIn(code, childId, pin) {
-  const { token_hash } = await fn('child-login', { family_code: normCode(code), child_id: childId, pin });
+  const { token_hash } = await fn('child-login', { family_code: normFamily(code), child_id: childId, pin });
   const c = await sb();
   const { error } = await c.auth.verifyOtp({ token_hash, type: 'magiclink' });
   if (error) throw error;

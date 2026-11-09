@@ -75,14 +75,14 @@ try {
   await page.click('.celebrate button');
 
   // ---- signed-in child: activity row with timing ----
-  const { data: fam } = await parent.from('families').select('code').single();
+  const { data: fname } = await parent.rpc('my_family_name');
   const tag = Math.random().toString(36).slice(2, 6);
   const r = await familyFn(parent, { action: 'create', display_name: `Uji R ${tag}`, avatar: 1, pin: '5813' });
   kidId = r.body.child_id;
   await page.evaluate(() => { localStorage.removeItem('kebun-makna-mode'); location.hash = ''; });
   await page.goto(BASE + '/beta/?x=1');
   await page.click('#kid');
-  if (await page.$('#fc')) { await page.fill('#fc', 'KM-' + fam.code); await page.click('#go'); }
+  if (await page.$('#fc')) { await page.fill('#fc', fname); await page.click('#go'); }
   await page.locator('.kidgrid .av', { hasText: `Uji R ${tag}` }).click();
   for (const d of '5813') await page.click(`.pinpad button[data-n="${d}"]`);
   await page.click('.pinpad button[data-f="ok"]');

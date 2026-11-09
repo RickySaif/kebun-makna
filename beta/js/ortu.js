@@ -1,9 +1,9 @@
-// ortu.js — parent dashboard (#/ortu): family code, children, PINs, progress, activity, social oversight.
+// ortu.js — parent dashboard (#/ortu): family name, children, PINs, progress, activity, social oversight.
 import { $, esc, root, toast } from './ui.js';
 import { DATA, BY, HOUSE_TIERS } from './data.js';
 import { levelOf } from './progress.js';
 import { AVATARS } from './render.js';
-import { sb, session, friendly, fmtCode, familyCreate, familySetPin, familyDelete, signOut } from './api.js';
+import { sb, session, friendly, normFamily, familyCreate, familySetPin, familyDelete, signOut } from './api.js';
 import { avatarCanvas } from './account.js';
 import { badgeFor, loadTiers } from './badges.js';
 
@@ -40,7 +40,7 @@ async function loadAll() {
   await loadTiers();
   const uid = session.user.id;
   const [{ data: fam, error: fe }, { data: links, error: le }] = await Promise.all([
-    c.from('families').select('code').eq('parent_id', uid).maybeSingle(),
+    c.rpc('my_family_name').then(r => ({ data: r.data ? { name: r.data } : null, error: r.error })),
     c.from('family_members').select('child_id').eq('parent_id', uid),
   ]);
   if (fe) throw fe; if (le) throw le;
@@ -74,15 +74,19 @@ function render(h) {
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
       <b style="font-size:20px">Halo, ${esc(p.display_name)}${badgeFor(p.supporter_tier)}</b>
       <button class="btn ghost mini" id="out">Keluar</button></div>
-    <p style="margin:10px 0 4px">Kode keluarga (untuk anak masuk di perangkat mana pun):</p>
-    <div class="row" style="align-items:center"><span class="code" id="code">${esc(fmtCode(ctx.family && ctx.family.code))}</span><button class="btn mini" id="copy">Salin</button></div>
-    <p class="small" style="margin:8px 0 0">Kode ini juga dipakai saat mendukung Kebun Makna, supaya lencana pendukung muncul di akun keluarga. Jangan bagikan ke orang lain.</p>
+    <p style="margin:10px 0 4px">Nama keluarga (anak mengetiknya sekali untuk masuk di perangkat mana pun):</p>
+    <div class="row" style="align-items:center"><span class="code" id="code"></span><button class="btn mini" id="copy">Salin</button><button class="btn ghost mini" id="chg">Ganti</button></div>
+    <div id="chgbox"></div>
+    <p class="small" style="margin:8px 0 0">Nama ini juga dipakai saat mendukung Kebun Makna (tulis <b>#nama</b> di pesan Trakteer) supaya lencana pendukung muncul di akun keluarga. Anak tetap perlu PIN untuk masuk.</p>
     <button class="btn green block" id="play" style="margin-top:12px">🌱 Main sebagai saya</button>
     <p class="small" style="margin:6px 0 0">Orang tua juga bisa main game lengkapnya. Progres Anda terpisah dari progres anak.</p>
   </div>`);
   head.querySelector('#play').onclick = h.onPlaySelf;
   head.querySelector('#out').onclick = async () => { await signOut(); h.onLogout(); };
-  head.querySelector('#copy').onclick = () => copy(fmtCode(ctx.family && ctx.family.code));
+  const fname = (ctx.family && ctx.family.name) || '';
+  head.querySelector('#code').textContent = fname || '—';
+  head.querySelector('#copy').onclick = () => copy(fname);
+  head.querySelector('#chg').onclick = () => familyNameEditor(head.querySelector('#chgbox'), fname, h);
   wrap.append(head);
 
   wrap.append($(`<h2>Anak-anak</h2>`));
@@ -238,7 +242,7 @@ function spouseBox(h) {
     if (link) {
       const other = link.parent_a === me ? link.parent_b : link.parent_a;
       const { data: op } = await c.from('profiles').select('display_name, supporter_tier').eq('id', other).maybeSingle();
-      sp.replaceChildren($(`<p style="margin:6px 0 0">✅ Terhubung dengan <b></b>. Anda berdua melihat dan mengelola semua anak. Kode keluarga mana pun menampilkan semua anak saat masuk, dan PIN orang tua siapa pun bisa dipakai.</p>`));
+      sp.replaceChildren($(`<p style="margin:6px 0 0">✅ Terhubung dengan <b></b>. Anda berdua melihat dan mengelola semua anak. Anak masuk dengan satu nama keluarga bersama, dan PIN orang tua siapa pun bisa dipakai.</p>`));
       sp.querySelector('b').textContent = (op && op.display_name) || 'pasangan';
       return;
     }
@@ -256,13 +260,24 @@ function spouseBox(h) {
         cf.replaceChildren($(`<div class="confirm small" style="margin-top:8px"><b>Sebelum menerima:</b><ul style="padding-left:18px;margin:6px 0">
           <li>Daftar anak Anda dan pasangan digabung. Anda berdua bisa melihat dan mengelola semua anak.</li>
           <li>Kalau ada nama anak yang sama, salah satunya otomatis diberi angka (mis. "Amtar 2"). Kedua akun tetap ada, progresnya tidak hilang.</li>
-          <li>Kode keluarga Anda maupun pasangan akan menampilkan semua anak saat anak masuk.</li>
+          <li>Keluarga hanya memakai <b>satu nama keluarga</b>. Pilih di bawah; nama yang lain dilepas (bisa dipakai keluarga lain). Kedua orang tua dan semua anak memakai nama yang dipilih.</li>
           <li>Lencana pendukung dihitung bersama untuk satu rumah tangga. PIN orang tua siapa pun bisa dipakai.</li>
           <li>Hubungan ini belum bisa diputus dari aplikasi.</li></ul>
+          <div class="names"><span class="spinner"></span></div>
           <div class="row"><button class="btn green mini ok">Ya, hubungkan</button><button class="btn ghost mini no">Batal</button></div></div>`));
         cf.querySelector('.no').onclick = () => cf.replaceChildren();
+        c.rpc('spouse_invite_names', { invite_id: i.id }).then(({ data: nm }) => {
+          const row = Array.isArray(nm) ? nm[0] : nm; const box = cf.querySelector('.names');
+          if (!row) { box.textContent = 'Nama keluarga tidak bisa dimuat.'; return; }
+          box.replaceChildren($(`<div style="margin:6px 0"><b>Pakai nama keluarga:</b><label class="toggle"><input type="radio" name="fn${i.id}" value=""> <span class="m"></span> (milik Anda)</label><label class="toggle"><input type="radio" name="fn${i.id}" value=""> <span class="t"></span> (milik <span class="w"></span>)</label></div>`));
+          const [r1, r2] = box.querySelectorAll('input');
+          r1.value = row.mine || ''; r2.value = row.theirs || ''; r1.checked = true;
+          box.querySelector('.m').textContent = row.mine || '—'; box.querySelector('.t').textContent = row.theirs || '—'; box.querySelector('.w').textContent = row.inviter_name || 'pasangan';
+        });
         cf.querySelector('.ok').onclick = async () => {
-          const { error: e2 } = await c.rpc('accept_spouse', { invite_id: i.id });
+          const sel = cf.querySelector('.names input:checked');
+          if (!sel || !sel.value) { toast('Pilih satu nama keluarga dulu.'); return; }
+          const { error: e2 } = await c.rpc('accept_spouse', { invite_id: i.id, family_name: sel.value });
           if (e2) toast(friendly(e2)); else { toast('Akun pasangan terhubung'); refresh(h); }
         };
       };
@@ -275,15 +290,46 @@ function spouseBox(h) {
       r.querySelector('button').onclick = async () => { await c.rpc('decline_spouse', { invite_id: out.id }); refresh(h); };
       sp.append(r);
     }
-    const form = $(`<div><div class="formrow"><div class="field"><label>Kode keluarga pasangan</label><input class="sc" placeholder="KM-XXXXXX" autocapitalize="characters" maxlength="9" autocomplete="off"></div><button class="btn mini sb">Undang</button></div><p class="err se"></p></div>`);
+    const form = $(`<div><div class="formrow"><div class="field"><label>Nama keluarga pasangan</label><input class="sc" placeholder="contoh: saif" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="20" autocomplete="off"></div><button class="btn mini sb">Undang</button></div><p class="err se"></p></div>`);
     sp.append(form);
     const se = sp.querySelector('.se');
     sp.querySelector('.sb').onclick = async () => {
-      const code = sp.querySelector('.sc').value.trim();
-      if (!/^(KM-?)?[0-9A-Fa-f]{6}$/.test(code)) { se.textContent = 'Kode keluarga seperti KM-1A2B3C.'; return; }
+      const code = normFamily(sp.querySelector('.sc').value);
+      if (!/^[a-z][a-z0-9]{2,19}$/.test(code)) { se.textContent = 'Nama keluarga 3–20 huruf kecil/angka, contoh: saif'; return; }
       const { error: e3 } = await c.rpc('invite_spouse', { family_code: code });
       if (e3) se.textContent = friendly(e3); else { toast('Undangan dikirim. Pasangan menerimanya di Halaman Orang Tua miliknya.'); refresh(h); }
     };
   })().catch(e => { const er = $(`<p class="err"></p>`); er.textContent = friendly(e); sp.replaceChildren(er); });
   return f;
+}
+
+// ---------- change the family name (live availability check) ----------
+function familyNameEditor(box, current, h) {
+  if (box.firstChild) { box.replaceChildren(); return; }
+  const f = $(`<div class="confirm small" style="margin-top:8px"><div class="formrow"><div class="field"><label>Nama keluarga baru</label>
+    <input class="nn" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="20" autocomplete="off"></div><button class="btn mini sv">Simpan</button></div>
+    <p class="st" style="margin:4px 0"></p><p style="margin:0">3–20 huruf kecil atau angka, diawali huruf. Setelah diganti, anak perlu mengetik nama baru saat masuk di perangkat lain.</p></div>`);
+  const inp = f.querySelector('.nn'), st = f.querySelector('.st'), sv = f.querySelector('.sv');
+  inp.value = current; let t = null, okName = null;
+  const check = () => {
+    const v = normFamily(inp.value); if (v !== inp.value) inp.value = v; okName = null; sv.disabled = true;
+    if (v === current) { st.className = 'st'; st.textContent = 'Ini nama keluarga Anda sekarang.'; return; }
+    if (!/^[a-z][a-z0-9]{2,19}$/.test(v)) { st.className = 'st err'; st.textContent = 'Belum sesuai aturan.'; return; }
+    st.className = 'st'; st.textContent = 'Mengecek…';
+    clearTimeout(t); t = setTimeout(async () => {
+      const c = await sb(); const { data, error } = await c.rpc('family_name_available', { name: v });
+      if (normFamily(inp.value) !== v) return;
+      if (error) { st.className = 'st err'; st.textContent = friendly(error); return; }
+      if (data) { st.className = 'st ok'; st.textContent = `✓ "${v}" tersedia`; okName = v; sv.disabled = false; }
+      else { st.className = 'st err'; st.textContent = `"${v}" sudah dipakai keluarga lain.`; }
+    }, 350);
+  };
+  inp.oninput = check;
+  sv.onclick = async () => {
+    if (!okName) return;
+    const c = await sb(); const { error } = await c.rpc('set_family_name', { name: okName });
+    if (error) { st.className = 'st err'; st.textContent = friendly(error); return; }
+    toast('Nama keluarga disimpan: ' + okName); refresh(h);
+  };
+  box.replaceChildren(f); check(); inp.focus();
 }

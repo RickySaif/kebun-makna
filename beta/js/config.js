@@ -8,7 +8,7 @@ export const TRANSFORMERS_ESM = 'https://cdn.jsdelivr.net/npm/@huggingface/trans
 
 // Support pages. Trakteer webhook is live (verified 2026-11-09). Saweria is not used for now:
 // an empty value hides its button. Trakteer pays in "Cendol" units; supporters must write their
-// family code KM-XXXXXX in the support message so the webhook can match it.
+// family name as #name (e.g. #saif) in the support message so the webhook can match it.
 export const SUPPORT = {
   trakteer: 'https://trakteer.id/nurul_bahirah',
   saweria: '',

@@ -46,7 +46,7 @@ try {
   await P.click('#go');
   await P.waitForSelector('#code', { timeout: 20000 });
   code = (await P.locator('#code').innerText()).trim();
-  assert(/^KM-[0-9A-F]{6}$/.test(code), `dashboard shows family code ${code}`);
+  assert(/^[a-z][a-z0-9]{2,19}$/.test(code), `dashboard shows the family name ${code}`);
   for (const k of KIDS) {
     await P.fill('#kn', k.name);
     await P.fill('#kp', k.pin);

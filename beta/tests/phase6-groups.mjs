@@ -4,8 +4,8 @@
 import { BASE, newPage, close, parentClient, childClient, familyFn, assert } from './lib.mjs';
 
 const parent = await parentClient();
-const { data: fam } = await parent.from('families').select('code').single();
-const code = 'KM-' + fam.code, tag = Math.random().toString(36).slice(2, 6);
+const { data: code } = await parent.rpc('my_family_name'); // family name, e.g. "penguji"
+const tag = Math.random().toString(36).slice(2, 6);
 const probe = await parent.rpc('group_progress', { g: '00000000-0000-0000-0000-000000000000' });
 const applied = !(probe.error && /Could not find|does not exist/i.test(probe.error.message));
 console.log('  migration 20261109060000 applied:', applied);

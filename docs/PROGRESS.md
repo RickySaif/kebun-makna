@@ -48,14 +48,23 @@ Beta: https://rickysaif.github.io/kebun-makna/beta/ · Classic (live, untouched)
 
 ### Phase 6 — groups (built; waiting on the migration)
 - `#/grup`: join by code; parents create groups for children or parents and manage child groups without being members; weekly goal, progress bar, in-group leaderboard (`rpc group_progress`), remove member, leave, delete.
-- **Verified:** degrades gracefully today. Run `phase6-groups.mjs` after applying the migration; it then tests the full path automatically.
+- **Verified** (`phase6-groups.mjs`, with the migration applied): the parent creates a child group in the UI, which shows the join code; a child joins; a parent can't join a child group; the leaderboard shows 2 ayat this week; progress reads 2/50; the owner changes the goal. Before the migration, the pages degraded gracefully.
 
 ### Phase 7 — support, badges, admin (done)
 - Badges next to names everywhere, including the game HUD. Support page verified. `#/admin` (only for users in `admins`) lists unmatched payments with "Hubungkan" by family code.
 - **Verified** (`phase7-support.mjs`).
 
+### Phase 8 — akhlak chapter (done; for the ustaz to review)
+- 8 stories in `content/akhlak/*.json`, in the same village after Al-Fil. They unlock only when all 10 surahs and `boss4` are done; a 📗 button with a BARU marker and a "Bab baru" note appear. Topics: honesty, kindness to mother, a friendly face, removing thorns from the road, saving water, salam, sharing soup with neighbours, controlling anger.
+- Each story: the villager's problem (dialogue) → "Buka kitab": the child picks which of 3 real sources answers it (so there are no paraphrased answer options) → the full verbatim source card → the villager's resolution → reward (+15 coins, +30 XP), with `akhlak_done` logged. Stories unlock one after another.
+- Hadith/ayah text is copied verbatim from `sources` into `source_rows` by `content/tools/snapshot-sources.mjs`, so it works offline and the ustaz sees exactly what children see. `docs/CONTENT_REVIEW.md` lists each story's citations and its paraphrase lines.
+- **Verified** (`phase8-akhlak.mjs`): every `source_rows` entry is identical to the live table; the chapter is locked on a fresh game and unlocks after 10 surahs + boss4; a wrong pick gets gentle feedback; the right pick shows the verbatim HR. Muslim 4719 card; the reward is granted; the next story opens.
+
+### Family names + Google Identity Services (backend cb13349/e977e8d) (done)
+- See Decisions. Tests updated to use the family name (`rpc my_family_name`). `phase1c-google.mjs` checks the GIS button at 390 px and the no-GIS fallback.
+
 ## Next
-Phase 8 (akhlak arc after Al-Fil + boss4).
+All planned phases are built. What remains is Ricky's: the ustaz review of the whole beta, measuring recitation timing on Amtar's iPhone (dashboard → Percobaan membaca), and the cutover.
 
 ## Needs applying
 (none; `20261109060000_groups_fix_progress_admin` applied 2026-11-09 by the local session, with `admin_link_payment` changed to accept family names via `resolve_family`)
@@ -83,7 +92,8 @@ Ricky can overrule any of these.
 - **The group week starts Monday 00:00 WIB.** Reason: it matches Indonesian school weeks.
 - **Hadith cards show the matn only when it's the quoted text right after the narrator chain;** otherwise they show the start of the full text. "Lihat lengkap" always shows the full Arabic and Indonesian. Reason: never cut a hadith in a way that changes it.
 - **Children can't create their own groups or see family codes.** The group join code is visible to members so they can invite classmates.
-- **Parent's Google sign-in redirects back to `/beta/`.**
+- **Family names replace KM codes everywhere in the UI** (Ricky). Child login has one field, "Nama keluarga" (placeholder "contoh: saif"), lowercased as you type and remembered per device; a remembered legacy code still works. The dashboard shows the name prominently with Salin and Ganti (live availability check, debounced 350 ms). Spouse invites take the family name. Accepting asks you to pick one of the two names (radio), and explains that the other is released. The support page shows `#name` with copy; admin links payments by family name.
+- **Google sign-in uses Google Identity Services** (the official button, popup, hashed nonce → `signInWithIdToken`). `signInWithOAuth` is removed. The button shows only when Supabase reports the Google provider enabled and the GIS script loads; otherwise the email login stays alone. Reason: Google's chooser then shows Kebun Makna / rickysaif.github.io instead of supabase.co.
 
 ## Decisions from Ricky
 - An ustaz reviews the whole beta (including all religious content) before cutover. There's no pending/approved gating. Every story that relies on a hadith or ayah cites real `sources` ids, listed in `docs/CONTENT_REVIEW.md`.

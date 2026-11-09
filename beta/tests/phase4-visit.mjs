@@ -3,8 +3,8 @@
 import { BASE, newPage, close, parentClient, familyFn, assert } from './lib.mjs';
 
 const parent = await parentClient();
-const { data: fam } = await parent.from('families').select('code').single();
-const code = 'KM-' + fam.code, tag = Math.random().toString(36).slice(2, 6);
+const { data: code } = await parent.rpc('my_family_name'); // family name, e.g. "penguji"
+const tag = Math.random().toString(36).slice(2, 6);
 const kids = [];
 async function login(page, k) {
   await page.goto(BASE + '/beta/');

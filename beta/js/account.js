@@ -1,7 +1,7 @@
-// account.js — start screen: parent email login/signup, child family code → avatar → PIN, guest mode.
+// account.js — start screen: parent email/Google login, child family name → avatar → PIN, guest mode.
 import { $, esc, root } from './ui.js';
 import { AVATARS, drawKid } from './render.js';
-import { sb, session, friendly, childList, childSignIn, loadProfile, normCode, fmtCode, googleEnabled, signInGoogle } from './api.js';
+import { sb, session, friendly, childList, childSignIn, loadProfile, normFamily, isFamilyName, renderGoogleButton } from './api.js';
 
 const LAST_CODE = 'kebun-makna-last-family';
 const MODE = 'kebun-makna-mode'; // 'guest' remembered on this device
@@ -40,18 +40,20 @@ function childStart(h, msg) {
   const last = getLastCode();
   if (last && !msg) return childPick(h, last);
   root.replaceChildren(title('Masuk sebagai anak'));
-  const f = $(`<div class="frame"><div class="field"><label for="fc"><b>Kode keluarga</b></label>
-    <input id="fc" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="KM-XXXXXX" maxlength="9" value="${esc(last ? fmtCode(last) : '')}"></div>
-    <p class="small" style="margin:0 0 10px">Minta kodenya ke Ayah atau Ibu. Kode ini ada di halaman orang tua.</p>
+  const f = $(`<div class="frame"><div class="field"><label for="fc"><b>Nama keluarga</b></label>
+    <input id="fc" inputmode="text" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="contoh: saif" maxlength="20" value="${esc(last && /^[a-z]/.test(last) ? last : '')}"></div>
+    <p class="small" style="margin:0 0 10px">Tanya Ayah atau Ibu nama keluargamu. Nama ini ada di halaman orang tua.</p>
     <button class="btn green block" id="go">Lanjut ▸</button><p class="err" id="err">${esc(msg || '')}</p>
     <button class="linkbtn" id="back">◂ Kembali</button></div>`);
   const go = f.querySelector('#go');
   go.onclick = () => {
-    const c = normCode(f.querySelector('#fc').value);
-    if (c.length !== 6) { f.querySelector('#err').textContent = 'Kode keluarga 6 huruf/angka setelah KM-.'; return; }
+    const c = normFamily(f.querySelector('#fc').value);
+    if (!isFamilyName(c)) { f.querySelector('#err').textContent = 'Nama keluarga 3–20 huruf kecil/angka, contoh: saif'; return; }
     childPick(h, c);
   };
-  f.querySelector('#fc').onkeydown = e => { if (e.key === 'Enter') go.click(); };
+  const inp = f.querySelector('#fc');
+  inp.oninput = () => { const v = inp.value.toLowerCase().replace(/\s/g, ''); if (v !== inp.value) inp.value = v; };
+  inp.onkeydown = e => { if (e.key === 'Enter') go.click(); };
   f.querySelector('#back').onclick = () => startScreen(h);
   root.append(f);
 }
@@ -60,10 +62,10 @@ async function childPick(h, code) {
   root.replaceChildren(title('Siapa kamu?'), $(`<div class="frame"><span class="spinner"></span> Memuat…</div>`));
   let kids;
   try { ({ children: kids } = await childList(code)); }
-  catch (e) { return childStart(h, e.status === 404 ? 'Kode keluarga tidak ditemukan.' : friendly(e)); }
+  catch (e) { return childStart(h, e.status === 404 ? 'Nama keluarga tidak ditemukan. Cek lagi ejaannya, ya.' : friendly(e)); }
   setLastCode(code);
   const f = $(`<div class="frame"><p style="margin:0">Ketuk gambarmu.</p><div class="kidgrid"></div>
-    <p class="err" id="err"></p><button class="linkbtn" id="other">Ganti kode keluarga</button> · <button class="linkbtn" id="back">◂ Kembali</button></div>`);
+    <p class="err" id="err"></p><button class="linkbtn" id="other">Ganti nama keluarga</button> · <button class="linkbtn" id="back">◂ Kembali</button></div>`);
   const grid = f.querySelector('.kidgrid');
   if (!kids.length) f.querySelector('#err').textContent = 'Belum ada anak di keluarga ini. Minta Ayah/Ibu menambahkanmu di halaman orang tua.';
   kids.forEach(k => {
@@ -156,15 +158,16 @@ export function parentLogin(h, mode = 'login', msg = '') {
   if (q('#li')) q('#li').onclick = () => parentLogin(h, 'login');
   q('#back').onclick = () => startScreen(h);
   root.append(f);
-  if (mode !== 'reset') googleEnabled().then(on => {
-    if (!on) return;
-    const g = $(`<div><div class="small" style="text-align:center;margin:10px 0 8px">atau</div><button class="btn ghost block" id="gg">Masuk dengan Google</button></div>`);
-    g.querySelector('#gg').onclick = async () => {
-      try { await signInGoogle(); }
-      catch (e) { g.remove(); err.className = 'err'; err.textContent = /not enabled|unsupported/i.test(e.message) ? 'Masuk dengan Google belum tersedia. Pakai email dulu, ya.' : friendly(e); }
-    };
+  if (mode !== 'reset') {
+    const g = $(`<div><div class="small" style="text-align:center;margin:10px 0 8px">atau</div><div id="gbtn" style="display:flex;justify-content:center;min-height:44px"></div></div>`);
     go.after(g);
-  });
+    renderGoogleButton(g.querySelector('#gbtn'), p => {
+      if (!p) { err.className = 'err'; err.textContent = 'Profil tidak ditemukan.'; return; }
+      if (p.role !== 'parent') { err.className = 'err'; err.textContent = 'Akun ini bukan akun orang tua.'; return; }
+      rememberGuest(false); h.parent(p);
+    }, e => { err.className = 'err'; err.textContent = friendly(e); })
+      .then(ok => { if (!ok) g.remove(); }, () => g.remove()); // no GIS / provider off -> email login only
+  }
 }
 
 /** After a password-recovery link: let the parent choose a new password. */
