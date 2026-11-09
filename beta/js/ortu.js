@@ -92,6 +92,7 @@ function render(h) {
   wrap.append(spouseBox(h));
   wrap.append(parentPinBox());
   wrap.append(supportBox());
+  import('./admin.js').then(async m => { if (await m.isAdmin()) wrap.append($(`<div class="frame" style="margin-bottom:12px"><b>🛠️ Admin</b><p class="small" style="margin:6px 0">Cocokkan dukungan yang belum terhubung ke keluarga.</p><a class="btn mini" href="#/admin">Buka halaman admin</a></div>`)); });
   const g = $(`<p class="start-note"><button class="linkbtn" style="color:#fff" id="guest">Coba main di perangkat ini sebagai tamu</button></p>`);
   g.querySelector('#guest').onclick = h.onPlayGuest; wrap.append(g);
   root.replaceChildren(wrap);

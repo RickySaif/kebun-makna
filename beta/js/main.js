@@ -59,7 +59,18 @@ function bootGuest() {
   setTimeout(() => toast('Mode tamu: progres hanya di perangkat ini.'), 1200);
 }
 
+// supporter badge next to the player's name in the game HUD (the HUD is re-rendered by the classic code)
+function hudBadge(p) {
+  if (!p || !p.supporter_tier) return;
+  import('./badges.js').then(async b => {
+    await b.loadTiers();
+    const put = () => { const g = document.querySelector('.hud .grow'); if (g && !g.querySelector('.badge')) g.insertAdjacentHTML('beforeend', b.badgeFor(p.supporter_tier)); };
+    new MutationObserver(put).observe(root, { childList: true }); put();
+  });
+}
+
 async function bootPlayer(p) {
+  hudBadge(p);
   mode = p.role === 'parent' ? 'player' : 'child';
   if (p.role === 'child') addTabs('kebun');
   import('./online.js').then(o => o.joinOnline()).catch(() => {});
@@ -100,6 +111,7 @@ async function showParent() {
 async function route() {
   const h = location.hash;
   if (h.startsWith('#/dukung')) { mode = 'page'; const m = await import('./support.js'); return m.supportPage(); }
+  if (h.startsWith('#/admin')) { mode = 'page'; await loadProfile().catch(() => null); const m = await import('./admin.js'); return m.adminPage(); }
   let p = null;
   try { p = await loadProfile(); if (p) cacheProfile(p); }
   catch (e) {
