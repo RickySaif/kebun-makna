@@ -77,7 +77,7 @@ export async function feedPage(which = 'ikuti') {
   const body = page(session.profile.role === 'parent' ? 'Beranda Orang Tua' : 'Beranda', 'beranda');
   await loadTiers();
   const top = $(`<div><div class="ptab"><button data-w="ikuti">Diikuti</button><button data-w="jelajah">Jelajah</button></div>
-    <button class="btn green block" id="new">✏️ Tulis kiriman</button></div>`);
+    <div class="row"><button class="btn green" id="new" style="flex:2">✏️ Tulis kiriman</button><a class="btn blue" href="#/lomba" style="flex:1">🏁 Lomba</a></div></div>`);
   top.querySelectorAll('.ptab button').forEach(b => { b.classList.toggle('on', b.dataset.w === which); b.onclick = () => { location.hash = '#/beranda/' + b.dataset.w; }; });
   top.querySelector('#new').onclick = () => composer();
   const list = $(`<div class="feed"><div class="frame"><span class="spinner"></span></div></div>`);
@@ -308,7 +308,17 @@ export async function profilePage(id) {
       profilePage(id);
     };
     acts.append(fb);
-    if (p.role === session.profile.role) acts.append($(`<a class="btn blue" href="#/kunjungi/${id}">🏡 Kunjungi kebun</a>`));
+    if (p.role === session.profile.role) {
+      acts.append($(`<a class="btn blue" href="#/kunjungi/${id}">🏡 Kunjungi kebun</a>`));
+      import('./online.js').then(async o => {
+        await o.joinOnline();
+        const add = () => { if (!o.onlineIds().has(id) || acts.querySelector('.race')) return;
+          const b = $(`<button class="btn race">🏁 Ajak lomba</button>`);
+          b.onclick = async () => { const room = String(1000 + Math.floor(Math.random() * 9000)); await o.sendInvite(id, room); location.hash = '#/lomba/' + room; };
+          acts.append(b); };
+        o.onOnlineChange(add); add();
+      });
+    }
   } else acts.append($(`<a class="btn green" href="#/">🌱 Ke kebunku</a>`));
   body.append(head, $(`<h3 style="color:#fff;text-shadow:1px 1px 0 var(--ink)">Kiriman</h3>`));
   const list = $(`<div class="feed"></div>`);

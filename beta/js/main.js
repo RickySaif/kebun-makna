@@ -62,6 +62,7 @@ function bootGuest() {
 async function bootPlayer(p) {
   mode = p.role === 'parent' ? 'player' : 'child';
   if (p.role === 'child') addTabs('kebun');
+  import('./online.js').then(o => o.joinOnline()).catch(() => {});
   root.replaceChildren($(`<div class="title"><h1>Kebun Makna</h1><p>Memuat kebunmu…</p></div>`));
   const r = await startCloud(p.id, { onReplace: () => { if (document.getElementById('farm')) farm(); } });
   if (r.legacy && p.role === 'child') {
@@ -119,6 +120,7 @@ async function route() {
 
 async function socialRoute(kind, arg) {
   mode = 'social';
+  import('./online.js').then(o => o.joinOnline()).catch(() => {});
   const m = await import('./social.js');
   if (kind === 'beranda') return m.feedPage(arg || 'ikuti');
   if (kind === 'profil') return m.profilePage(arg);
