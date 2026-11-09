@@ -96,7 +96,7 @@ async function groupDetail(id) {
   else if (!prog.length) ol.append($(`<li class="small">Belum ada anggota. Bagikan kode grup.</li>`));
   else prog.forEach(m => {
     const li = $(`<li style="margin:6px 0"><span class="who-row" style="display:inline-flex"><span class="ic"></span><span><b></b><span class="bd"></span> · ${Number(m.ayat_week)} ayat</span></span>${owner && m.profile_id !== session.user.id ? ' <button class="linkbtn rm">keluarkan</button>' : ''}</li>`);
-    li.querySelector('.ic').append(avatarCanvas(m.avatar)); li.querySelector('b').textContent = m.display_name; li.querySelector('.bd').innerHTML = badgeFor(m.supporter_tier);
+    li.querySelector('.ic').append(avatarCanvas(m.avatar)); li.querySelector('b').textContent = m.display_name; li.querySelector('.bd').innerHTML = badgeFor(m);
     const rm = li.querySelector('.rm'); if (rm) rm.onclick = async () => { const { error: e } = await c.from('group_members').delete().match({ group_id: id, profile_id: m.profile_id }); if (e) toast(friendly(e)); else groupDetail(id); };
     ol.append(li);
   });

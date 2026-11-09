@@ -115,7 +115,7 @@ export async function postCards(posts, sameRoleOnly = false) {
   const c = await sb();
   const ids = posts.map(p => p.id);
   const [{ data: authors }, srcs, { data: reacts }, { data: comms }] = await Promise.all([
-    c.from('profiles').select('id, display_name, avatar, supporter_tier, role').in('id', [...new Set(posts.map(p => p.author_id))]),
+    c.from('profiles').select('id, display_name, avatar, supporter_tier, supporter_until, role').in('id', [...new Set(posts.map(p => p.author_id))]),
     getSources(posts.map(p => p.source_id)),
     c.from('reactions').select('post_id, profile_id, kind').in('post_id', ids),
     c.from('comments').select('post_id').in('post_id', ids),
@@ -128,7 +128,7 @@ export async function postCards(posts, sameRoleOnly = false) {
 
 function nameRow(a, when) {
   const r = $(`<a class="who-row"><span class="ic"></span><span><b class="nm"></b><span class="bd"></span><br><span class="small">${esc(when || '')}</span></span></a>`);
-  if (a) { r.href = '#/profil/' + a.id; r.querySelector('.ic').append(avatarCanvas(a.avatar)); r.querySelector('.nm').textContent = a.display_name; r.querySelector('.bd').innerHTML = badgeFor(a.supporter_tier); }
+  if (a) { r.href = '#/profil/' + a.id; r.querySelector('.ic').append(avatarCanvas(a.avatar)); r.querySelector('.nm').textContent = a.display_name; r.querySelector('.bd').innerHTML = badgeFor(a); }
   else r.querySelector('.nm').textContent = 'Pengguna';
   return r;
 }
@@ -169,7 +169,7 @@ async function loadComments(p, box, counter) {
   const c = await sb();
   const { data: cs, error } = await c.from('comments').select('id, author_id, body, hidden, created_at').eq('post_id', p.id).order('created_at');
   if (error) { box.textContent = friendly(error); return; }
-  const { data: au } = cs.length ? await c.from('profiles').select('id, display_name, avatar, supporter_tier').in('id', [...new Set(cs.map(x => x.author_id))]) : { data: [] };
+  const { data: au } = cs.length ? await c.from('profiles').select('id, display_name, avatar, supporter_tier, supporter_until').in('id', [...new Set(cs.map(x => x.author_id))]) : { data: [] };
   const A = {}; (au || []).forEach(a => A[a.id] = a);
   box.replaceChildren();
   cs.forEach(x => {
@@ -294,7 +294,7 @@ export async function profilePage(id) {
   await loadTiers();
   const c = await sb();
   const [{ data: p }, { data: fp }, { data: fol }, { data: fers }, { data: posts }] = await Promise.all([
-    c.from('profiles').select('id, display_name, avatar, supporter_tier, role').eq('id', id).maybeSingle(),
+    c.from('profiles').select('id, display_name, avatar, supporter_tier, supporter_until, role').eq('id', id).maybeSingle(),
     c.from('farm_public').select('level, surahs_done, snapshot').eq('profile_id', id).maybeSingle(),
     c.from('follows').select('followee_id').eq('follower_id', me()).eq('followee_id', id),
     c.from('follows').select('follower_id', { count: 'exact' }).eq('followee_id', id),
@@ -306,7 +306,7 @@ export async function profilePage(id) {
     <div class="stats" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"><span class="pill">Lv ${(fp && fp.level) || 1}</span><span class="pill">${(fp && fp.surahs_done) || 0}/10 surat</span><span class="pill">${(fers || []).length} pengikut</span></div></div></div>
     <div class="row acts" style="margin-top:10px"></div></div>`);
   head.querySelector('.ic').append(avatarCanvas(p.avatar, 0.6));
-  head.querySelector('.nm').textContent = p.display_name; head.querySelector('.bd').innerHTML = badgeFor(p.supporter_tier, true);
+  head.querySelector('.nm').textContent = p.display_name; head.querySelector('.bd').innerHTML = badgeFor(p, true);
   const acts = head.querySelector('.acts');
   if (!isMe) {
     const fb = $(`<button class="btn ${following ? 'ghost' : 'green'}">${following ? '✓ Mengikuti' : '➕ Ikuti'}</button>`);
@@ -337,7 +337,7 @@ export async function profilePage(id) {
   if (isMe) {
     const { data: following2 } = await c.from('follows').select('followee_id').eq('follower_id', me());
     if (following2 && following2.length) {
-      const { data: ppl } = await c.from('profiles').select('id, display_name, avatar, supporter_tier').in('id', following2.map(f => f.followee_id));
+      const { data: ppl } = await c.from('profiles').select('id, display_name, avatar, supporter_tier, supporter_until').in('id', following2.map(f => f.followee_id));
       const box = $(`<div class="frame" style="margin-top:12px"><b>Yang kamu ikuti</b><div class="ppl"></div></div>`);
       (ppl || []).forEach(x => box.querySelector('.ppl').append(nameRow(x, '')));
       body.append(box);

@@ -11,7 +11,7 @@ try {
   await P.click('a[href="#/dukung"]');
   await P.locator('text=Sahabat Kebun Makna').waitFor({ timeout: 15000 });
   const t = await P.locator('.dash').innerText();
-  assert(/Penanam/.test(t) && /Rp25\.000/.test(t), 'tiers listed with amounts');
+  assert(/Penanam/.test(t) && /Rp15\.000/.test(t), 'tiers listed with amounts');
   assert(/Cendol/.test(t) && t.includes('#' + fname), 'Cendol note and the #familyname to paste');
   assert(await P.locator('a[href="https://trakteer.id/nurul_bahirah"]').count() === 1, 'Trakteer button links to the live page');
   assert(await P.locator('a', { hasText: 'Saweria' }).count() === 0, 'Saweria hidden');

@@ -36,7 +36,7 @@ export async function loadProfile() {
   const { data: { session: s } } = await c.auth.getSession();
   if (!s) { session.user = null; session.profile = null; return null; }
   session.user = s.user;
-  const { data, error } = await c.from('profiles').select('id, role, display_name, avatar, supporter_tier').eq('id', s.user.id).maybeSingle();
+  const { data, error } = await c.from('profiles').select('id, role, display_name, avatar, supporter_tier, supporter_until').eq('id', s.user.id).maybeSingle();
   if (error) throw error;
   session.profile = data;
   return data;

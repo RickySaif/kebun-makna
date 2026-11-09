@@ -65,7 +65,7 @@ function hudBadge(p) {
   if (!p || !p.supporter_tier) return;
   import('./badges.js').then(async b => {
     await b.loadTiers();
-    const put = () => { const g = document.querySelector('.hud .grow'); if (g && !g.querySelector('.badge')) g.insertAdjacentHTML('beforeend', b.badgeFor(p.supporter_tier)); };
+    const put = () => { const g = document.querySelector('.hud .grow'); if (g && !g.querySelector('.badge')) g.insertAdjacentHTML('beforeend', b.badgeFor(p)); };
     new MutationObserver(put).observe(root, { childList: true }); put();
   });
 }

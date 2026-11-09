@@ -1,7 +1,7 @@
 // support.js — "Dukung Kebun Makna" page (#/dukung): tiers, Trakteer link, the parent's #familyname to paste.
 import { $, esc, root, toast } from './ui.js';
 import { sb, session, loadProfile } from './api.js';
-import { loadTiers, badgeFor } from './badges.js';
+import { loadTiers, badgeFor, badgeActive, fmtDate } from './badges.js';
 import { SUPPORT } from './config.js';
 
 const rp = n => 'Rp' + Number(n).toLocaleString('id-ID');
@@ -20,10 +20,12 @@ export async function supportPage() {
   ].filter(Boolean).join('');
   const f = $(`<div class="dash"><h2>💚 Dukung Kebun Makna</h2>
     <div class="frame" style="margin-bottom:12px"><p style="margin:0 0 8px"><b>Gratis untuk semua.</b> Semua surat, cerita dan fitur bisa dipakai tanpa bayar. Dukungan membantu biaya server dan pembuatan konten, dan memberi <b>lencana pendukung</b> untuk seluruh keluarga.</p>
-      ${p && p.supporter_tier ? `<div class="banner">Lencana keluarga Anda: ${badgeFor(p.supporter_tier, true)}. Jazakumullahu khairan!</div>` : ''}</div>
+      ${p && p.supporter_tier ? (badgeActive(p)
+        ? `<div class="banner">Lencana keluarga Anda: ${badgeFor(p, true)}, aktif sampai <b>${fmtDate(p.supporter_until)}</b>. Jazakumullahu khairan!</div>`
+        : `<div class="banner">Lencana keluarga Anda: ${badgeFor(p, true)}. Dukung lagi bulan ini untuk mengaktifkannya kembali.</div>`) : ''}</div>
     <div class="frame" style="margin-bottom:12px"><b>Lencana</b><ul style="list-style:none;padding:0;margin:8px 0 0">
-      ${tiers.map(t => `<li style="padding:6px 0;border-bottom:1px dashed #D8CBA8"><span style="font-size:22px">${t.badge}</span> <b>${esc(t.name)}</b> <span class="small">· total dukungan mulai ${rp(t.min_total_idr)}</span></li>`).join('')}
-    </ul><p class="small" style="margin:8px 0 0">Total dukungan keluarga dijumlahkan. Lencana muncul di samping nama orang tua dan anak-anak.</p></div>
+      ${tiers.map(t => `<li style="padding:6px 0;border-bottom:1px dashed #D8CBA8"><span style="font-size:22px">${t.badge}</span> <b>${esc(t.name)}</b> <span class="small">· mulai ${rp(t.min_total_idr)}</span></li>`).join('')}
+    </ul><p class="small" style="margin:8px 0 0"><b>Per 30 hari.</b> Semua dukungan keluarga dalam 30 hari terakhir dijumlahkan (maksimal Rp310.000 per bulan). Lencana aktif 30 hari sejak dukungan terakhir. Setelah itu lencana tetap ada tetapi tampak abu-abu sampai Anda mendukung lagi. Trakteer tidak menagih otomatis, jadi kami akan mengingatkan Anda.</p></div>
     <div class="frame" style="margin-bottom:12px"><b>Cara mendukung</b>
       <ol style="padding-left:20px;margin:8px 0">
         <li>Salin nama keluarga Anda (dengan tanda #).</li>

@@ -96,6 +96,7 @@ Ricky can overrule any of these.
 - **Google sign-in uses Google Identity Services** (the official button, popup, hashed nonce → `signInWithIdToken`). `signInWithOAuth` is removed. The button shows only when Supabase reports the Google provider enabled and the GIS script loads; otherwise the email login stays alone. Reason: Google's chooser then shows Kebun Makna / rickysaif.github.io instead of supabase.co.
 
 ## Decisions from Ricky
+- **Supporter badges are monthly (rolling 30 days)** (Ricky). Trakteer has no auto-recurring billing, so a badge is active for 30 days after the latest payment and then stays visible but greyed out ("tidak aktif"). Tier = household support in the last 30 days, capped at Rp310.000: 🌱 15k · 🌳 50k · 🏡 150k · 🌟 310k. The parent dashboard nudges 5 days before expiry and after it lapses. Test: `beta/tests/phase7b-monthly-badge.mjs` (BADGE_STATE=active|lapsed).
 - An ustaz reviews the whole beta (including all religious content) before cutover. There's no pending/approved gating. Every story that relies on a hadith or ayah cites real `sources` ids, listed in `docs/CONTENT_REVIEW.md`.
 - Support: Trakteer only (https://trakteer.id/nurul_bahirah; the webhook is live and verified). Saweria is hidden. Trakteer pays in "Cendol"; supporters write `KM-XXXXXX` in the message.
 - Game order: the original 10 surahs and 4 bosses come first, unchanged. The akhlak arc unlocks after `boss4` plus all 10 surahs. Social features are reachable from the start but never interrupt the original progression.

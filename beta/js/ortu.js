@@ -5,7 +5,7 @@ import { levelOf } from './progress.js';
 import { AVATARS } from './render.js';
 import { sb, session, friendly, normFamily, familyCreate, familySetPin, familyDelete, signOut } from './api.js';
 import { avatarCanvas } from './account.js';
-import { badgeFor, loadTiers } from './badges.js';
+import { badgeFor, loadTiers, fmtDate } from './badges.js';
 
 const TOTAL_AYAT = DATA.reduce((s, x) => s + x.ayat.length, 0);
 const KIND = {
@@ -49,7 +49,7 @@ async function loadAll() {
   ctx.kids = []; ctx.saves = {}; ctx.acts = []; ctx.posts = []; ctx.comments = []; ctx.follows = [];
   if (!ids.length) return;
   const [kids, saves, acts, posts, comments, follows] = await Promise.all([
-    c.from('profiles').select('id, display_name, avatar, supporter_tier, created_at').in('id', ids).order('created_at'),
+    c.from('profiles').select('id, display_name, avatar, supporter_tier, supporter_until, created_at').in('id', ids).order('created_at'),
     c.from('game_saves').select('profile_id, state, version, updated_at').in('profile_id', ids),
     c.from('activity_log').select('profile_id, kind, detail, created_at').in('profile_id', ids).order('created_at', { ascending: false }).limit(300),
     c.from('posts').select('id, author_id, source_id, body, hidden, created_at').in('author_id', ids).order('created_at', { ascending: false }).limit(100),
@@ -62,7 +62,7 @@ async function loadAll() {
   const other = [...new Set(ctx.follows.map(f => f.followee_id))];
   ctx.names = {};
   if (other.length) {
-    const { data } = await c.from('profiles').select('id, display_name, supporter_tier').in('id', other);
+    const { data } = await c.from('profiles').select('id, display_name, supporter_tier, supporter_until').in('id', other);
     (data || []).forEach(p => ctx.names[p.id] = p);
   }
 }
@@ -72,7 +72,7 @@ function render(h) {
   const wrap = $(`<div class="dash"></div>`);
   const head = $(`<div class="frame" style="margin-bottom:12px">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-      <b style="font-size:20px">Halo, ${esc(p.display_name)}${badgeFor(p.supporter_tier)}</b>
+      <b style="font-size:20px">Halo, ${esc(p.display_name)}${badgeFor(p)}</b>
       <button class="btn ghost mini" id="out">Keluar</button></div>
     <p style="margin:10px 0 4px">Nama keluarga (anak mengetiknya sekali untuk masuk di perangkat mana pun):</p>
     <div class="row" style="align-items:center"><span class="code" id="code"></span><button class="btn mini" id="copy">Salin</button><button class="btn ghost mini" id="chg">Ganti</button></div>
@@ -116,7 +116,7 @@ function kidCard(k, h) {
   const acts = ctx.acts.filter(a => a.profile_id === k.id);
   const recs = acts.filter(a => a.kind.startsWith('recitation') || a.kind === 'parent_override');
   const posts = ctx.posts.filter(x => x.author_id === k.id), comments = ctx.comments.filter(x => x.author_id === k.id), follows = ctx.follows.filter(x => x.follower_id === k.id);
-  const c = $(`<div class="kidcard"><div class="head"><div class="ic"></div><div style="flex:1"><b></b>${badgeFor(k.supporter_tier)}<div class="small">${sv ? 'Tersimpan ' + fmtTime(sv.updated_at) : 'Belum pernah main'}</div></div></div>
+  const c = $(`<div class="kidcard"><div class="head"><div class="ic"></div><div style="flex:1"><b></b>${badgeFor(k)}<div class="small">${sv ? 'Tersimpan ' + fmtTime(sv.updated_at) : 'Belum pernah main'}</div></div></div>
     <div class="stats"><span class="pill">Lv ${levelOf(st.xp || 0)}</span><span class="pill">${surahs.length}/10 surat</span><span class="pill">${ayat}/${TOTAL_AYAT} ayat</span><span class="pill">🏠 ${esc(house)}</span><span class="pill">🪙 ${st.coins || 0}</span></div>
     ${surahs.length ? `<p class="small" style="margin:0 0 6px">Surat selesai: ${esc(surahs.join(', '))}</p>` : ''}
     <details class="sec"><summary>Aktivitas terbaru (${acts.length})</summary><ul class="timeline">${acts.slice(0, 60).map(a => `<li><time>${fmtTime(a.created_at)}</time><span>${KIND[a.kind] || esc(a.kind)} <span class="small">${esc(describe(a))}</span></span></li>`).join('') || '<li>Belum ada.</li>'}</ul></details>
@@ -220,10 +220,21 @@ function parentPinBox() {
   return f;
 }
 
+// reminder: Trakteer has no auto-renew, so nudge 5 days before the badge lapses and after it has lapsed
+function supportReminder(p) {
+  if (!p.supporter_tier || !p.supporter_until) return '';
+  const days = Math.ceil((new Date(p.supporter_until) - new Date()) / 86400000);
+  if (days > 5) return '';
+  const msg = days > 0 ? `Lencana keluarga aktif ${days} hari lagi (sampai ${fmtDate(p.supporter_until)}). Dukung lagi agar tetap aktif.`
+                       : 'Lencana keluarga sedang tidak aktif. Dukung lagi bulan ini untuk mengaktifkannya kembali.';
+  return `<div class="banner" style="margin:6px 0">${esc(msg)}</div>`;
+}
+
 function supportBox() {
   const p = session.profile;
   return $(`<div class="frame" style="margin-bottom:12px"><b style="font-size:18px">💚 Dukung Kebun Makna</b>
-    <p class="small" style="margin:6px 0">Gratis untuk semua. Dukungan memberi lencana pendukung untuk seluruh keluarga.${p.supporter_tier ? ' Lencana Anda: ' + badgeFor(p.supporter_tier, true) : ''}</p>
+    <p class="small" style="margin:6px 0">Gratis untuk semua. Dukungan memberi lencana pendukung untuk seluruh keluarga, aktif 30 hari sejak dukungan terakhir.${p.supporter_tier ? ' Lencana Anda: ' + badgeFor(p, true) + '.' : ''}</p>
+    ${supportReminder(p)}
     <a class="btn mini" href="#/dukung">Lihat cara mendukung</a></div>`);
 }
 
@@ -241,7 +252,7 @@ function spouseBox(h) {
     if (error) { sp.replaceChildren($(`<p class="small">Fitur pasangan belum tersedia.</p>`)); return; }
     if (link) {
       const other = link.parent_a === me ? link.parent_b : link.parent_a;
-      const { data: op } = await c.from('profiles').select('display_name, supporter_tier').eq('id', other).maybeSingle();
+      const { data: op } = await c.from('profiles').select('display_name, supporter_tier, supporter_until').eq('id', other).maybeSingle();
       sp.replaceChildren($(`<p style="margin:6px 0 0">✅ Terhubung dengan <b></b>. Anda berdua melihat dan mengelola semua anak. Anak masuk dengan satu nama keluarga bersama, dan PIN orang tua siapa pun bisa dipakai.</p>`));
       sp.querySelector('b').textContent = (op && op.display_name) || 'pasangan';
       return;

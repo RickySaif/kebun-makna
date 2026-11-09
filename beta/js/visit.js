@@ -39,7 +39,7 @@ export async function visitPage(id) {
   await loadTiers();
   const c = await sb();
   const [{ data: owner }, { data: fp }] = await Promise.all([
-    c.from('profiles').select('id, display_name, avatar, supporter_tier, role').eq('id', id).maybeSingle(),
+    c.from('profiles').select('id, display_name, avatar, supporter_tier, supporter_until, role').eq('id', id).maybeSingle(),
     c.from('farm_public').select('snapshot, level, surahs_done').eq('profile_id', id).maybeSingle(),
   ]);
   if (!owner || owner.role !== session.profile.role || id === session.user.id) {
@@ -54,7 +54,7 @@ export async function visitPage(id) {
       <div class="small" style="margin:12px 0 6px"><b>Kirim salam</b></div><div class="salam" style="display:flex;flex-wrap:wrap;gap:6px"></div>
       <p class="fb" id="fb" aria-live="polite"></p>
       <a class="linkbtn" href="#/profil/${esc(id)}">◂ Kembali ke profil</a></div></div>`);
-  w.querySelector('.nm').textContent = owner.display_name; w.querySelector('.bd').innerHTML = badgeFor(owner.supporter_tier);
+  w.querySelector('.nm').textContent = owner.display_name; w.querySelector('.bd').innerHTML = badgeFor(owner);
   root.replaceChildren(w);
   const cv = w.querySelector('#farm');
   startVisitView(cv, { x: 2, y: 4 });
