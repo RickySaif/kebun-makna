@@ -2,6 +2,8 @@
 
 Each phase ships on its own to `/beta/` and should leave the game playable. Work in order. If you're blocked on a phase (for example, waiting on Ricky), note it in `PROGRESS.md` and move to the next one that isn't blocked.
 
+**Game order (Ricky, 2026-11-09):** the original Qur'an game comes first, unchanged (10 surahs An-Nas → Al-Fil, word meanings, recitation, villager quests, crops, 4 bosses). The recitation gate and account features wrap around it without changing its story or flow. The akhlak/hadith arc (Phase 8) unlocks only after all 10 surahs plus `boss4`, as the next chapter in the same village. Social features (Phases 3–6) are reachable from the start but never interrupt or replace the original progression.
+
 ## Phase 0 — Split the monolith (no behaviour change)
 - Port the root `index.html` into `beta/index.html` + `beta/css/*.css` + `beta/js/*.js` ES modules, with roughly these modules:
   - `data.js`: DATA, REV, QUEST, BOSS, copied verbatim; don't edit the text.
@@ -87,8 +89,8 @@ Each phase ships on its own to `/beta/` and should leave the game playable. Work
 - **Badge rendering:** wherever a name appears, show the badge from `profiles.supporter_tier`.
 - **Admin page** (only if `admins` contains the user): unmatched payments and a manual link action. This needs a new migration with an admin RPC, so write it and list it under "Needs applying".
 
-## Phase 8 — Story expansion: akhlak of a good Muslim (content, gated)
-- Draft a new chapter arc after Al-Fil: village problems answered by hadith on akhlak, for example:
+## Phase 8 — Story expansion: akhlak of a good Muslim (content)
+- Draft a new chapter arc after Al-Fil, unlocked only when all 10 surahs and `boss4` are done: village problems answered by hadith on akhlak, for example:
   - honesty
   - kindness to parents
   - smiling as charity
@@ -98,8 +100,8 @@ Each phase ships on its own to `/beta/` and should leave the game playable. Work
   - sharing food with neighbours
   - anger control
 - Each quest cites 1–2 `sources` ids. Verify each hadith's text in the table before using it; quote only what the row says.
-- Write the drafts in `content/akhlak/*.json` with the same shape as QUEST, plus `sources:[...]` and `status:'pending'`. List each one in `docs/CONTENT_REVIEW.md`.
-- The game loads only `status:'approved'` content for children. Parents can preview pending content from the dashboard.
+- Write the stories in `content/akhlak/*.json` with the same shape as QUEST, plus `sources:[...]` (the `sources.id` values each story relies on). List what each story cites in `docs/CONTENT_REVIEW.md`.
+- Build the stories straight into the `/beta/` game like any other feature: no status flags, no parent-only preview. Ricky's ustaz reviews the whole beta before cutover.
 
 ## Cutover (Ricky decides)
 When Ricky approves, move `beta/` to the root and keep the old root as `/classic/`. This is not part of autonomous work.
