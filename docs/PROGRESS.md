@@ -13,6 +13,8 @@
 ## Decisions from Ricky
 - An ustaz reviews all religious content. `docs/CONTENT_REVIEW.md` shows each item's Indonesian story/dialogue next to the cited source (Arabic, Indonesian, ref_label, attribution) and its status. Approval stays a manual status change by Ricky; no reviewer account.
 
+- Support: Trakteer only for now (https://trakteer.id/nurul_bahirah; webhook live and verified with a test payment). Saweria button hidden (empty config value). Trakteer pays in "Cendol"; supporters write their family code `KM-XXXXXX` in the message.
+
 ## Next
 Phase 0 (see PLAN.md).
 
@@ -20,4 +22,3 @@ Phase 0 (see PLAN.md).
 (none)
 
 ## Questions for Ricky
-- Trakteer and Saweria page URLs, plus their webhook token and stream key, so the support page and webhook can go live (still pending; placeholders stay in `beta/js/config.js`).

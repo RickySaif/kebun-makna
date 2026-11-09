@@ -6,11 +6,12 @@ export const SUPABASE_KEY = 'sb_publishable_obFuN_gARWpT-HHQWBEDXg_37CaxUE5';
 export const SUPABASE_ESM = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 export const TRANSFORMERS_ESM = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1';
 
-// Support pages (placeholders until Ricky creates them).
+// Support pages. Trakteer webhook is live (verified 2026-11-09). Saweria is not used for now:
+// an empty value hides its button. Trakteer pays in "Cendol" units; supporters must write their
+// family code KM-XXXXXX in the support message so the webhook can match it.
 export const SUPPORT = {
-  trakteer: 'https://trakteer.id/',   // TODO(Ricky): real Trakteer page
-  saweria: 'https://saweria.co/',     // TODO(Ricky): real Saweria page
-  ready: false,                       // flip to true when the links above are real
+  trakteer: 'https://trakteer.id/nurul_bahirah',
+  saweria: '',
 };
 
 // Recitation recognition (Phase 2).
