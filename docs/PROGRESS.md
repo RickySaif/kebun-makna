@@ -18,11 +18,47 @@ Beta: https://rickysaif.github.io/kebun-makna/beta/ · Classic (live, untouched)
 - Support page (`#/dukung`): tiers from `supporter_tiers`, Trakteer button, "Cendol" note, the parent's family code with copy. Saweria hidden.
 - **Verified** (`beta/tests/phase1-accounts.mjs`, live backend, 390×844): the parent logs in and creates 2 children in the UI; each child logs in on its own browser and plays one ayah; the dashboard shows 1 ayat and the ayah_done entry for each; a fresh browser restores progress from the cloud; child A's session reads its own save but 0 rows of child B's; B's public snapshot is readable and has no private progress; a child can't read family codes. No console errors. Test children were deleted.
 
+### Phase 1 extras (backend 90476f9): Google login, parents play, spouse linking, role separation (done)
+- "Masuk dengan Google" appears only when `/auth/v1/settings` reports Google enabled (it's off now, so it's hidden); a "not enabled" error also hides it.
+- "Main sebagai saya" on the dashboard: the parent plays the full game on their own `game_saves` row.
+- Pasangan box: invite by family code, incoming invite with a merge explanation before accepting, decline/cancel. No unlink.
+- Two social spaces: each feed shows only its own role (a parent's feed hides their own children's posts, which RLS allows them to read). Visits and races only offer same-role targets; Realtime channels are per role and payload roles are checked.
+- **Verified:** `phase1b-parent.mjs` (Google hidden, self-invite refused kindly, parent plays and saves to own row). Accepting an invite isn't tested end to end: it needs a second real parent account, and I may not create accounts.
+
+### Phase 2 — recitation gate (done)
+- ⚙ → Pengaturan → "🎙️ Pengenal bacaan": choose q4 (default, ≈140 MB) or Kualitas (fp32 encoder + q4 decoder), download with a progress bar, "Siap ✓" with the MB used, "Hapus model".
+- After the 4 classic ayah steps, "Sekarang kamu yang baca" appears (via a one-line hook; the classic flow is otherwise untouched): mic with 1.5 s silence auto-stop and 15 s max; "Tidak ada suara yang terdengar" on silence; word alignment from `tes-whisper.html`; pass at 60% (`config.js`); matched words highlighted; fail → "Hampir! Dengar sekali lagi, yuk" plus replay; after 3 fails, "Minta Ayah/Ibu dengar" (`verify_parent_pin`). No model → a grown-up downloads it, or the parent PIN. Never a silent skip.
+- Logs `recitation_pass/fail {ayah, score, ms, rec_s, profile, heard}`; the dashboard shows them under "Percobaan membaca".
+- **Verified** (`phase2-recite.mjs`, real model, Chrome fake mic): the gate appears and asks for the download; download and load took 50 s on desktop; silence → the right message; Alafasy's 114:1 → 4/4 words, pass; a signed-in child's `recitation_pass` row has `ms` 10056 and profile q4 (headless desktop, 1 WASM thread). **iPhone timing is still unmeasured**: check the dashboard after Amtar's first attempts.
+
+### Phase 3 — feed (done)
+- Tabs: Kebun/Keluarga · Beranda · Grup · Profil. Beranda has Diikuti (follows + my groups + me) and Jelajah. Cards show avatar, name, badge, the source card (Qur'an: Arabic + Kemenag; hadith: matn when it can be split reliably, with full Arabic + Indonesian including sanad behind "Lihat lengkap"), ref_label, attribution, 4 preset reactions, comments, Laporkan.
+- Composer: Dari kebunmu (learned ayat) / Cari (websearch) / Al-Qur'an (surah:ayah), reflection ≤ 500 with prompts, server guard messages shown as-is. Profile: follow/unfollow, posts, Kunjungi kebun, Ajak lomba.
+- **Verified** (`phase3-feed.mjs`): profanity → "Kata-kata ini tidak sopan…"; an insert without source_id is rejected by the DB; B sees, reacts, comments, follows; the parent's feed has no child posts; after the parent hides a post, it disappears for B and the author still sees it.
+- **Bug found in the backend:** any select on `groups`/`group_members` returns 500 (RLS infinite recursion). It's fixed in the new migration below; the feed ignores it meanwhile.
+
+### Phase 4 — farm visits (done)
+- `#/kunjungi/<id>` renders the friend's `farm_public` snapshot with the real renderer; the visitor can walk around and nothing is saved. Water one plant (once per friend per day) or send a preset salam (once a day; same DB unique index).
+- On their next load, the owner gets a "Ada tamu di kebunmu!" note ("🌧️ Dodi menyiram kebunmu", salam text), and each watering waters one thirsty plant.
+- **Verified** (`phase4-visit.mjs`).
+
+### Phase 5 — live race (done)
+- `#/lomba`: create a 4-digit room or join by code; followed friends who are online can be invited (a banner on their screen, never auto-navigation). Same seeded questions from ayat both have learned; first to 10 correct answers wins; both log `boss_done {mode:'pvp'}`.
+- **Verified** (`phase5-race.mjs`).
+
+### Phase 6 — groups (built; waiting on the migration)
+- `#/grup`: join by code; parents create groups for children or parents and manage child groups without being members; weekly goal, progress bar, in-group leaderboard (`rpc group_progress`), remove member, leave, delete.
+- **Verified:** degrades gracefully today. Run `phase6-groups.mjs` after applying the migration; it then tests the full path automatically.
+
+### Phase 7 — support, badges, admin (done)
+- Badges next to names everywhere, including the game HUD. Support page verified. `#/admin` (only for users in `admins`) lists unmatched payments with "Hubungkan" by family code.
+- **Verified** (`phase7-support.mjs`).
+
 ## Next
-Phase 2 (recitation gate), then 3 (feed), 4 (visits), 5 (race), 6 (groups), 7 (badges everywhere + admin), 8 (akhlak arc).
+Phase 8 (akhlak arc after Al-Fil + boss4).
 
 ## Needs applying
-(none yet)
+- `supabase/migrations/20261109060000_groups_fix_progress_admin.sql`: fixes the groups/group_members RLS recursion (currently every select 500s), adds `groups.weekly_goal` and the owner update policy, `group_progress(g)`, and `admin_link_payment(payment_id, family_code)`. After applying it, run `beta/tests/phase6-groups.mjs`.
 
 ## Decisions made (assumed)
 Ricky can overrule any of these.
@@ -34,6 +70,20 @@ Ricky can overrule any of these.
 - **The family code is shown only to parents** (dashboard and support page). Children enter it once and it's remembered on the device.
 - **Sign-up sends the confirmation link back to `/beta/`.** Reason: it keeps beta self-contained until cutover.
 - **Activity is logged by diffing the save, not by editing the lesson code.** Reason: this keeps the classic game code verbatim (Ricky's rule: don't rewrite the original game).
+- **The recitation gate is skipped on murajaah of an ayah already recited.** Reason: one recitation per ayah keeps reviews short (boss games and reviews must stay short).
+- **Guests pass the gate's grown-up check with a multiplication question** (there's no parent PIN without an account). Reason: guests have no server PIN, and the rule is "no silent skip".
+- **The model download asks for a grown-up first.** Reason: it's about 140 MB and should go over Wi-Fi.
+- **Social pages switch in place; going between the game and social pages reloads.** Reason: the classic game loop owns the screen.
+- **Comments are free text (≤ 280, server-filtered),** as the schema allows; reactions are the 4 presets. Reason: this follows the backend contract.
+- **A friend's watering counts as today's watering for one thirsty plant** (it grows at the owner's next sleep). Reason: it reuses the game's own growth rule; there's no new mechanic to balance.
+- **Salam is limited to once a day per friend.** Reason: the DB unique index (visitor, owner, kind, day) applies to salam too.
+- **Race questions are word meanings from ayat both players have learned; 10 correct to win; a wrong answer costs 1 s.** Reason: it's short and friendly.
+- **Online presence is per role** (`online:child`, `online:parent`), and invites go only to people you follow. Reason: Realtime isn't RLS-gated, and this enforces role separation client-side.
+- **Only parents create groups; children join by code.** Reason: this follows PLAN ("parents or teachers create").
+- **The group week starts Monday 00:00 WIB.** Reason: it matches Indonesian school weeks.
+- **Hadith cards show the matn only when it's the quoted text right after the narrator chain;** otherwise they show the start of the full text. "Lihat lengkap" always shows the full Arabic and Indonesian. Reason: never cut a hadith in a way that changes it.
+- **Children can't create their own groups or see family codes.** The group join code is visible to members so they can invite classmates.
+- **Parent's Google sign-in redirects back to `/beta/`.**
 
 ## Decisions from Ricky
 - An ustaz reviews the whole beta (including all religious content) before cutover. There's no pending/approved gating. Every story that relies on a hadith or ayah cites real `sources` ids, listed in `docs/CONTENT_REVIEW.md`.
