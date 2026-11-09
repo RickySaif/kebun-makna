@@ -63,6 +63,23 @@ async function fn(name, body, auth) {
   return j;
 }
 
+// ---- Google sign-in for parents (shown only when the provider is enabled in Supabase) ----
+let _google = null;
+export async function googleEnabled() {
+  if (_google !== null) return _google;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: SUPABASE_KEY } });
+    const j = await r.json();
+    _google = !!(j.external && j.external.google);
+  } catch (e) { _google = false; }
+  return _google;
+}
+export async function signInGoogle() {
+  const c = await sb();
+  const { error } = await c.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } });
+  if (error) { if (/not enabled|unsupported provider/i.test(error.message)) _google = false; throw error; }
+}
+
 // ---- child login (no email) ----
 export const childList = code => fn('child-login', { family_code: normCode(code) });
 export async function childSignIn(code, childId, pin) {

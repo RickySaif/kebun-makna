@@ -7,6 +7,7 @@ import { hooks } from './hooks.js';
 import { sb, session, loadProfile, signOut } from './api.js';
 import { startScreen, parentLogin, newPasswordScreen, rememberGuest, isRememberedGuest } from './account.js';
 import { startCloud, importLegacy, flushNow } from './cloud.js';
+import { settingsBox } from './recite.js';
 
 /* migration for players from earlier versions (verbatim from the classic game; now run after S is chosen) */
 function migrate(){ if(!S.hv2){ S.house=S.house===1?2:S.house===2?3:S.house||0; S.hv2=true; }
@@ -17,16 +18,22 @@ const PROFILE_CACHE = 'kebun-makna-profile';
 const cacheProfile = p => { try { localStorage.setItem(PROFILE_CACHE, JSON.stringify(p)); } catch (e) {} };
 const cachedProfile = () => { try { return JSON.parse(localStorage.getItem(PROFILE_CACHE) || 'null'); } catch (e) { return null; } };
 
-let mode = null; // 'start' | 'guest' | 'child' | 'parent' | 'page'
+let mode = null; // 'start' | 'guest' | 'child' | 'player' (parent playing) | 'parent' | 'page'
 const handlers = {
   parent: () => { location.hash = '#/ortu'; route(); },
-  child: p => { cacheProfile(p); bootChild(p); },
+  child: p => { cacheProfile(p); bootPlayer(p); },
   guest: () => bootGuest(),
 };
 
 function accountBox(box) {
   const p = session.profile;
-  if (mode === 'child' && p) {
+  if (mode === 'player' && p) {
+    const b = $(`<div class="box"><h3>Akun</h3><p class="small" style="margin:0 0 8px">Anda bermain sebagai <b></b> (orang tua). Progres Anda terpisah dari progres anak-anak.</p>
+      <div class="row"><button class="btn ghost" id="bk">Kembali ke Halaman Orang Tua</button></div></div>`);
+    b.querySelector('b').textContent = p.display_name;
+    b.querySelector('#bk').onclick = async () => { flushNow(); await new Promise(r => setTimeout(r, 400)); location.hash = '#/ortu'; location.reload(); };
+    box.prepend(b);
+  } else if (mode === 'child' && p) {
     const b = $(`<div class="box"><h3>Akun</h3><p class="small" style="margin:0 0 8px">Masuk sebagai <b></b>. Progres tersimpan di akun (cloud) dan di perangkat ini, jadi aman walau ganti HP.</p>
       <div class="row"><button class="btn ghost" id="sw">Ganti pemain / keluar</button></div></div>`);
     b.querySelector('b').textContent = p.display_name;
@@ -39,7 +46,7 @@ function accountBox(box) {
     box.prepend(b);
   }
 }
-hooks.atur = accountBox;
+hooks.atur = box => { accountBox(box); box.prepend(settingsBox()); };
 
 function bootGame() {
   migrate();
@@ -52,11 +59,11 @@ function bootGuest() {
   setTimeout(() => toast('Mode tamu: progres hanya di perangkat ini.'), 1200);
 }
 
-async function bootChild(p) {
-  mode = 'child';
+async function bootPlayer(p) {
+  mode = p.role === 'parent' ? 'player' : 'child';
   root.replaceChildren($(`<div class="title"><h1>Kebun Makna</h1><p>Memuat kebunmu…</p></div>`));
   const r = await startCloud(p.id, { onReplace: () => { if (document.getElementById('farm')) farm(); } });
-  if (r.legacy) {
+  if (r.legacy && p.role === 'child') {
     const ay = Object.keys(r.legacy.ay || {}).length, solved = Object.keys(r.legacy.solved || {}).length;
     const f = $(`<div class="frame"><h2 style="margin:0 0 6px">Pakai progres lama di perangkat ini?</h2>
       <p>Di perangkat ini ada kebun milik <b></b>: ${solved} surat selesai, ${ay} ayat. Mau dipindahkan ke akun <b class="nm"></b>?</p>
@@ -81,6 +88,7 @@ async function showParent() {
   parentDashboard({
     onLogout: () => { location.hash = ''; location.reload(); },
     onPlayGuest: () => { location.hash = '#/tamu'; location.reload(); },
+    onPlaySelf: () => { location.hash = '#/main'; location.reload(); },
   });
 }
 
@@ -94,8 +102,8 @@ async function route() {
     try { const c = await sb(); const { data: { session: s } } = await c.auth.getSession(); if (s) { session.user = s.user; p = cachedProfile(); if (p && p.id !== s.user.id) p = null; session.profile = p; } } catch (e2) {}
   }
   if (h.startsWith('#/tamu')) return bootGuest();
-  if (p && p.role === 'parent') return showParent();
-  if (p && p.role === 'child') return bootChild(p);
+  if (p && p.role === 'parent') return h.startsWith('#/main') ? bootPlayer(p) : showParent();
+  if (p && p.role === 'child') return bootPlayer(p);
   if (h.startsWith('#/ortu')) { mode = 'start'; return parentLogin(handlers); }
   if (isRememberedGuest()) return bootGuest();
   mode = 'start';

@@ -20,7 +20,7 @@ async function run(url, label) {
   page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));
   await page.addInitScript(INIT);
   await page.goto(url);
-  if (url.includes('/beta/')) { await page.waitForSelector('#guest'); await page.click('#guest'); }
+  if (url.includes('/beta/')) { await page.waitForSelector('#guest'); await page.evaluate(async () => { (await import('./js/hooks.js')).hooks.afterAyah = null; }); await page.click('#guest'); } // classic flow has no recitation gate
   await page.waitForSelector('#nm');
   await page.fill('#nm', 'Amtar');
   await page.click('#go');

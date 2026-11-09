@@ -23,7 +23,13 @@ async function childPlay(kid, label) {
   assert(await page.locator('.hud .grow').innerText() === kid.name.slice(0, 16), `${label}: game uses the child's name`);
   // play the first ayah of An-Nas
   await page.evaluate(async () => { const m = await import('./js/farm.js'); const l = await import('./js/lesson.js'); l.lessonStart(114); });
-  for (let i = 0; i < 20; i++) { const r = await driveLessonOnce(page); if (r === 'cel') break; await page.waitForTimeout(150); }
+  let overrode = false;
+  for (let i = 0; i < 60; i++) {
+    const r = await driveLessonOnce(page); if (r === 'cel') break;
+    if (r === 'gate' && !overrode) { await page.click('#par'); await page.fill('#pp', '1357'); await page.click('.celebrate #ok'); overrode = true; }
+    await page.waitForTimeout(250);
+  }
+  assert(overrode, `${label}: recitation gate shown; parent override PIN accepted`);
   const ay = await page.evaluate(async () => Object.keys((await import('./js/state.js')).S.ay));
   assert(ay.includes('114001'), `${label}: ayah 114:1 done in game state`);
   await page.waitForTimeout(5000); // debounce 3 s + push

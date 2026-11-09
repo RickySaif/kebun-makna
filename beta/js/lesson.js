@@ -1,4 +1,5 @@
 // lesson.js — split verbatim from the classic single-file game (Phase 0).
+import { hooks } from './hooks.js';
 import { play, sfx, stopAudio, voice } from './audio.js';
 import { AA, AW, BY, COIN_PER_AYAH, DATA, EXPLAIN, QUEST } from './data.js';
 import { dialog, farm, idleDialog, shop, well } from './farm.js';
@@ -16,7 +17,7 @@ export function lesson(no,j,review){
   const bar=$(`<div class="steps">${steps.map(()=>'<i></i>').join('')}</div>`); body.before(bar);
   const mist={match:0,arrange:0};
   function go(n){ stopAudio(); [...bar.children].forEach((x,k)=>x.className=k<n?'past':k===n?'on':'');
-    body.replaceChildren([dengar,kenali,cocokkan,susun][n](s,a,()=>n<3?go(n+1):finish(),mist)); p.scrollTop=0; }
+    body.replaceChildren([dengar,kenali,cocokkan,susun][n](s,a,()=>n<3?go(n+1):(hooks.afterAyah?hooks.afterAyah({body,bar,s,a,review,next:finish}):finish()),mist)); p.scrollTop=0; }
   function finish(){
     const first=!S.ay[a.a]; S.ay[a.a]=true; a.w.forEach(w=>bump(w.a,2));
     const stars=1+(mist.match===0?1:0)+(mist.arrange===0?1:0); S.stars[a.a]=Math.max(S.stars[a.a]||0,stars);

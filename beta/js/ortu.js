@@ -28,11 +28,11 @@ function describe(a) {
 
 let ctx = { family: null, kids: [], saves: {}, acts: [], posts: [], comments: [], follows: [], names: {} };
 
-export async function parentDashboard({ onLogout, onPlayGuest }) {
+export async function parentDashboard({ onLogout, onPlayGuest, onPlaySelf }) {
   root.replaceChildren($(`<div class="dash"><h2>Halaman Orang Tua</h2><div class="frame"><span class="spinner"></span> Memuat…</div></div>`));
   try { await loadAll(); }
-  catch (e) { root.replaceChildren($(`<div class="dash"><h2>Halaman Orang Tua</h2><div class="frame"><p class="err">${esc(friendly(e))}</p></div></div>`)); const b = $(`<button class="btn">Coba lagi</button>`); b.onclick = () => parentDashboard({ onLogout, onPlayGuest }); root.querySelector('.frame').append(b); return; }
-  render({ onLogout, onPlayGuest });
+  catch (e) { root.replaceChildren($(`<div class="dash"><h2>Halaman Orang Tua</h2><div class="frame"><p class="err">${esc(friendly(e))}</p></div></div>`)); const b = $(`<button class="btn">Coba lagi</button>`); b.onclick = () => parentDashboard({ onLogout, onPlayGuest, onPlaySelf }); root.querySelector('.frame').append(b); return; }
+  render({ onLogout, onPlayGuest, onPlaySelf });
 }
 
 async function loadAll() {
@@ -77,7 +77,10 @@ function render(h) {
     <p style="margin:10px 0 4px">Kode keluarga (untuk anak masuk di perangkat mana pun):</p>
     <div class="row" style="align-items:center"><span class="code" id="code">${esc(fmtCode(ctx.family && ctx.family.code))}</span><button class="btn mini" id="copy">Salin</button></div>
     <p class="small" style="margin:8px 0 0">Kode ini juga dipakai saat mendukung Kebun Makna, supaya lencana pendukung muncul di akun keluarga. Jangan bagikan ke orang lain.</p>
+    <button class="btn green block" id="play" style="margin-top:12px">🌱 Main sebagai saya</button>
+    <p class="small" style="margin:6px 0 0">Orang tua juga bisa main game lengkapnya. Progres Anda terpisah dari progres anak.</p>
   </div>`);
+  head.querySelector('#play').onclick = h.onPlaySelf;
   head.querySelector('#out').onclick = async () => { await signOut(); h.onLogout(); };
   head.querySelector('#copy').onclick = () => copy(fmtCode(ctx.family && ctx.family.code));
   wrap.append(head);
@@ -86,6 +89,7 @@ function render(h) {
   if (!ctx.kids.length) wrap.append($(`<div class="banner">Belum ada akun anak. Tambahkan di bawah, lalu anak masuk dengan kode keluarga dan PIN.</div>`));
   ctx.kids.forEach(k => wrap.append(kidCard(k, h)));
   wrap.append(addKidForm(h));
+  wrap.append(spouseBox(h));
   wrap.append(parentPinBox());
   wrap.append(supportBox());
   const g = $(`<p class="start-note"><button class="linkbtn" style="color:#fff" id="guest">Coba main di perangkat ini sebagai tamu</button></p>`);
@@ -220,4 +224,65 @@ function supportBox() {
 
 async function refresh(h) {
   try { await loadAll(); render(h); } catch (e) { toast(friendly(e)); }
+}
+
+// ---------- Pasangan (spouse linking) ----------
+function spouseBox(h) {
+  const f = $(`<div class="frame" style="margin-bottom:12px"><b style="font-size:18px">💞 Pasangan</b><div class="sp"><span class="spinner"></span></div></div>`);
+  const sp = f.querySelector('.sp');
+  (async () => {
+    const c = await sb(); const me = session.user.id;
+    const { data: link, error } = await c.from('spouses').select('parent_a, parent_b, created_at').or(`parent_a.eq.${me},parent_b.eq.${me}`).maybeSingle();
+    if (error) { sp.replaceChildren($(`<p class="small">Fitur pasangan belum tersedia.</p>`)); return; }
+    if (link) {
+      const other = link.parent_a === me ? link.parent_b : link.parent_a;
+      const { data: op } = await c.from('profiles').select('display_name, supporter_tier').eq('id', other).maybeSingle();
+      sp.replaceChildren($(`<p style="margin:6px 0 0">✅ Terhubung dengan <b></b>. Anda berdua melihat dan mengelola semua anak. Kode keluarga mana pun menampilkan semua anak saat masuk, dan PIN orang tua siapa pun bisa dipakai.</p>`));
+      sp.querySelector('b').textContent = (op && op.display_name) || 'pasangan';
+      return;
+    }
+    const { data: inv } = await c.from('spouse_invites').select('id, from_parent, to_parent, created_at').eq('status', 'pending').or(`from_parent.eq.${me},to_parent.eq.${me}`).order('created_at', { ascending: false });
+    const ids = [...new Set((inv || []).flatMap(i => [i.from_parent, i.to_parent]).filter(x => x !== me))];
+    const names = {};
+    if (ids.length) { const { data } = await c.from('profiles').select('id, display_name').in('id', ids); (data || []).forEach(p => names[p.id] = p.display_name); }
+    sp.replaceChildren($(`<p class="small" style="margin:6px 0">Hubungkan akun Ayah dan Ibu supaya keduanya mengelola anak-anak yang sama.</p>`));
+    for (const i of (inv || []).filter(i => i.to_parent === me)) {
+      const r = $(`<div class="banner"><b></b> mengundang Anda sebagai pasangan.<div class="row" style="margin-top:8px"><button class="btn green mini y">Terima…</button><button class="btn ghost mini n">Tolak</button></div><div class="cf"></div></div>`);
+      r.querySelector('b').textContent = names[i.from_parent] || 'Orang tua';
+      r.querySelector('.n').onclick = async () => { await c.rpc('decline_spouse', { invite_id: i.id }); refresh(h); };
+      r.querySelector('.y').onclick = () => {
+        const cf = r.querySelector('.cf');
+        cf.replaceChildren($(`<div class="confirm small" style="margin-top:8px"><b>Sebelum menerima:</b><ul style="padding-left:18px;margin:6px 0">
+          <li>Daftar anak Anda dan pasangan digabung. Anda berdua bisa melihat dan mengelola semua anak.</li>
+          <li>Kalau ada nama anak yang sama, salah satunya otomatis diberi angka (mis. "Amtar 2"). Kedua akun tetap ada, progresnya tidak hilang.</li>
+          <li>Kode keluarga Anda maupun pasangan akan menampilkan semua anak saat anak masuk.</li>
+          <li>Lencana pendukung dihitung bersama untuk satu rumah tangga. PIN orang tua siapa pun bisa dipakai.</li>
+          <li>Hubungan ini belum bisa diputus dari aplikasi.</li></ul>
+          <div class="row"><button class="btn green mini ok">Ya, hubungkan</button><button class="btn ghost mini no">Batal</button></div></div>`));
+        cf.querySelector('.no').onclick = () => cf.replaceChildren();
+        cf.querySelector('.ok').onclick = async () => {
+          const { error: e2 } = await c.rpc('accept_spouse', { invite_id: i.id });
+          if (e2) toast(friendly(e2)); else { toast('Akun pasangan terhubung'); refresh(h); }
+        };
+      };
+      sp.append(r);
+    }
+    const out = (inv || []).find(i => i.from_parent === me);
+    if (out) {
+      const r = $(`<div class="banner">Menunggu <b></b> menerima undangan. <button class="linkbtn">Batalkan</button></div>`);
+      r.querySelector('b').textContent = names[out.to_parent] || 'pasangan';
+      r.querySelector('button').onclick = async () => { await c.rpc('decline_spouse', { invite_id: out.id }); refresh(h); };
+      sp.append(r);
+    }
+    const form = $(`<div><div class="formrow"><div class="field"><label>Kode keluarga pasangan</label><input class="sc" placeholder="KM-XXXXXX" autocapitalize="characters" maxlength="9" autocomplete="off"></div><button class="btn mini sb">Undang</button></div><p class="err se"></p></div>`);
+    sp.append(form);
+    const se = sp.querySelector('.se');
+    sp.querySelector('.sb').onclick = async () => {
+      const code = sp.querySelector('.sc').value.trim();
+      if (!/^(KM-?)?[0-9A-Fa-f]{6}$/.test(code)) { se.textContent = 'Kode keluarga seperti KM-1A2B3C.'; return; }
+      const { error: e3 } = await c.rpc('invite_spouse', { family_code: code });
+      if (e3) se.textContent = friendly(e3); else { toast('Undangan dikirim. Pasangan menerimanya di Halaman Orang Tua miliknya.'); refresh(h); }
+    };
+  })().catch(e => { const er = $(`<p class="err"></p>`); er.textContent = friendly(e); sp.replaceChildren(er); });
+  return f;
 }

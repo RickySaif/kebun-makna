@@ -62,7 +62,7 @@ export async function familyFn(parent, body) {
 
 /** Drive one lesson panel step (Dengar/Kenali/Cocokkan/Susun) or a celebration. Returns a label or null. */
 export async function driveLessonOnce(page) {
-  if (await page.$('.celebrate button')) { await page.click('.celebrate button'); return 'cel'; }
+  if (await page.$('.celebrate:not(.askparent) button')) { await page.click('.celebrate:not(.askparent) button'); return 'cel'; }
   const h2 = await page.$eval('#layer .panel h2', e => e.textContent).catch(() => null);
   if (!h2) return null;
   if (h2.startsWith('Dengarkan')) await page.click('#nx:not([disabled])', { timeout: 15000 });
@@ -79,7 +79,8 @@ export async function driveLessonOnce(page) {
       for (const w of words) [...document.querySelectorAll('.pool .tile:not(.used)')].find(t => t.textContent === w).click();
     }, [m[1].trim(), +m[2]]);
     await page.click('#nx:not([disabled])'); await page.waitForTimeout(50); await page.click('#nx');
-  } else return 'other:' + h2;
+  } else if (h2.startsWith('Sekarang kamu yang baca')) return 'gate';
+  else return 'other:' + h2;
   return h2;
 }
 

@@ -1,7 +1,7 @@
 // account.js — start screen: parent email login/signup, child family code → avatar → PIN, guest mode.
 import { $, esc, root } from './ui.js';
 import { AVATARS, drawKid } from './render.js';
-import { sb, session, friendly, childList, childSignIn, loadProfile, normCode, fmtCode } from './api.js';
+import { sb, session, friendly, childList, childSignIn, loadProfile, normCode, fmtCode, googleEnabled, signInGoogle } from './api.js';
 
 const LAST_CODE = 'kebun-makna-last-family';
 const MODE = 'kebun-makna-mode'; // 'guest' remembered on this device
@@ -156,6 +156,15 @@ export function parentLogin(h, mode = 'login', msg = '') {
   if (q('#li')) q('#li').onclick = () => parentLogin(h, 'login');
   q('#back').onclick = () => startScreen(h);
   root.append(f);
+  if (mode !== 'reset') googleEnabled().then(on => {
+    if (!on) return;
+    const g = $(`<div><div class="small" style="text-align:center;margin:10px 0 8px">atau</div><button class="btn ghost block" id="gg">Masuk dengan Google</button></div>`);
+    g.querySelector('#gg').onclick = async () => {
+      try { await signInGoogle(); }
+      catch (e) { g.remove(); err.className = 'err'; err.textContent = /not enabled|unsupported/i.test(e.message) ? 'Masuk dengan Google belum tersedia. Pakai email dulu, ya.' : friendly(e); }
+    };
+    go.after(g);
+  });
 }
 
 /** After a password-recovery link: let the parent choose a new password. */
