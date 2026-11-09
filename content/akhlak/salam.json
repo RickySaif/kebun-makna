@@ -1,0 +1,37 @@
+{
+  "id": "salam",
+  "order": 6,
+  "title": "Anak Baru di Desa",
+  "npc": "Nisa",
+  "look": {
+    "girl": true,
+    "hijab": "#118AB2",
+    "shirt": "#FFD166",
+    "hair": "#2B1D12",
+    "pants": "#073B4C"
+  },
+  "ask": [
+    "Eh… halo. Aku Nisa, baru pindah ke desa ini minggu lalu.",
+    "Aku belum punya teman. Anak-anak di sini kelihatannya sudah akrab semua.",
+    "Aku malu mau mulai menyapa duluan."
+  ],
+  "pick": "Nisa ingin punya teman. Pilih hadis yang cocok.",
+  "done": [
+    "Rasulullah ﷺ bersabda bahwa kita tidak beriman sampai saling menyayangi…",
+    "…dan beliau menunjukkan caranya: sebarkanlah salam di antara kalian.",
+    "Jadi aku cukup mulai dengan mengucapkan salam. Assalamu'alaikum, {n}!"
+  ],
+  "thanks": "Wa'alaikumussalam! Sekarang aku punya banyak teman. Semua dimulai dari salam.",
+  "sources": [
+    "muslim:81"
+  ],
+  "source_rows": [
+    {
+      "id": "muslim:81",
+      "ref_label": "HR. Muslim no. 81",
+      "arabic": "حَدَّثَنَا أَبُو بَكْرِ بْنُ أَبِي شَيْبَةَ حَدَّثَنَا أَبُو مُعَاوِيَةَ وَوَكِيعٌ عَنْ الْأَعْمَشِ عَنْ أَبِي صَالِحٍ عَنْ أَبِي هُرَيْرَةَ قَالَقَالَ رَسُولُ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ لَا تَدْخُلُونَ الْجَنَّةَ حَتَّى تُؤْمِنُوا وَلَا تُؤْمِنُوا حَتَّى تَحَابُّوا أَوَلَا أَدُلُّكُمْ عَلَى شَيْءٍ إِذَا فَعَلْتُمُوهُ تَحَابَبْتُمْ أَفْشُوا السَّلَامَ بَيْنَكُمْو حَدَّثَنِي زُهَيْرُ بْنُ حَرْبٍ أَنْبَأَنَا جَرِيرٌ عَنْ الْأَعْمَشِ بِهَذَا الْإِسْنَادِ قَالَ قَالَ رَسُولُ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ وَالَّذِي نَفْسِي بِيَدِهِ لَا تَدْخُلُونَ الْجَنَّةَ حَتَّى تُؤْمِنُوا بِمِثْلِ حَدِيثِ أَبِي مُعَاوِيَةَ وَوَكِيعٍ",
+      "indonesian": "Telah menceritakan kepada kami [Abu Bakar bin Abu Syaibah] telah menceritakan kepada kami [Abu Mu'awiyah] dan [Waki'] dari [al-A'masy] dari [Abu Shalih] dari [Abu Hurairah] dia berkata, \"Rasulullah shallallahu 'alaihi wasallam bersabda: \"Kalian tidak akan masuk surga hingga kalian beriman, dan tidaklah kalian beriman hingga kalian saling menyayangi. Maukan kalian aku tunjukkan atas sesuatu yang mana apabila kalian mengerjakannya niscaya kalian akan saling menyayangi. Sebarkanlah salam di antara kalian.\" Dan telah menceritakan kepadaku [Zuhair bin Harb] telah memberitakan kepada kami [Jarir] dari [al-A'masy] dengan sanad ini. Dia berkata, \"Rasulullah shallallahu 'alaihi wasallam bersabda: \"Demi Dzat yang jiwaku berada di tangan-Nya, kalian tidak akan masuk surga hingga kalian beriman, \" sebagaimana hadits Abu Mu'awiyah dan Waki'.\"",
+      "attribution": "Terjemah Lidwa Pusaka, penomoran Lidwa (via github.com/gadingnst/hadith-api, MIT)"
+    }
+  ]
+}

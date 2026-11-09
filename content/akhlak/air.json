@@ -1,0 +1,44 @@
+{
+  "id": "air",
+  "order": 5,
+  "title": "Sumur Desa Hampir Kering",
+  "npc": "Pak Kades",
+  "look": {
+    "hair": "#6E6E6E",
+    "shirt": "#F2F2F2",
+    "pants": "#2B2B3B",
+    "hat": "#2B2B3B"
+  },
+  "ask": [
+    "{n}, kemarau tahun ini panjang. Air sumur desa makin sedikit.",
+    "Tapi masih ada yang membiarkan keran terbuka saat berwudu, ada yang menyiram jalan dengan air sumur.",
+    "Bagaimana caranya mengingatkan warga dengan baik?"
+  ],
+  "pick": "Pak Kades ingin warga hemat air. Pilih sumber yang tepat (ada dua).",
+  "done": [
+    "Allah berfirman: makan dan minumlah, tetapi jangan berlebihan. Allah tidak menyukai orang yang berlebih-lebihan.",
+    "Anas meriwayatkan bahwa Nabi ﷺ berwudu dengan satu mud, takaran yang kecil.",
+    "Kalau Nabi ﷺ saja berwudu dengan air sedikit, kita juga bisa. Aku akan menulis pengumuman di dekat sumur."
+  ],
+  "thanks": "Sejak pengumuman itu, air sumur cukup sampai hujan datang. Alhamdulillah.",
+  "sources": [
+    "quran:7:31",
+    "bukhari:194"
+  ],
+  "source_rows": [
+    {
+      "id": "quran:7:31",
+      "ref_label": "QS. Al-A'raf 7:31",
+      "arabic": "۞ يَـٰبَنِىٓ ءَادَمَ خُذُوا۟ زِينَتَكُمْ عِندَ كُلِّ مَسْجِدٍ وَكُلُوا۟ وَٱشْرَبُوا۟ وَلَا تُسْرِفُوٓا۟ ۚ إِنَّهُۥ لَا يُحِبُّ ٱلْمُسْرِفِينَ",
+      "indonesian": "Wahai anak cucu Adam! Pakailah pakaianmu yang bagus pada setiap (memasuki) masjid, makan dan minumlah, tetapi jangan berlebihan! Sesungguhnya, Allah tidak menyukai orang yang berlebih-lebihan.",
+      "attribution": "Terjemah Kemenag RI (via quran.com, resource 33)"
+    },
+    {
+      "id": "bukhari:194",
+      "ref_label": "HR. Bukhari no. 194",
+      "arabic": "حَدَّثَنَا أَبُو نُعَيْمٍ قَالَ حَدَّثَنَا مِسْعَرٌ قَالَ حَدَّثَنِي ابْنُ جَبْرٍ قَالَ سَمِعْتُ أَنَسًا يَقُولُكَانَ النَّبِيُّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ يَغْسِلُ أَوْ كَانَ يَغْتَسِلُ بِالصَّاعِ إِلَى خَمْسَةِ أَمْدَادٍ وَيَتَوَضَّأُ بِالْمُدِّ",
+      "indonesian": "Telah menceritakan kepada kami [Abu Nu'aim] berkata, telah menceritakan kepada kami [Mis'ar] berkata, telah menceritakan kepadaku [Ibnu Jabar] berkata, \"Aku mendengar [Anas] berkata, \"Nabi shallallahu 'alaihi wasallam membasuh, atau mandi dengan satu sha' hingga lima mud, dan berwudlu dengan satu mud.\"",
+      "attribution": "Terjemah Lidwa Pusaka, penomoran Lidwa (via github.com/gadingnst/hadith-api, MIT)"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "id": "tetangga",
+  "order": 7,
+  "title": "Sayur Bu Rahma",
+  "npc": "Bu Rahma",
+  "look": {
+    "girl": true,
+    "hijab": "#3A5A40",
+    "shirt": "#A3B18A",
+    "hair": "#2B1D12",
+    "pants": "#588157"
+  },
+  "ask": [
+    "Assalamu'alaikum, {n}. Bu Rahma sedang memasak sayur sop.",
+    "Tetangga sebelah, keluarga Pak Amin, sedang susah. Pak Amin sakit dan belum bisa bekerja.",
+    "Sopnya cuma cukup untuk keluarga Ibu. Ibu jadi bingung."
+  ],
+  "pick": "Bu Rahma ingin membantu tetangganya. Pilih hadis yang cocok.",
+  "done": [
+    "Rasulullah ﷺ berpesan kepada Abu Dzar: kalau memasak kuah sayur, perbanyaklah airnya…",
+    "…dan berikan sebagiannya kepada tetanggamu.",
+    "Tambah air sedikit, dan semangkuk bisa Ibu antar ke rumah Pak Amin. Bantu Ibu mengantarnya, ya!"
+  ],
+  "thanks": "Keluarga Pak Amin senang sekali. Besok giliran mereka mengirim pisang dari kebunnya.",
+  "sources": [
+    "muslim:4758"
+  ],
+  "source_rows": [
+    {
+      "id": "muslim:4758",
+      "ref_label": "HR. Muslim no. 4758",
+      "arabic": "حَدَّثَنَا أَبُو كَامِلٍ الْجَحْدَرِيُّ وَإِسْحَقُ بْنُ إِبْرَاهِيمَ وَاللَّفْظُ لِإِسْحَقَ قَالَ أَبُو كَامِلٍ حَدَّثَنَا و قَالَ إِسْحَقُ أَخْبَرَنَا عَبْدُ الْعَزِيزِ بْنُ عَبْدِ الصَّمَدِ الْعَمِّيُّ حَدَّثَنَا أَبُو عِمْرَانَ الْجَوْنِيُّ عَنْ عَبْدِ اللَّهِ بْنِ الصَّامِتِ عَنْ أَبِي ذَرٍّ قَالَقَالَ رَسُولُ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ يَا أَبَا ذَرٍّ إِذَا طَبَخْتَ مَرَقَةً فَأَكْثِرْ مَاءَهَا وَتَعَاهَدْ جِيرَانَكَ",
+      "indonesian": "Telah menceritakan kepada kami [Abu Kamil Al Jahdari] dan [Ishaq bin Ibrahim] dan lafazh ini milik Ishaq dia berkata; [Abu Kamil] Telah menceritakan kepada kami dan berkata [Ishaq]; Telah mengabarkan kepada kami ['Abdul 'Aziz bin 'Abdush Shamad Al 'Ammi]; Telah menceritakan kepada kami [Abu 'Imran Al Jauni] dari ['Abdullah bin Ash Shamit] dari [Abu Dzar] dia berkata; Rasulullah shallallahu 'alaihi wasallam bersabda: \"Wahai Abu Dzar, Apabila kamu memasak kuah sayur, maka perbanyaklah airnya, dan berikanlah sebagiannya kepada tetanggamu.\"",
+      "attribution": "Terjemah Lidwa Pusaka, penomoran Lidwa (via github.com/gadingnst/hadith-api, MIT)"
+    }
+  ]
+}

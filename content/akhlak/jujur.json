@@ -1,0 +1,35 @@
+{
+  "id": "jujur",
+  "order": 1,
+  "title": "Pot Bunga yang Pecah",
+  "npc": "Fajar",
+  "look": {
+    "hair": "#2B1D12",
+    "shirt": "#4A90D9",
+    "pants": "#2F3B52"
+  },
+  "ask": [
+    "{n}, sini sebentar… Aku Fajar. Tadi aku main bola di depan rumah Bu Wati.",
+    "Bolaku kena pot bunganya sampai pecah. Tidak ada yang lihat.",
+    "Kalau Bu Wati tanya, aku bilang saja kucing yang menjatuhkannya. Boleh, kan?"
+  ],
+  "pick": "Fajar bingung. Pilih hadis yang menjawab masalahnya.",
+  "done": [
+    "Kejujuran membimbing kepada kebaikan, dan kebaikan membimbing ke surga…",
+    "Kalau aku menyalahkan kucing, berarti aku berdusta. Dusta mengantarkan kepada kejahatan.",
+    "Aku mau ke rumah Bu Wati sekarang. Aku akan bilang aku yang memecahkan potnya, dan minta maaf."
+  ],
+  "thanks": "Bu Wati tidak marah karena aku jujur. Aku malah membantu menanam ulang bunganya!",
+  "sources": [
+    "muslim:4719"
+  ],
+  "source_rows": [
+    {
+      "id": "muslim:4719",
+      "ref_label": "HR. Muslim no. 4719",
+      "arabic": "حَدَّثَنَا زُهَيْرُ بْنُ حَرْبٍ وَعُثْمَانُ بْنُ أَبِي شَيْبَةَ وَإِسْحَقُ بْنُ إِبْرَاهِيمَ قَالَ إِسْحَقُ أَخْبَرَنَا و قَالَ الْآخَرَانِ حَدَّثَنَا جَرِيرٌ عَنْ مَنْصُورٍ عَنْ أَبِي وَائِلٍ عَنْ عَبْدِ اللَّهِ قَالَقَالَ رَسُولُ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ إِنَّ الصِّدْقَ يَهْدِي إِلَى الْبِرِّ وَإِنَّ الْبِرَّ يَهْدِي إِلَى الْجَنَّةِ وَإِنَّ الرَّجُلَ لَيَصْدُقُ حَتَّى يُكْتَبَ صِدِّيقًا وَإِنَّ الْكَذِبَ يَهْدِي إِلَى الْفُجُورِ وَإِنَّ الْفُجُورَ يَهْدِي إِلَى النَّارِ وَإِنَّ الرَّجُلَ لَيَكْذِبُ حَتَّى يُكْتَبَ كَذَّابًا",
+      "indonesian": "Telah menceritakan kepada kami [Zuhair bin Harb] dan ['Utsman bin Abu Syaibah] serta [Ishaq bin Ibrahim]. [Ishaq] berkata; Telah mengabarkan kepada kami Sedangkan yang lainnya berkata; Telah menceritakan kepada kami [Jarir] dari [Manshur] dari [Abu Wail] dari ['Abdullah] dia berkata; Rasulullah shallallahu 'alaihi wasallam bersabda: \"Sesungguhnya kejujuran itu akan membimbing pada kebaikan. Dan kebaikan itu akan membimbing ke surga. Seseorang yang senantiasa berlaku jujur maka ia akan dicatat sebagai orang yang jujur. Dan sesungguhnya dusta itu akan mengantarkan pada kejahatan. Dan sesungguhnya kejahatan itu akan menggiring ke neraka. Seseorang yang memelihara kedustaan, maka ia akan dicatat sebagai pendusta.\"",
+      "attribution": "Terjemah Lidwa Pusaka, penomoran Lidwa (via github.com/gadingnst/hadith-api, MIT)"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": "wajah",
+  "order": 3,
+  "title": "Kebaikan yang Kecil",
+  "npc": "Bayu",
+  "look": {
+    "hair": "#5A3820",
+    "shirt": "#9B5DE5",
+    "pants": "#3D405B"
+  },
+  "ask": [
+    "{n}, aku Bayu. Aku ingin berbuat baik, tapi aku tidak punya uang untuk bersedekah.",
+    "Aku juga belum bisa membantu pekerjaan berat seperti orang dewasa.",
+    "Kebaikan kecil itu tidak ada artinya, ya?"
+  ],
+  "pick": "Bayu mengira kebaikan kecil tidak berarti. Pilih hadis untuknya.",
+  "done": [
+    "Nabi ﷺ berpesan: jangan menganggap remeh kebaikan sedikit pun…",
+    "…walaupun hanya bermanis muka kepada saudaramu ketika bertemu.",
+    "Jadi wajah yang ramah saat bertemu teman juga kebaikan! Itu bisa aku lakukan setiap hari."
+  ],
+  "thanks": "Hari ini aku menyapa semua orang dengan wajah ramah. Banyak yang balas tersenyum!",
+  "sources": [
+    "muslim:4760"
+  ],
+  "source_rows": [
+    {
+      "id": "muslim:4760",
+      "ref_label": "HR. Muslim no. 4760",
+      "arabic": "حَدَّثَنِي أَبُو غَسَّانَ الْمِسْمَعِيُّ حَدَّثَنَا عُثْمَانُ بْنُ عُمَرَ حَدَّثَنَا أَبُو عَامِرٍ يَعْنِي الْخَزَّازَ عَنْ أَبِي عِمْرَانَ الْجَوْنِيِّ عَنْ عَبْدِ اللَّهِ بْنِ الصَّامِتِ عَنْ أَبِي ذَرٍّ قَالَقَالَ لِيَ النَّبِيُّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ لَا تَحْقِرَنَّ مِنْ الْمَعْرُوفِ شَيْئًا وَلَوْ أَنْ تَلْقَى أَخَاكَ بِوَجْهٍ طَلْقٍ",
+      "indonesian": "Telah menceritakan kepadaku [Abu Ghassan Al Misma'i]; Telah menceritakan kepada kami ['Utsman bin 'Umar]; Telah menceritakan kepada kami [Abu 'Amir] yaitu Al Khazzaz dari [Abu 'Imran Al Jauni] dari ['Abdullah bin Ash Shamit] dari [Abu Dzar] dia berkata; Nabi shallallahu 'alaihi wasallam berkata kepadaku: \"Janganlah kamu menganggap remeh sedikitpun terhadap kebaikan, walaupun kamu hanya bermanis muka kepada saudaramu (sesama muslim) ketika bertemu.\"",
+      "attribution": "Terjemah Lidwa Pusaka, penomoran Lidwa (via github.com/gadingnst/hadith-api, MIT)"
+    }
+  ]
+}

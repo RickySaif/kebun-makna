@@ -1,0 +1,37 @@
+{
+  "id": "jalan",
+  "order": 4,
+  "title": "Ranting Berduri di Jalan",
+  "npc": "Mbok Ijah",
+  "look": {
+    "girl": true,
+    "hijab": "#6D6875",
+    "shirt": "#B5838D",
+    "hair": "#F2F2F2",
+    "pants": "#6D6875"
+  },
+  "ask": [
+    "Aduh, aduh… {n}, tolong Mbok sebentar.",
+    "Mbok Ijah tersandung ranting berduri di jalan ke sawah. Untung tidak jatuh.",
+    "Dari kemarin ranting itu di situ. Semua orang cuma melangkahinya saja."
+  ],
+  "pick": "Ada ranting berduri di jalan desa. Pilih hadis yang cocok.",
+  "done": [
+    "Rasulullah ﷺ menceritakan seorang laki-laki yang menemukan potongan duri di jalan, lalu mengambilnya.",
+    "Allah bersyukur kepadanya dan mengampuninya.",
+    "Ayo kita singkirkan ranting itu sekarang, supaya tidak ada yang tersandung lagi."
+  ],
+  "thanks": "Jalan ke sawah sudah bersih. Anak-anak sekarang ikut memungut duri dan batu di jalan.",
+  "sources": [
+    "bukhari:2292"
+  ],
+  "source_rows": [
+    {
+      "id": "bukhari:2292",
+      "ref_label": "HR. Bukhari no. 2292",
+      "arabic": "حَدَّثَنَا عَبْدُ اللَّهِ بْنُ يُوسُفَ أَخْبَرَنَا مَالِكٌ عَنْ سُمَيٍّ عَنْ أَبِي صَالِحٍ عَنْ أَبِي هُرَيْرَةَ رَضِيَ اللَّهُ عَنْهُأَنَّ رَسُولَ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ قَالَ بَيْنَمَا رَجُلٌ يَمْشِي بِطَرِيقٍ وَجَدَ غُصْنَ شَوْكٍ عَلَى الطَّرِيقِ فَأَخَذَهُ فَشَكَرَ اللَّهُ لَهُ فَغَفَرَ لَهُ",
+      "indonesian": "Telah menceritakan kepada kami ['Abdullah bin Yusuf] telah mengabarkan kepada kami [Malik] dari [Sumayya] dari [Abu Shalih] dari [Abu Hurairah radliallahu 'anhu] bahwa Rasulullah shallallahu 'alaihi wasallam bersabda: \"Ada seorang laki-laki yang sedang berjalan lalu menemuklan potongan duri di jalan lalu diambilnya. Kemudian dia bersyukur kepada Allah maka Allah mengampuninya\".",
+      "attribution": "Terjemah Lidwa Pusaka, penomoran Lidwa (via github.com/gadingnst/hadith-api, MIT)"
+    }
+  ]
+}

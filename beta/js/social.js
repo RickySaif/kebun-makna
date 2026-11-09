@@ -20,10 +20,19 @@ const me = () => session.user && session.user.id;
 /** For hadith rows: the matn (quoted words after the chain of narrators), or null when it can't be split reliably. */
 export function matn(src) {
   if (!src || src.kind === 'quran' || !/^(bukhari|muslim):/.test(src.id)) return null;
-  const t = src.indonesian; const lastBr = t.indexOf(']'); if (lastBr < 0) return null;
-  const q = t.indexOf('"', lastBr); if (q < 0) return null;
-  const end = t.indexOf('"', q + 1); const m = (end > q ? t.slice(q + 1, end) : t.slice(q + 1)).trim();
-  return m.length >= 20 ? m : null;
+  const t = src.indonesian; const first = t.indexOf(']'); if (first < 0) return null;
+  // Candidate quoted segments after the first narrator. Accept the first one that directly follows
+  // "bersabda" / "berkata kepadaku" / "berpesan", has no narrator names and doesn't end mid-sentence.
+  // Anything else (dialogues, narrations) falls back to the full text.
+  const qs = []; for (let i = t.indexOf('"', first); i >= 0; i = t.indexOf('"', i + 1)) qs.push(i);
+  for (let k = 0; k < qs.length; k++) {
+    const a = qs[k], b = k + 1 < qs.length ? qs[k + 1] : t.length;
+    const seg = t.slice(a + 1, b).trim(), before = t.slice(Math.max(0, a - 40), a);
+    if (!/(bersabda|berkata kepadaku|berpesan kepada saya)[^"]{0,20}[:;,]?\s*$/.test(before)) continue;
+    if (seg.length < 20 || seg.includes('[') || /[;:,]$/.test(seg)) continue;
+    return seg;
+  }
+  return null;
 }
 export function sourceCard(src) {
   if (!src) return $(`<div class="srccard"><p class="small">Sumber tidak tersedia.</p></div>`);
@@ -36,7 +45,7 @@ export function sourceCard(src) {
     ${!isQ ? `<button class="linkbtn more">Lihat lengkap</button><div class="full" hidden><div class="ar" lang="ar" dir="rtl" style="font-size:20px"></div><p class="small fullid"></p></div>` : ''}
   </div>`);
   if (isQ) c.querySelector('.ar').textContent = src.arabic;
-  c.querySelector('.idn').textContent = isQ ? src.indonesian : (m ? `“${m}”` : src.indonesian.slice(0, 280) + (src.indonesian.length > 280 ? '…' : ''));
+  c.querySelector('.idn').textContent = isQ ? src.indonesian : (m ? `“${m}”` : src.indonesian.slice(0, 700) + (src.indonesian.length > 700 ? '…' : ''));
   c.querySelector('.ref b').textContent = src.ref_label;
   c.querySelector('.attr').textContent = src.attribution;
   if (!isQ) {

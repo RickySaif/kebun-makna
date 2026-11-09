@@ -1,0 +1,37 @@
+{
+  "id": "ibu",
+  "order": 2,
+  "title": "Disuruh Ibu Lagi",
+  "npc": "Salsa",
+  "look": {
+    "girl": true,
+    "hijab": "#E07A5F",
+    "shirt": "#F2CC8F",
+    "hair": "#2B1D12",
+    "pants": "#81B29A"
+  },
+  "ask": [
+    "Hai {n}. Aku Salsa. Huh, aku lagi kesal.",
+    "Dari pagi Ibu menyuruhku terus: angkat jemuran, jaga adik, beli garam.",
+    "Aku kan juga mau main. Kenapa sih harus aku?"
+  ],
+  "pick": "Salsa sedang kesal pada ibunya. Pilih hadis yang cocok untuknya.",
+  "done": [
+    "Seseorang bertanya kepada Rasulullah ﷺ siapa yang paling berhak ia perlakukan dengan baik.",
+    "Beliau menjawab: ibumu, ibumu, ibumu, kemudian ayahmu.",
+    "Ibu disebut sampai tiga kali… Ibu juga capek mengurus rumah. Aku bantu Ibu dulu, mainnya nanti."
+  ],
+  "thanks": "Tadi Ibu memelukku dan bilang terima kasih. Rasanya senang sekali!",
+  "sources": [
+    "bukhari:5514"
+  ],
+  "source_rows": [
+    {
+      "id": "bukhari:5514",
+      "ref_label": "HR. Bukhari no. 5514",
+      "arabic": "حَدَّثَنَا قُتَيْبَةُ بْنُ سَعِيدٍ حَدَّثَنَا جَرِيرٌ عَنْ عُمَارَةَ بْنِ الْقَعْقَاعِ بْنِ شُبْرُمَةَ عَنْ أَبِي زُرْعَةَ عَنْ أَبِي هُرَيْرَةَ رَضِيَ اللَّهُ عَنْهُ قَالَجَاءَ رَجُلٌ إِلَى رَسُولِ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ فَقَالَ يَا رَسُولَ اللَّهِ مَنْ أَحَقُّ النَّاسِ بِحُسْنِ صَحَابَتِي قَالَ أُمُّكَ قَالَ ثُمَّ مَنْ قَالَ ثُمَّ أُمُّكَ قَالَ ثُمَّ مَنْ قَالَ ثُمَّ أُمُّكَ قَالَ ثُمَّ مَنْ قَالَ ثُمَّ أَبُوكَوَقَالَ ابْنُ شُبْرُمَةَ وَيَحْيَى بْنُ أَيُّوبَ حَدَّثَنَا أَبُو زُرْعَةَ مِثْلَهُ",
+      "indonesian": "Telah menceritakan kepada kami [Qutaibah bin Sa'id] telah menceritakan kepada kami [Jarir] dari ['Umarah bin Al Qa'qa' bin Syubrumah] dari [Abu Zur'ah] dari [Abu Hurairah] radliallahu 'anhu dia berkata; \"Seorang laki-laki datang kepada Rasulullah shallallahu 'alaihi wasallam sambil berkata; \"Wahai Rasulullah, siapakah orang yang paling berhak aku berbakti kepadanya?\" beliau menjawab: \"Ibumu.\" Dia bertanya lagi; \"Kemudian siapa?\" beliau menjawab: \"Ibumu.\" Dia bertanya lagi; \"kemudian siapa lagi?\" beliau menjawab: \"Ibumu.\" Dia bertanya lagi; \"Kemudian siapa?\" dia menjawab: \"Kemudian ayahmu.\" [Ibnu Syubrumah] dan [Yahya bin Ayyub] berkata; telah menceritakan kepada kami [Abu Zur'ah] hadits seperti di atas.\"",
+      "attribution": "Terjemah Lidwa Pusaka, penomoran Lidwa (via github.com/gadingnst/hadith-api, MIT)"
+    }
+  ]
+}

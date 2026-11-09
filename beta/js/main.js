@@ -50,6 +50,7 @@ hooks.atur = box => { accountBox(box); box.prepend(settingsBox()); };
 
 function bootGame() {
   migrate();
+  import('./akhlak.js').then(m => m.installAkhlak()).catch(() => {}); // next chapter, only after boss4 + 10 surahs
   if (!S.name) onboarding(); else farm();
 }
 

@@ -1,0 +1,35 @@
+{
+  "id": "marah",
+  "order": 8,
+  "title": "Pertandingan Bola",
+  "npc": "Gilang",
+  "look": {
+    "hair": "#1A1A1A",
+    "shirt": "#E63946",
+    "pants": "#1D3557"
+  },
+  "ask": [
+    "{n}! Aku Gilang. Aku kesal sekali!",
+    "Tadi waktu main bola, Tono mendorongku sampai jatuh. Semua menertawakanku.",
+    "Aku mau balas mendorongnya lebih keras. Biar semua tahu aku yang paling kuat!"
+  ],
+  "pick": "Gilang sedang marah. Pilih hadis yang cocok untuknya.",
+  "done": [
+    "Rasulullah ﷺ bersabda: orang yang kuat bukanlah yang pandai bergulat…",
+    "…tetapi orang yang dapat menahan dirinya ketika marah.",
+    "Jadi kalau aku bisa menahan marah, aku yang benar-benar kuat. Aku tarik napas dulu, lalu bicara baik-baik dengan Tono."
+  ],
+  "thanks": "Tono minta maaf, dan kami main bola lagi bersama. Menahan marah memang susah, tapi bisa!",
+  "sources": [
+    "bukhari:5649"
+  ],
+  "source_rows": [
+    {
+      "id": "bukhari:5649",
+      "ref_label": "HR. Bukhari no. 5649",
+      "arabic": "حَدَّثَنَا عَبْدُ اللَّهِ بْنُ يُوسُفَ أَخْبَرَنَا مَالِكٌ عَنْ ابْنِ شِهَابٍ عَنْ سَعِيدِ بْنِ الْمُسَيَّبِ عَنْ أَبِي هُرَيْرَةَ رَضِيَ اللَّهُ عَنْهُأَنَّ رَسُولَ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ قَالَ لَيْسَ الشَّدِيدُ بِالصُّرَعَةِ إِنَّمَا الشَّدِيدُ الَّذِي يَمْلِكُ نَفْسَهُ عِنْدَ الْغَضَبِ",
+      "indonesian": "Telah menceritakan kepada kami [Abdullah bin Yusuf] telah mengabarkan kepada kami [Malik] dari [Ibnu Syihab] dari [Sa'id bin Musayyib] dari [Abu Hurairah] radliallahu 'anhu bahwa Rasulullah shallallahu 'alaihi wasallam bersabda: \"Tidaklah orang yang kuat adalah orang yang pandai bergulat, tapi orang yang kuat adalah orang yang dapat menahan nafsunya ketika ia marah.\"",
+      "attribution": "Terjemah Lidwa Pusaka, penomoran Lidwa (via github.com/gadingnst/hadith-api, MIT)"
+    }
+  ]
+}
