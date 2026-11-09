@@ -1,0 +1,13 @@
+import { BASE, newPage, close, assert } from './lib.mjs';
+const P = await newPage('parent'); P.on('response', r => { if (r.status() === 403) console.log('403 URL:', r.url().slice(0, 160)); });
+await P.goto(BASE + '/beta/'); await P.click('#ortu');
+await P.fill('#em', process.env.KM_EMAIL); await P.fill('#pw', process.env.KM_PASS); await P.click('#go');
+await P.waitForSelector('#code', { timeout: 20000 });
+const b = await P.locator('.dash .badge').first().innerText();
+assert(b.startsWith('2') && b.includes('🌟'), 'dashboard badge shows 2🌟: ' + JSON.stringify(b));
+await P.click('a[href="#/dukung"]'); await P.locator('text=Sahabat Kebun Makna').first().waitFor();
+const t = await P.locator('.dash').innerText();
+assert(/Rp620\.000 = 2🌟/.test(t), 'support page explains multiplier');
+await P.locator('.banner').first().screenshot({ path: 'shot-mult.png' });
+assert(P.errors.length === 0, 'no console errors ' + P.errors.join(' | '));
+await close();

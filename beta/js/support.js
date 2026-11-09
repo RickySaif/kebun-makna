@@ -25,7 +25,7 @@ export async function supportPage() {
         : `<div class="banner">Lencana keluarga Anda: ${badgeFor(p, true)}. Dukung lagi bulan ini untuk mengaktifkannya kembali.</div>`) : ''}</div>
     <div class="frame" style="margin-bottom:12px"><b>Lencana</b><ul style="list-style:none;padding:0;margin:8px 0 0">
       ${tiers.map(t => `<li style="padding:6px 0;border-bottom:1px dashed #D8CBA8"><span style="font-size:22px">${t.badge}</span> <b>${esc(t.name)}</b> <span class="small">· mulai ${rp(t.min_total_idr)}</span></li>`).join('')}
-    </ul><p class="small" style="margin:8px 0 0"><b>Per 30 hari.</b> Semua dukungan keluarga dalam 30 hari terakhir dijumlahkan (maksimal Rp310.000 per bulan). Lencana aktif 30 hari sejak dukungan terakhir. Setelah itu lencana tetap ada tetapi tampak abu-abu sampai Anda mendukung lagi. Trakteer tidak menagih otomatis, jadi kami akan mengingatkan Anda.</p></div>
+    </ul><p class="small" style="margin:8px 0 0"><b>Per 30 hari.</b> Semua dukungan keluarga dalam 30 hari terakhir dijumlahkan (di atas Rp310.000 lencana 🌟 mendapat pengali, misalnya Rp620.000 = 2🌟). Lencana aktif 30 hari sejak dukungan terakhir. Setelah itu lencana tetap ada tetapi tampak abu-abu sampai Anda mendukung lagi. Trakteer tidak menagih otomatis, jadi kami akan mengingatkan Anda.</p></div>
     <div class="frame" style="margin-bottom:12px"><b>Cara mendukung</b>
       <ol style="padding-left:20px;margin:8px 0">
         <li>Salin nama keluarga Anda (dengan tanda #).</li>

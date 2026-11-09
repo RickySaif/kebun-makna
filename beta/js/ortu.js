@@ -49,7 +49,7 @@ async function loadAll() {
   ctx.kids = []; ctx.saves = {}; ctx.acts = []; ctx.posts = []; ctx.comments = []; ctx.follows = [];
   if (!ids.length) return;
   const [kids, saves, acts, posts, comments, follows] = await Promise.all([
-    c.from('profiles').select('id, display_name, avatar, supporter_tier, supporter_until, created_at').in('id', ids).order('created_at'),
+    c.from('profiles').select('id, display_name, avatar, supporter_tier, supporter_until, supporter_mult, created_at').in('id', ids).order('created_at'),
     c.from('game_saves').select('profile_id, state, version, updated_at').in('profile_id', ids),
     c.from('activity_log').select('profile_id, kind, detail, created_at').in('profile_id', ids).order('created_at', { ascending: false }).limit(300),
     c.from('posts').select('id, author_id, source_id, body, hidden, created_at').in('author_id', ids).order('created_at', { ascending: false }).limit(100),
@@ -62,7 +62,7 @@ async function loadAll() {
   const other = [...new Set(ctx.follows.map(f => f.followee_id))];
   ctx.names = {};
   if (other.length) {
-    const { data } = await c.from('profiles').select('id, display_name, supporter_tier, supporter_until').in('id', other);
+    const { data } = await c.from('profiles').select('id, display_name, supporter_tier, supporter_until, supporter_mult').in('id', other);
     (data || []).forEach(p => ctx.names[p.id] = p);
   }
 }
@@ -252,7 +252,7 @@ function spouseBox(h) {
     if (error) { sp.replaceChildren($(`<p class="small">Fitur pasangan belum tersedia.</p>`)); return; }
     if (link) {
       const other = link.parent_a === me ? link.parent_b : link.parent_a;
-      const { data: op } = await c.from('profiles').select('display_name, supporter_tier, supporter_until').eq('id', other).maybeSingle();
+      const { data: op } = await c.from('profiles').select('display_name, supporter_tier, supporter_until, supporter_mult').eq('id', other).maybeSingle();
       sp.replaceChildren($(`<p style="margin:6px 0 0">✅ Terhubung dengan <b></b>. Anda berdua melihat dan mengelola semua anak. Anak masuk dengan satu nama keluarga bersama, dan PIN orang tua siapa pun bisa dipakai.</p>`));
       sp.querySelector('b').textContent = (op && op.display_name) || 'pasangan';
       return;

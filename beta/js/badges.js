@@ -35,6 +35,13 @@ export function badgeFor(p, withName = false) {
   const on = badgeActive(p);
   const title = on ? `Pendukung: ${x.name}` : `Pendukung: ${x.name} (tidak aktif bulan ini)`;
   const style = on ? '' : ' style="filter:grayscale(1);opacity:.45"';
-  return `<span class="badge${on ? '' : ' off'}" title="${esc(title)}"${style}>${x.badge}${withName ? ' ' + esc(x.name) + (on ? '' : ' (tidak aktif)') : ''}</span>`;
+  const mult = multLabel(p);
+  return `<span class="badge${on ? '' : ' off'}" title="${esc(title + (mult ? ` ×${mult}` : ''))}"${style}>${mult ? `<b class="mult">${mult}</b>` : ''}${x.badge}${withName ? ' ' + esc(x.name) + (on ? '' : ' (tidak aktif)') : ''}</span>`;
+}
+/** Above the top tier (Rp310.000 in 30 days) the badge shows a multiplier: 620k -> "2", 465k -> "1,5". */
+export function multLabel(p) {
+  const m = p && typeof p === 'object' ? Number(p.supporter_mult) : 0;
+  if (!m || m <= 1) return '';
+  return (Math.floor(m * 10) / 10).toLocaleString('id-ID', { maximumFractionDigits: 1 });
 }
 export const fmtDate = d => new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
