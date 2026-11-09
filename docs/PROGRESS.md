@@ -10,6 +10,9 @@
 - Parent override PIN RPCs added (migration `20261109024500`).
 - Repo created; root = current live game (unchanged); new work goes in `/beta/`.
 
+## Decisions from Ricky
+- An ustaz reviews all religious content. `docs/CONTENT_REVIEW.md` shows each item's Indonesian story/dialogue next to the cited source (Arabic, Indonesian, ref_label, attribution) and its status. Approval stays a manual status change by Ricky; no reviewer account.
+
 ## Next
 Phase 0 (see PLAN.md).
 
@@ -17,5 +20,4 @@ Phase 0 (see PLAN.md).
 (none)
 
 ## Questions for Ricky
-- Trakteer and Saweria page URLs, plus their webhook token and stream key, so the support page and webhook can go live.
-- Who reviews the hadith-based story content (you, or an ustaz)?
+- Trakteer and Saweria page URLs, plus their webhook token and stream key, so the support page and webhook can go live (still pending; placeholders stay in `beta/js/config.js`).
