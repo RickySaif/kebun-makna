@@ -46,7 +46,11 @@ Deno.serve(async (req) => {
         db.from("profiles").insert({ id: childId, role: "child", display_name: name, avatar: Number(body.avatar) || 0, supporter_tier: pp?.supporter_tier ?? 0 }),
       ];
       for (const s of steps) { const { error } = await s; if (error) { await db.auth.admin.deleteUser(childId); return json({ error: error.message }, 500); } }
-      const { error: le } = await db.from("family_members").insert({ child_id: childId, parent_id: parentId });
+      // link to this parent and, if linked, their spouse
+      const { data: sp } = await db.from("spouses").select("parent_a, parent_b").or(`parent_a.eq.${parentId},parent_b.eq.${parentId}`).maybeSingle();
+      const spouseId = sp ? (sp.parent_a === parentId ? sp.parent_b : sp.parent_a) : null;
+      const links = [{ child_id: childId, parent_id: parentId }, ...(spouseId ? [{ child_id: childId, parent_id: spouseId }] : [])];
+      const { error: le } = await db.from("family_members").insert(links);
       if (le) { await db.auth.admin.deleteUser(childId); return json({ error: le.message }, 500); }
       const { error: pe } = await db.rpc("set_child_pin", { child: childId, pin });
       if (pe) { await db.auth.admin.deleteUser(childId); return json({ error: pe.message }, 400); }
