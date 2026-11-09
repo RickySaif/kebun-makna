@@ -1,5 +1,5 @@
 // main.js — boot: route between start screen, child game (cloud save), guest game, parent dashboard.
-import { farm, onboarding, intro } from './farm.js';
+import { farm, onboarding, intro, introActive } from './farm.js';
 import { checkSurahLevels } from './progress.js';
 import { S, save } from './state.js';
 import { $, esc, root, toast } from './ui.js';
@@ -76,7 +76,9 @@ async function bootPlayer(p) {
   if (p.role === 'child') addTabs('kebun');
   import('./online.js').then(o => o.joinOnline()).catch(() => {});
   root.replaceChildren($(`<div class="title"><h1>Kebun Makna</h1><p>Memuat kebunmu…</p></div>`));
-  const r = await startCloud(p.id, { onReplace: () => { if (document.getElementById('farm')) farm(); } });
+  // A newer save from another device redraws the farm. If Kakek Umar's welcome is still open, redraw it too:
+  // a plain farm() would drop its "Siap!" button and leave introActive stuck, so no villager ever arrives.
+  const r = await startCloud(p.id, { onReplace: () => { if (!document.getElementById('farm')) return; if (introActive) intro(); else farm(); } });
   if (r.legacy && p.role === 'child') {
     const ay = Object.keys(r.legacy.ay || {}).length, solved = Object.keys(r.legacy.solved || {}).length;
     const f = $(`<div class="frame"><h2 style="margin:0 0 6px">Pakai progres lama di perangkat ini?</h2>
