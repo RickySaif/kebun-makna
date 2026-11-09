@@ -58,7 +58,7 @@ Beta: https://rickysaif.github.io/kebun-makna/beta/ · Classic (live, untouched)
 Phase 8 (akhlak arc after Al-Fil + boss4).
 
 ## Needs applying
-- `supabase/migrations/20261109060000_groups_fix_progress_admin.sql`: fixes the groups/group_members RLS recursion (currently every select 500s), adds `groups.weekly_goal` and the owner update policy, `group_progress(g)`, and `admin_link_payment(payment_id, family_code)`. After applying it, run `beta/tests/phase6-groups.mjs`.
+(none; `20261109060000_groups_fix_progress_admin` applied 2026-11-09 by the local session, with `admin_link_payment` changed to accept family names via `resolve_family`)
 
 ## Decisions made (assumed)
 Ricky can overrule any of these.

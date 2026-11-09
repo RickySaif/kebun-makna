@@ -58,12 +58,11 @@ grant execute on function public.group_progress(uuid) to authenticated;
 -- ===== 4. admin: unmatched payments + manual link =====
 create or replace function public.admin_link_payment(payment_id bigint, family_code text) returns void
 language plpgsql security definer set search_path = public as $$
-declare pid uuid; c text;
+declare pid uuid;
 begin
   if not public.is_admin() then raise exception 'Hanya admin' using errcode = 'P0001'; end if;
-  c := upper(regexp_replace(btrim(family_code), '^KM-?', '', 'i'));
-  select parent_id into pid from families where code = c;
-  if pid is null then raise exception 'Kode keluarga tidak ditemukan' using errcode = 'P0001'; end if;
+  pid := public.resolve_family(family_code);  -- family name or legacy KM code
+  if pid is null then raise exception 'Nama keluarga tidak ditemukan' using errcode = 'P0001'; end if;
   update payments set parent_id = pid where id = payment_id;
   if not found then raise exception 'Pembayaran tidak ditemukan' using errcode = 'P0001'; end if;
   perform public.recompute_supporter_tier(pid);
