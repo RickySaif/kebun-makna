@@ -25,6 +25,7 @@ export async function newPage(label) {
   page.errors = [];
   page.on('console', m => { if (m.type() === 'error') page.errors.push(`[${label}] ${m.text()}`); });
   page.on('pageerror', e => page.errors.push(`[${label}] PAGEERROR ${e.message}`));
+  page.on('response', r => { if (r.status() >= 500) page.errors.push(`[${label}] HTTP ${r.status()} ${r.request().method()} ${r.url().slice(0, 160)}`); });
   await page.addInitScript(INIT);
   return page;
 }

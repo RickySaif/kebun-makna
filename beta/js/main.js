@@ -61,6 +61,7 @@ function bootGuest() {
 
 async function bootPlayer(p) {
   mode = p.role === 'parent' ? 'player' : 'child';
+  if (p.role === 'child') addTabs('kebun');
   root.replaceChildren($(`<div class="title"><h1>Kebun Makna</h1><p>Memuat kebunmu…</p></div>`));
   const r = await startCloud(p.id, { onReplace: () => { if (document.getElementById('farm')) farm(); } });
   if (r.legacy && p.role === 'child') {
@@ -84,6 +85,7 @@ async function bootPlayer(p) {
 
 async function showParent() {
   mode = 'parent';
+  addTabs('ortu');
   const { parentDashboard } = await import('./ortu.js');
   parentDashboard({
     onLogout: () => { location.hash = ''; location.reload(); },
@@ -102,6 +104,9 @@ async function route() {
     try { const c = await sb(); const { data: { session: s } } = await c.auth.getSession(); if (s) { session.user = s.user; p = cachedProfile(); if (p && p.id !== s.user.id) p = null; session.profile = p; } } catch (e2) {}
   }
   if (h.startsWith('#/tamu')) return bootGuest();
+  const soc = h.match(/^#\/(beranda|profil|grup|kunjungi|lomba)(?:\/([^/]+))?/);
+  if (soc && p) return socialRoute(soc[1], soc[2]);
+  if (soc && !p) { mode = 'start'; return guestNudge(); }
   if (p && p.role === 'parent') return h.startsWith('#/main') ? bootPlayer(p) : showParent();
   if (p && p.role === 'child') return bootPlayer(p);
   if (h.startsWith('#/ortu')) { mode = 'start'; return parentLogin(handlers); }
@@ -110,8 +115,31 @@ async function route() {
   startScreen(handlers);
 }
 
-// switching sections reloads the page: simplest way to reset the game loop and module state
-window.addEventListener('hashchange', () => { if (mode && mode !== 'start') location.reload(); });
+async function socialRoute(kind, arg) {
+  mode = 'social';
+  const m = await import('./social.js');
+  if (kind === 'beranda') return m.feedPage(arg || 'ikuti');
+  if (kind === 'profil') return m.profilePage(arg);
+  if (kind === 'grup') { const g = await import('./groups.js'); return g.groupsPage(arg); }
+  if (kind === 'kunjungi') { const v = await import('./visit.js'); return v.visitPage(arg); }
+  if (kind === 'lomba') { const r = await import('./pvp.js'); return r.racePage(arg); }
+}
+function guestNudge() {
+  root.replaceChildren($(`<div class="dash"><h2>Beranda</h2><div class="frame"><p>Beranda, kunjungan kebun dan grup hanya untuk pemain yang punya akun keluarga. Minta Ayah/Ibu membuat akun, lalu masuk dengan kode keluarga dan PIN.</p><a class="btn green" href="#">Ke halaman awal</a></div></div>`));
+}
+function addTabs(active) {
+  import('./social.js').then(m => { document.body.append(m.tabBar(active)); document.body.classList.add('has-tabs'); });
+}
+
+// Switching between social pages happens in place; any switch into or out of the game or dashboard reloads
+// the page, the simplest reliable way to reset the game loop and module state.
+const SOCIAL = /^#\/(beranda|profil|grup|kunjungi|lomba)/;
+window.addEventListener('hashchange', () => {
+  if (!mode || mode === 'start') return;
+  if (mode === 'social' && SOCIAL.test(location.hash)) { route(); return; }
+  if (mode === 'child' || mode === 'player') { flushNow(); setTimeout(() => location.reload(), 300); return; }
+  location.reload();
+});
 
 (async () => {
   try {
