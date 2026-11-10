@@ -29,7 +29,7 @@ export function chase(){
     const sc=2.6; const tx=Math.round((st.tX-cam)*sc), pxp=Math.round((st.pX-cam)*sc);
     const fr=Math.floor(t/120)%2;
     if(tx<W+10){ drawKid(c,tx,58,0,f4(),THIEF.look,3); px(c,tx+9,61,6,6,'#E8D6A8'); px(c,tx+10,60,4,1,'#C9A465'); }
-    else { px(c,W-14,58,12,10,'#F4B400'); c.fillStyle='#2B1D12'; c.font='8px monospace'; c.fillText('→',W-11,66); }
+    else { px(c,W-14,58,12,10,'#F4B400'); c.fillStyle='#2B1D12'; c.font='bold 8px "Fredoka",sans-serif'; c.fillText('→',W-11,66); }
     drawKid(c,pxp,58,S.avatar,(st.boost>0.2||st.started)?f4():0,null,3);
     if(st.boost>1.5){px(c,pxp-6,62,4,1,'#fff');px(c,pxp-8,65,5,1,'#fff');}
     if(st.stumble>0){px(c,pxp+4,52,4,4,'#F4B400');}

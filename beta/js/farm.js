@@ -140,8 +140,8 @@ window.addEventListener('resize',fitCanvas); window.addEventListener('km-gfx',()
 let fxSeed=7; const fxRnd=()=>(fxSeed=(fxSeed*16807)%2147483647)/2147483647; // own generator: effects must not consume the game's Math.random
 function puff(x,y,n,col,up){ if(parts.length>60) return; for(let i=0;i<n;i++) parts.push({x:x+fxRnd()*4-2,y:y+fxRnd()*2,vx:(fxRnd()-.5)*.012,vy:up?-.012-fxRnd()*.008:-.004,life:0,max:up?1600:420,col,s:up?2:1.5}); }
 function tag(c,X,Y,w,text,dark,light,t){ const b=Math.sin(t/260)>0?0:.5; c.fillStyle=dark; c.fillRect(X+.5,Y+b,w-1,9); c.fillRect(X,Y+b+.5,w,8); c.fillRect(X+w/2-2,Y+b+9,4,1); c.fillRect(X+w/2-1,Y+b+10,2,1);
-  c.fillStyle=light; c.fillRect(X+1,Y+b+1,w-2,7); c.fillStyle='#fff'; c.font='bold 6.5px "Pixelify Sans",monospace'; c.textAlign='center'; c.textBaseline='middle'; c.fillText(text,X+w/2,Y+b+4.8); c.textAlign='left'; c.textBaseline='alphabetic'; }
-function board(c,X,Y,w,text){ px(c,X,Y,w,14,'#6E4426'); px(c,X+1,Y+1,w-2,12,'#C98A52'); px(c,X+1,Y+1,w-2,1.5,'#E3A96C'); px(c,X+4,Y+14,2,4,'#6E4426'); px(c,X+w-6,Y+14,2,4,'#6E4426'); c.fillStyle='#2B1D12'; c.font='bold 6.5px "Pixelify Sans",monospace'; c.textAlign='center'; c.textBaseline='middle'; c.fillText(text,X+w/2,Y+7.5); c.textAlign='left'; c.textBaseline='alphabetic'; }
+  c.fillStyle=light; c.fillRect(X+1,Y+b+1,w-2,7); c.fillStyle='#fff'; c.font='bold 6.5px "Fredoka",sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText(text,X+w/2,Y+b+4.8); c.textAlign='left'; c.textBaseline='alphabetic'; }
+function board(c,X,Y,w,text){ px(c,X,Y,w,14,'#6E4426'); px(c,X+1,Y+1,w-2,12,'#C98A52'); px(c,X+1,Y+1,w-2,1.5,'#E3A96C'); px(c,X+4,Y+14,2,4,'#6E4426'); px(c,X+w-6,Y+14,2,4,'#6E4426'); c.fillStyle='#2B1D12'; c.font='bold 6.5px "Fredoka",sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText(text,X+w/2,Y+7.5); c.textAlign='left'; c.textBaseline='alphabetic'; }
 export function draw(t){
   const c=ctx, k=cv._k||2, VW=VC*T, VH=VR*T;
   const tx=me.fx*T+8-VW/2, ty=me.fy*T+8-VH/2;
