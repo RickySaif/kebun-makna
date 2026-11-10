@@ -141,3 +141,10 @@ export async function logActivity(kind, detail = {}) {
     if (error) { pending.unshift(...rows); }
   } catch (e) { /* keep queued */ }
 }
+
+// v3: the player's own look (packed integer). The column grant already lets a user update their own avatar.
+export async function updateMyAvatar(avatar) {
+  if (!session.user || !session.profile) return;
+  const c = await sb(); const { error } = await c.from('profiles').update({ avatar }).eq('id', session.user.id);
+  if (!error) session.profile.avatar = avatar;
+}

@@ -2,9 +2,9 @@
 import { $, esc, root, toast } from './ui.js';
 import { DATA, BY, HOUSE_TIERS } from './data.js';
 import { levelOf } from './progress.js';
-import { AVATARS } from './render.js';
 import { sb, session, friendly, normFamily, familyCreate, familySetPin, familyDelete, signOut } from './api.js';
 import { avatarCanvas } from './account.js';
+import { avatarBuilder } from './avatar.js';
 import { badgeFor, loadTiers, fmtDate } from './badges.js';
 
 const TOTAL_AYAT = DATA.reduce((s, x) => s + x.ayat.length, 0);
@@ -180,15 +180,10 @@ function addKidForm(h) {
   let av = 0;
   const f = $(`<div class="frame" style="margin-bottom:12px"><b style="font-size:18px">➕ Tambah anak</b>
     <div class="field"><label for="kn">Nama panggilan</label><input id="kn" maxlength="40" autocomplete="off" placeholder="mis. Amtar"></div>
-    <b>Tokoh</b><div class="avatars" style="margin:8px 0 10px"></div>
+    <b>Tokoh</b> <span class="small">(anak bisa mengubahnya sendiri nanti)</span><div class="avatars" style="margin:8px 0 10px"></div>
     <div class="field"><label for="kp">PIN untuk anak (4–6 angka)</label><input id="kp" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></div>
     <button class="btn green block" id="add">Buat akun anak</button><p class="err" id="err"></p></div>`);
-  const avs = f.querySelector('.avatars');
-  AVATARS.forEach((A, i) => {
-    const b = $(`<button class="av${i === av ? ' on' : ''}"><span>${esc(A.name)}</span></button>`); b.prepend(avatarCanvas(i));
-    b.onclick = () => { av = i; avs.querySelectorAll('.av').forEach(x => x.classList.remove('on')); b.classList.add('on'); };
-    avs.append(b);
-  });
+  f.querySelector('.avatars').replaceWith(avatarBuilder(0, v => { av = v; }));
   f.querySelector('#add').onclick = async () => {
     const name = f.querySelector('#kn').value.trim(), pin = f.querySelector('#kp').value.trim(), err = f.querySelector('#err');
     if (!name) { err.textContent = 'Nama wajib diisi.'; return; }

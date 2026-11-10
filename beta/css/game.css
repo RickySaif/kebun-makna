@@ -215,3 +215,72 @@ td.ar{font-size:24px;text-align:right;white-space:nowrap}
 .aytile .pl{flex:none;width:44px;border:3px solid var(--ink);border-radius:4px;background:#8CC8F5;font-weight:700}
 .aytile .tx{flex:1;text-align:right;font-size:22px;line-height:1.8;padding:4px 10px;border:3px solid var(--ink);border-radius:4px;background:#fff;box-shadow:0 3px 0 var(--ink)}
 .aytile.used{opacity:.25;pointer-events:none}
+
+/* ===== v3 visual pass: richer frames, buttons, HUD; avatar builder. Only cheap properties (no blur, no backdrop-filter),
+   animations use transform/opacity only, so mid-range Android phones stay smooth. ===== */
+body{background:#3A8A3C;background-image:
+  radial-gradient(circle at 20% 30%,rgba(255,255,255,.07) 2px,transparent 2.5px),
+  radial-gradient(circle at 70% 75%,rgba(0,0,0,.06) 2px,transparent 2.5px),
+  linear-gradient(to bottom,#5BB5E8 0,#9EDCF8 150px,#74C365 300px,#3A8A3C 560px);
+  background-size:14px 14px,18px 18px,100% 100%;background-repeat:repeat,repeat,no-repeat}
+.frame{background:linear-gradient(to bottom,#FFFAEA,var(--paper) 40%);border:3px solid var(--ink);border-radius:10px;
+  box-shadow:inset 0 0 0 2px #fff,inset 0 0 0 4px var(--paper-d),0 4px 0 #1f140b,0 7px 0 rgba(0,0,0,.22);padding:14px 16px}
+.btn{border-radius:10px;background:linear-gradient(to bottom,#FFD23F,var(--gold));box-shadow:inset 0 2px 0 rgba(255,255,255,.55),inset 0 -3px 0 rgba(0,0,0,.14),0 4px 0 var(--ink);
+  transition:transform .06s,box-shadow .06s;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.btn:active{transform:translateY(3px);box-shadow:inset 0 2px 0 rgba(255,255,255,.4),0 1px 0 var(--ink)}
+.btn.green{background:linear-gradient(to bottom,#93E374,#6CC74E)}.btn.blue{background:linear-gradient(to bottom,#A6D8FA,#7DBEF0)}.btn.ghost{background:linear-gradient(to bottom,#fff,var(--paper))}
+.btn[disabled]{background:#CFC3A3;box-shadow:0 2px 0 #7D6E55}
+.hud .chip,.clock{border-radius:999px;border-width:2px;background:linear-gradient(to bottom,#fff,var(--paper));box-shadow:0 3px 0 rgba(0,0,0,.35);padding:3px 10px}
+.hud .chip img{width:18px;height:18px;image-rendering:auto}
+.hud .grow{font-size:19px;letter-spacing:.3px}
+.hud .icon{border-radius:12px;width:42px;height:42px}
+.lvchip{border-radius:12px!important}
+.minibar{border-radius:3px;overflow:hidden}
+.stage{border:3px solid var(--ink);border-radius:12px;background:#74C365;
+  box-shadow:0 0 0 3px #B5793C,0 0 0 5px #6E4426,0 0 0 7px var(--ink),0 12px 0 rgba(0,0,0,.25);margin:9px 7px 14px}
+canvas#farm{image-rendering:auto}
+.mg{image-rendering:auto;border-width:3px;border-radius:12px}
+.dialog{min-height:124px}
+.dialog .portrait{width:72px;height:72px;border-radius:12px;box-shadow:0 3px 0 rgba(0,0,0,.25)}
+.dialog .who{font-size:16px;letter-spacing:.3px}
+.vbar .track{border-width:2px;border-radius:999px;height:13px}
+.vbar .fillb{background:linear-gradient(to bottom,#A5EE8A,#6CC74E);border-radius:999px}
+.panel{background-image:linear-gradient(to bottom,#6FC3EE 0,#B6E6FA 45%,#CDEFC0 60%,#A5DD95 100%)}
+.pbody{animation:fadein .16s ease-out}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.card,.chip2,.tile,.opt,.item,.box,.bk,.orow,.aytile .tx,.aytile .pl,.qayah,.av,.pinpad button{border-radius:10px}
+.card,.chip2,.tile,.opt{transition:transform .06s}
+.card:active,.chip2:active,.tile:active,.opt:active,.av:active{transform:translateY(2px)}
+.item img{image-rendering:auto}
+.title h1{font-size:46px;transform:rotate(-1.5deg);animation:titlein .5s ease-out}
+@keyframes titlein{from{transform:translateY(-14px) rotate(-1.5deg);opacity:0}to{transform:rotate(-1.5deg);opacity:1}}
+.toast{border-radius:999px;padding:10px 18px;animation:toastin .2s ease-out}
+@keyframes toastin{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+.celebrate .frame{box-shadow:inset 0 0 0 2px #fff,inset 0 0 0 4px var(--gold),0 5px 0 #1f140b,0 0 0 6px rgba(255,224,122,.35)}
+.sleepfade{background:linear-gradient(to bottom,#0B1020,#1B2450)}
+/* avatars */
+.av canvas{width:66px;height:96px;image-rendering:pixelated}
+.avb{display:grid;gap:10px}
+.avb-top{display:flex;gap:12px;align-items:stretch}
+.avb-prev{flex:none;width:118px;height:150px;border:3px solid var(--ink);border-radius:12px;display:grid;place-items:center;
+  background:linear-gradient(to bottom,#9EDCF8 0 58%,#8AD277 58% 100%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.6)}
+.avb-prev canvas{width:91px;height:133px;image-rendering:pixelated}
+.avb-side{flex:1;min-width:0;display:grid;gap:8px;align-content:center}
+.seg{display:flex;gap:6px}.seg.wrap{flex-wrap:wrap}
+.seg button{flex:1;min-height:40px;padding:6px 8px;border:2px solid var(--ink);border-radius:10px;background:#fff;font-weight:700;font-size:14px;white-space:nowrap;box-shadow:0 2px 0 var(--ink)}
+.seg button.on{background:var(--gold)}
+.avb-rows{display:grid;gap:8px}
+.avb-row{display:grid;gap:4px;font-size:14px;font-weight:700}
+.avb-row .seg.wrap{display:grid;grid-template-columns:1fr 1fr}
+.sws{display:flex;gap:6px;flex-wrap:wrap}
+.sws button{width:30px;height:30px;border-radius:50%;border:2px solid var(--ink);box-shadow:0 2px 0 rgba(0,0,0,.3);padding:0}
+.sws button.on{outline:3px solid var(--gold);outline-offset:2px;transform:scale(1.08)}
+.eyesopt{border-top:2px dashed var(--paper-d);padding-top:8px}
+.eyesopt .toggle{margin-top:0;font-size:16px}
+.eyesopt .toggle input{width:26px;height:26px;flex:none}
+.eyesopt .small{margin:4px 0 0;color:var(--ink-soft)}
+.eyesframe{margin-top:12px;display:flex;gap:10px;align-items:center;padding:10px 12px}
+.eyesframe .pv{flex:none;display:flex;gap:2px}.eyesframe .pv canvas{image-rendering:pixelated}
+.eyesframe .eyesopt{border:0;padding:0;flex:1}
+.box .eyesopt{border:0;padding:0}
+.hud{gap:6px}.hud .grow{font-size:17px}.hud .icon{width:38px;height:38px;font-size:17px}.hud .chip{padding:3px 8px}

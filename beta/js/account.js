@@ -1,6 +1,6 @@
 // account.js — start screen: parent email/Google login, child family name → avatar → PIN, guest mode.
 import { $, esc, root } from './ui.js';
-import { AVATARS, drawKid } from './render.js';
+import { avatarCanvas, eyesToggle } from './avatar.js';
 import { sb, session, friendly, childList, childSignIn, loadProfile, normFamily, isFamilyName, renderGoogleButton } from './api.js';
 
 const LAST_CODE = 'kebun-makna-last-family';
@@ -10,12 +10,7 @@ const setLastCode = c => { try { localStorage.setItem(LAST_CODE, c); } catch (e)
 export const rememberGuest = on => { try { on ? localStorage.setItem(MODE, 'guest') : localStorage.removeItem(MODE); } catch (e) {} };
 export const isRememberedGuest = () => { try { return localStorage.getItem(MODE) === 'guest'; } catch (e) { return false; } };
 
-export function avatarCanvas(av, scale = 1) {
-  const cv = document.createElement('canvas'); cv.width = 12; cv.height = 16;
-  drawKid(cv.getContext('2d'), 0, 0, (av | 0) % AVATARS.length, 0, null);
-  if (scale !== 1) { cv.style.width = 12 * 6 * scale + 'px'; cv.style.height = 16 * 6 * scale + 'px'; }
-  return cv;
-}
+export { avatarCanvas };
 
 const title = sub => $(`<div class="title"><h1>Kebun Makna</h1><p>${esc(sub)}</p></div>`);
 const busy = (btn, on, label) => { btn.disabled = on; if (label) btn.innerHTML = on ? '<span class="spinner"></span>' : esc(label); };
@@ -32,7 +27,8 @@ export function startScreen(h) {
   f.querySelector('#kid').onclick = () => childStart(h);
   f.querySelector('#ortu').onclick = () => parentLogin(h);
   f.querySelector('#guest').onclick = () => { rememberGuest(true); h.guest(); };
-  root.append(f, $(`<p class="start-note">Akun dibuat oleh orang tua. Anak masuk dengan kode keluarga dan PIN, tanpa email.</p>`));
+  const eo = $(`<div class="frame eyesframe"><div class="pv"></div></div>`); eo.querySelector('.pv').append(avatarCanvas(0, .5), avatarCanvas(1, .5)); eo.append(eyesToggle());
+  root.append(f, eo, $(`<p class="start-note">Akun dibuat oleh orang tua. Anak masuk dengan kode keluarga dan PIN, tanpa email.</p>`));
 }
 
 // ---------- child ----------

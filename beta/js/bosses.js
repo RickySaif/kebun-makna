@@ -5,6 +5,8 @@ import { dialog, farm } from './farm.js';
 import { celebrate, makeQ, renderQ } from './lesson.js';
 import { addXP, repXP } from './progress.js';
 import { ICON, SPOT, drawHut, drawKid, drawTree, giverNo, px } from './render.js';
+import { hdCanvas, lookOf } from './art.js';
+const f4=()=>Math.floor(performance.now()/110)%4; // v3: 4-step walk cycle
 import { S, lv, save } from './state.js';
 import { $, closePanel, comboPop, panel, pick } from './ui.js';
 
@@ -15,7 +17,7 @@ export function chase(){
   const body=pn.querySelector('.pbody');
   const W=192,H=88;
   const v=$(`<div><canvas class="mg" width="${W}" height="${H}"></canvas><div class="mgbar"><span>Jarak: <span id="gap">25</span> m</span><span>⏱ <span id="tm">100</span></span></div><div class="frame"><div class="qh"></div></div></div>`);
-  body.append(v); const c=v.querySelector('canvas').getContext('2d'); c.imageSmoothingEnabled=false;
+  body.append(v); const c=hdCanvas(v.querySelector('canvas'),W,H);
   let st={pX:0,tX:25,boost:0,stumble:0,time:100,over:false,streak:0,started:false};
   const thiefV=1.05, baseV=0.75;
   let last=performance.now(), rid;
@@ -26,9 +28,9 @@ export function chase(){
     px(c,0,66,W,14,'#D9B77A'); for(let i=-1;i<14;i++){const x=Math.round(i*16-((cam*4)%16));px(c,x,72,6,1,'#C9A465');}
     const sc=2.6; const tx=Math.round((st.tX-cam)*sc), pxp=Math.round((st.pX-cam)*sc);
     const fr=Math.floor(t/120)%2;
-    if(tx<W+10){ drawKid(c,tx,58,0,fr,THIEF.look); px(c,tx+9,61,6,6,'#E8D6A8'); px(c,tx+10,60,4,1,'#C9A465'); }
+    if(tx<W+10){ drawKid(c,tx,58,0,f4(),THIEF.look,3); px(c,tx+9,61,6,6,'#E8D6A8'); px(c,tx+10,60,4,1,'#C9A465'); }
     else { px(c,W-14,58,12,10,'#F4B400'); c.fillStyle='#2B1D12'; c.font='8px monospace'; c.fillText('→',W-11,66); }
-    drawKid(c,pxp,58,S.avatar,(st.boost>0.2||st.started)?fr:0,null);
+    drawKid(c,pxp,58,S.avatar,(st.boost>0.2||st.started)?f4():0,null,3);
     if(st.boost>1.5){px(c,pxp-6,62,4,1,'#fff');px(c,pxp-8,65,5,1,'#fff');}
     if(st.stumble>0){px(c,pxp+4,52,4,4,'#F4B400');}
   }
@@ -63,9 +65,9 @@ export function race(){
   const body=pn.querySelector('.pbody');
   const W=192,H=104;
   const v=$(`<div><canvas class="mg" width="${W}" height="${H}"></canvas><div class="mgbar"><span>Posisi: <span id="pos">-</span></span><span>⏱ <span id="tm">0</span></span></div><div class="frame"><div class="qh"></div></div></div>`);
-  body.append(v); const c=v.querySelector('canvas').getContext('2d'); c.imageSmoothingEnabled=false;
+  body.append(v); const c=hdCanvas(v.querySelector('canvas'),W,H);
   const L=100;
-  const cars=[{name:S.name,col:S.avatar?'#E56B8A':'#3A78C9',x:0,v:0,me:true},{name:'Bima',col:'#E0702F',x:0,v:1.55+Math.random()*.15},{name:'Dodi',col:'#3A9D6A',x:0,v:1.75+Math.random()*.15},{name:'Tono',col:'#B8862B',x:0,v:1.95+Math.random()*.15}];
+  const cars=[{name:S.name,col:lookOf(S.avatar).shirt,x:0,v:0,me:true},{name:'Bima',col:'#E0702F',x:0,v:1.55+Math.random()*.15},{name:'Dodi',col:'#3A9D6A',x:0,v:1.75+Math.random()*.15},{name:'Tono',col:'#B8862B',x:0,v:1.95+Math.random()*.15}];
   let boost=0, started=false, over=false, time=0, finish=[], streak=0, last=performance.now(), rid;
   function car(X,Y,col,t,moving){ const b=moving&&Math.floor(t/100)%2?1:0; px(c,X,Y+3-b,16,6,col); px(c,X+3,Y-b,8,4,col); px(c,X+4,Y+1-b,5,2,'#BFE7FA'); px(c,X+1,Y+8,4,4,'#2B1D12'); px(c,X+11,Y+8,4,4,'#2B1D12'); px(c,X+2,Y+9,2,2,'#9A9A9A'); px(c,X+12,Y+9,2,2,'#9A9A9A'); px(c,X+15,Y+4-b,1,2,'#FFE07A'); }
   function drawScene(t){
@@ -108,7 +110,7 @@ export function cartGame(){
   const body=pn.querySelector('.pbody');
   const W=192,H=88;
   const v=$(`<div><canvas class="mg" width="${W}" height="${H}"></canvas><div class="mgbar"><span>Bekal: <span id="bk">5</span>/5</span><span>Rintangan: <span id="ob">0</span>/8</span></div><div class="frame"><div class="qh"></div></div></div>`);
-  body.append(v); const c=v.querySelector('canvas').getContext('2d'); c.imageSmoothingEnabled=false;
+  body.append(v); const c=hdCanvas(v.querySelector('canvas'),W,H);
   const N=8, GAP=6, SPEED=0.9, CARTX=46, SC=16;
   const obs=Array.from({length:N},(_,i)=>({x:6+i*GAP,kind:i%3===1?'hole':'rock',state:'open'}));
   let st={x:0,bekal:5,pause:0,jump:0,over:false,started:false,cur:0,passed:0}, last=performance.now(), rid;
@@ -130,7 +132,7 @@ export function cartGame(){
       if(o.state==='ok'){px(c,ox+3,58,4,4,'#7CD35E');} });
     const jy=st.jump>0?-Math.round(Math.sin((1-st.jump/0.6)*Math.PI)*12):0;
     const fr=Math.floor(t/140)%2;
-    drawCart(CARTX-24,54+jy,st.bekal); drawKid(c,CARTX,58+jy,S.avatar,st.pause>0?0:fr,null);
+    drawCart(CARTX-24,54+jy,st.bekal); drawKid(c,CARTX,58+jy,S.avatar,st.pause>0?0:f4(),null,3);
     if(st.pause>0){px(c,CARTX+4,50,4,4,'#F4B400');}
   }
   function nextQuestion(){ if(st.over) return; const o=obs.find(o=>o.state==='open'); if(!o){ v.querySelector('.qh').innerHTML='<div class="qprompt"><div class="lead">Hampir sampai!</div></div>'; return; }
@@ -175,7 +177,7 @@ export function pestGame(){
   const body=pn.querySelector('.pbody');
   const W=192,H=112, LANES=5, LY=i=>14+i*19, PLANTX=10, TOTAL=12;
   const v=$(`<div><canvas class="mg" width="${W}" height="${H}"></canvas><div class="mgbar"><span>Tanaman selamat: <span id="pl">5</span>/5</span><span>Ulat: <span id="ul">0</span>/${TOTAL}</span></div><div class="frame"><div class="qh"></div></div></div>`);
-  body.append(v); const c=v.querySelector('canvas').getContext('2d'); c.imageSmoothingEnabled=false;
+  body.append(v); const c=hdCanvas(v.querySelector('canvas'),W,H);
   const plants=Array.from({length:LANES},()=>({hp:3}));
   let worms=[], birds=[], spawned=0, cleared=0, nextSpawn=1.5, over=false, started=false, streak=0, last=performance.now(), rid, time=0;
   function drawPlant(X,Y,hp){ if(hp<=0){px(c,X+5,Y+8,3,4,'#6E4426');return;} px(c,X+6,Y+4,2,9,'#3E8E35'); if(hp>=1)px(c,X+1,Y+6,5,4,'#5DBB4A'); if(hp>=2)px(c,X+8,Y+5,5,4,'#5DBB4A'); if(hp>=3)px(c,X+3,Y,7,5,'#4CA63C'); }

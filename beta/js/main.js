@@ -4,7 +4,9 @@ import { checkSurahLevels } from './progress.js';
 import { S, save } from './state.js';
 import { $, esc, root, toast } from './ui.js';
 import { hooks } from './hooks.js';
-import { sb, session, loadProfile, signOut } from './api.js';
+import { sb, session, loadProfile, signOut, updateMyAvatar } from './api.js';
+import { eyesOff, eyesChosen, setEyesOff, gfxLite, setGfxLite } from './art.js';
+import { eyesToggle } from './avatar.js';
 import { startScreen, parentLogin, newPasswordScreen, rememberGuest, isRememberedGuest } from './account.js';
 import { startCloud, importLegacy, flushNow } from './cloud.js';
 import { settingsBox } from './recite.js';
@@ -46,9 +48,22 @@ function accountBox(box) {
     box.prepend(b);
   }
 }
-hooks.atur = box => { accountBox(box); box.prepend(settingsBox()); };
+// v3: display choices. "Tanpa mata" is a device choice that also rides along in the save, so a new device picks it up.
+function displayBox() {
+  const b = $(`<div class="box"><h3>Tampilan</h3><div class="eo"></div>
+    <label class="toggle"><input type="checkbox" id="lite" ${gfxLite() ? 'checked' : ''}> Grafik hemat (untuk HP yang terasa berat)</label>
+    <p class="small" style="margin:6px 0 0">Tokohmu bisa diubah lewat tombol "Ganti nama/tokoh" di bawah.</p></div>`);
+  b.querySelector('.eo').append(eyesToggle(false));
+  b.querySelector('#lite').onchange = e => setGfxLite(e.target.checked);
+  return b;
+}
+const inGame = () => mode === 'guest' || mode === 'child' || mode === 'player';
+window.addEventListener('km-eyes', () => { if (inGame() && S.name && S.noEyes !== eyesOff()) { S.noEyes = eyesOff(); save(); } });
+window.addEventListener('km-avatar', () => { if (eyesChosen() && S.noEyes !== eyesOff()) { S.noEyes = eyesOff(); save(); } if (mode === 'child' || mode === 'player') updateMyAvatar(S.avatar | 0).catch(() => {}); });
+hooks.atur = box => { accountBox(box); box.prepend(settingsBox()); box.prepend(displayBox()); };
 
 function bootGame() {
+  if (!eyesChosen() && typeof S.noEyes === 'boolean') setEyesOff(S.noEyes, false); // adopt the account's choice on a new device
   migrate();
   import('./akhlak.js').then(m => m.installAkhlak()).catch(() => {}); // next chapter, only after boss4 + 10 surahs
   if (!S.name) onboarding(); else farm();
@@ -95,7 +110,8 @@ async function bootPlayer(p) {
   // friends' waterings and salam since the last visit (Phase 4)
   try { const v = await import('./visit.js'); const { note } = await import('./progress.js'); await v.applyVisits(note); } catch (e) {}
   if (!S.name) {
-    S.name = String(p.display_name || '').slice(0, 16); S.avatar = (p.avatar | 0) % 2;
+    S.name = String(p.display_name || '').slice(0, 16); S.avatar = p.avatar | 0;
+    if (!eyesChosen() && typeof S.noEyes === 'boolean') setEyesOff(S.noEyes, false);
     migrate(); save(); intro();
   } else bootGame();
 }

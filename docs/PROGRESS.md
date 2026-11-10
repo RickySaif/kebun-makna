@@ -2,6 +2,18 @@
 
 Beta: https://rickysaif.github.io/kebun-makna/beta/ · Classic (live, untouched): https://rickysaif.github.io/kebun-makna/
 
+## 2026-11-10 — v3 visual pass + player avatar (local Claude session)
+
+- **New art, same game.** Every farm sprite is redrawn in code at double detail (trees, hedges, gates, fence, the three house levels, villager huts, shop, well, sign, chest, trophies, soil, all 10 crops at 5 stages) with automatic outlines, shading and drop shadows. Paths have soft edges; grass has patches, tufts and flowers. Map layout, collisions, quests, lessons and bosses are untouched (`render.js` map logic is still verbatim).
+- **People:** a new character generator with 4 facing directions and a 4-step walk. Villagers keep their colours and hats; Kakek Umar gets a beard. Dialog portraits are now head-and-shoulders.
+- **Player avatar builder** (`js/avatar.js`): boy/girl, 4 skin tones, 4 hair or jilbab styles, 8 hair/jilbab colours, 8 shirt/gamis colours, 4 trouser/skirt colours, peci or flower pin, and a random button. It appears in the guest onboarding, in ⚙ → "Ganti nama/tokoh", and in the parent's "Tambah anak" form. The look is packed into the existing `avatar` integer (bit 14 marks a custom look; 0 and 1 are still Rafi and Aisyah), so **no migration is needed** and friends see it in the feed, groups, races and visits.
+- **"Gambar tokoh tanpa mata"** toggle on the start screen, in the avatar builder and in ⚙ → Tampilan. It removes only the eyes (mouth, cheeks and the rest stay) on every character: player, villagers, portraits, boss games, avatars in social pages. Stored per device (`kebun-makna-noeyes`) and copied into the save (`S.noEyes`) so a new device picks it up.
+- **Light and life:** windows and lamps glow at night, chimney smoke, footstep dust, butterflies by day, fireflies at night, drifting cloud shadows, a tap marker showing where you will walk.
+- **UI:** rounder frames and buttons with highlights, pill HUD chips, a wooden frame around the farm, sky-to-grass page background, short fade-ins. No blur or backdrop filters.
+- **Performance (mid-range Android):** sprites are baked once into offscreen canvases; the ground is one cached image; a frame is about 60 `drawImage` calls for what is on screen. The farm stops drawing while a lesson, shop or boss panel covers it. Movement speed now follows real time (same speed on 60 Hz and 120 Hz screens). If frames stay slow, the canvas resolution steps down automatically (6× → 4× → 2×) and then the ambient effects switch off; ⚙ → Tampilan → "Grafik hemat" forces that.
+- **Verified:** `node --check` on all modules; `phase0-playthrough.mjs` still passes (An-Nas on root vs beta, same 43 steps, **save byte-identical**, 0 console errors in beta); new `beta/tests/v3-visuals.mjs` passes (eyes toggle persists and changes only the eye pixels, the builder packs the look, `draw()` costs 0.45 ms per frame under a 4× CPU throttle at 1152×1056, no console errors). Screens checked by screenshot at 390×844: start, onboarding, farm (home, east, far, village, night, fresh save), boss 1 and 3.
+- **Not verified:** the account-backed screens (parent "Tambah anak" form, a child saving a new look to `profiles.avatar`, avatars in feed/groups/race) were not run this session because the test parent credentials were not available; they only passed syntax checks. Not yet tried on a real Android phone.
+
 ## 2026-11-09 — Phases 0–8 shipped (autonomous Claude session)
 
 ### Phase 0 — monolith split (done)
@@ -95,6 +107,12 @@ Ricky can overrule any of these.
 - **Family names replace KM codes everywhere in the UI** (Ricky). Child login has one field, "Nama keluarga" (placeholder "contoh: saif"), lowercased as you type and remembered per device; a remembered legacy code still works. The dashboard shows the name prominently with Salin and Ganti (live availability check, debounced 350 ms). Spouse invites take the family name. Accepting asks you to pick one of the two names (radio), and explains that the other is released. The support page shows `#name` with copy; admin links payments by family name.
 - **Google sign-in uses Google Identity Services** (the official button, popup, hashed nonce → `signInWithIdToken`). `signInWithOAuth` is removed. The button shows only when Supabase reports the Google provider enabled and the GIS script loads; otherwise the email login stays alone. Reason: Google's chooser then shows Kebun Makna / rickysaif.github.io instead of supabase.co.
 
+- **v3 art stays pixel art, drawn in code** (no image files). Reason: keeps the Harvest Moon look, no build step, nothing to download, and it can be baked for speed.
+- **Custom avatars reuse the `avatar` smallint** (14 bits + a flag). Reason: no schema change; older clients just show Rafi or Aisyah.
+- **"Tanpa mata" is one switch for all characters on the device**, not per character. Reason: it is a family's choice about pictures in general. Face emoji in buttons (🧒, 👨‍👩‍👧) are left as they are.
+- **Girls can pick jilbab (two lengths) or hair (kuncir dua, rambut panjang).** Reason: young girls dress both ways; jilbab is the default.
+- **The lesson "celebrate" burst and boss-game backgrounds keep the classic blocky look**; only the people, trees and huts in them are new. Reason: scope; they can follow later.
+
 ## Decisions from Ricky
 - **Supporter badges are monthly (rolling 30 days)** (Ricky). Trakteer has no auto-recurring billing, so a badge is active for 30 days after the latest payment and then stays visible but greyed out ("tidak aktif"). Tier = household support in the last 30 days, with 🌟 above Rp310.000 getting a multiplier rounded down to 1 decimal (465k = 1,5🌟, 620k = 2🌟): 🌱 15k · 🌳 50k · 🏡 150k · 🌟 310k. The parent dashboard nudges 5 days before expiry and after it lapses. Test: `beta/tests/phase7b-monthly-badge.mjs` (BADGE_STATE=active|lapsed).
 - An ustaz reviews the whole beta (including all religious content) before cutover. There's no pending/approved gating. Every story that relies on a hadith or ayah cites real `sources` ids, listed in `docs/CONTENT_REVIEW.md`.
@@ -104,5 +122,6 @@ Ricky can overrule any of these.
 ## How to run the tests
 Serve the repo root (`python3 -m http.server 8765`). In a scratch folder with `playwright@1.57.0` and `@supabase/supabase-js@2.45.4` installed (the tests use the system Chrome via `channel: 'chrome'`), copy `beta/tests/*.mjs` there and run them with `KM_EMAIL=… KM_PASS=…` (the test parent account; never commit its credentials). Each test creates its own `Uji …` children and deletes them at the end.
 - `node check-syntax.mjs <repo>/beta`: runs `node --check` on every module.
+- `v3-visuals.mjs` (no backend): avatar builder, eyes toggle, draw cost.
 - `phase0-playthrough.mjs` (root vs beta, no backend) · `phase1-accounts` · `phase1b-parent` · `phase1c-google` (needs `BASE=https://rickysaif.github.io/kebun-makna`, because GIS only renders on the authorized origin) · `phase2-recite` (needs `recite.wav` = `ffmpeg -i audio/a/114001.mp3 -af apad=pad_dur=2.5 -ar 16000 -ac 1 recite.wav` and `silence.wav` = `ffmpeg -f lavfi -i anullsrc=r=16000:cl=mono -t 10 silence.wav`; downloads the real model) · `phase3-feed` · `phase4-visit` · `phase5-race` · `phase6-groups` · `phase7-support` · `phase8-akhlak` (`CONTENT=<repo>/content/akhlak`).
 - Last full run (2026-11-09): all pass.
