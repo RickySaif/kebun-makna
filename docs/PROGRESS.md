@@ -2,6 +2,16 @@
 
 Beta: https://rickysaif.github.io/kebun-makna/beta/ · Classic (live, untouched): https://rickysaif.github.io/kebun-makna/
 
+## 2026-11-10 (later) — Word audio boundaries re-checked for all 201 words
+
+- **Problem (Ricky):** a word card sometimes played only part of its word, and the rest played on the next card. Example: 114:1 "aʿūdhu" played "aʿū", and the "dhu" played on "birabbi".
+- **Cause:** the word clips were cut at hand-placed boundaries. 67 of the 201 clips had an edge in the wrong place by more than 80 ms: inside a syllable (114:1 "dhu"), inside a hiss (the "sh" of "sharri", the "kh" of "khalaqa"), or in the middle of a long vowel.
+- **What I did:** checked all 153 word boundaries in all 48 ayat. Compared the old boundaries with Quran.com's word timings for the same Alafasy recording (same files, same length). 64 boundaries agree within 80 ms. The other 89 were checked one by one on a spectrogram. Neither source is reliable alone: Quran.com often gives the tail of a long vowel to the next word (for example "yadā | abī"), and the old cuts often fall inside a syllable. Then re-cut all clips from our own `audio/a/` recordings into `beta/audio/w/`. The ayah highlight timings (`beta/js/wordcuts.js`) use the same boundaries. The live `audio/` folder is untouched.
+- **Files:** `beta/tools/word-boundaries.json` (the reviewed boundaries), `beta/tools/recut-words.mjs` (re-cuts everything), `beta/tools/audio-analysis.mjs`, `beta/tests/word-audio.mjs`, `docs/WORD_AUDIO.md` (old vs new table for every word, and the rules used), `beta/cek-audio.html` (a page to listen to every word, new next to old).
+- **Verified:** `word-audio.mjs` (every clip exists, matches its planned length, the clips of an ayah add up to the ayah, and the reported 114:1 word is now 0.83 s instead of 0.66 s); the first-surah playthrough still ends with a save identical to the classic game; the beta loads the new clips.
+- **Not verified:** I cannot listen. Everything was judged from signal analysis and spectrograms. **Ricky or the ustaz should listen** with `beta/cek-audio.html`, especially the yellow ayat (105:4, 105:5, 106:4, 107:4, 111:5), where a nasal hum joins two words and the exact split is a judgement call.
+- **At cutover:** the beta now loads `beta/audio/w/<id>.mp3`. When beta replaces the root, move that folder to `audio/w/` and delete the old `_r2` clips there; the classic game keeps using the old clips until then.
+
 ## 2026-11-10 — v3 visual pass + player avatar (local Claude session)
 
 - **New art, same game.** Every farm sprite is redrawn in code at double detail (trees, hedges, gates, fence, the three house levels, villager huts, shop, well, sign, chest, trophies, soil, all 10 crops at 5 stages) with automatic outlines, shading and drop shadows. Paths have soft edges; grass has patches, tufts and flowers. Map layout, collisions, quests, lessons and bosses are untouched (`render.js` map logic is still verbatim).
@@ -124,5 +134,6 @@ Ricky can overrule any of these.
 Serve the repo root (`python3 -m http.server 8765`). In a scratch folder with `playwright@1.57.0` and `@supabase/supabase-js@2.45.4` installed (the tests use the system Chrome via `channel: 'chrome'`), copy `beta/tests/*.mjs` there and run them with `KM_EMAIL=… KM_PASS=…` (the test parent account; never commit its credentials). Each test creates its own `Uji …` children and deletes them at the end.
 - `node check-syntax.mjs <repo>/beta`: runs `node --check` on every module.
 - `v3-visuals.mjs` (no backend): avatar builder, eyes toggle, draw cost.
+- `word-audio.mjs` (no backend, repo root): word clips exist, match their planned length, add up to the ayah.
 - `phase0-playthrough.mjs` (root vs beta, no backend) · `phase1-accounts` · `phase1b-parent` · `phase1c-google` (needs `BASE=https://rickysaif.github.io/kebun-makna`, because GIS only renders on the authorized origin) · `phase2-recite` (needs `recite.wav` = `ffmpeg -i audio/a/114001.mp3 -af apad=pad_dur=2.5 -ar 16000 -ac 1 recite.wav` and `silence.wav` = `ffmpeg -f lavfi -i anullsrc=r=16000:cl=mono -t 10 silence.wav`; downloads the real model) · `phase3-feed` · `phase4-visit` · `phase5-race` · `phase6-groups` · `phase7-support` · `phase8-akhlak` (`CONTENT=<repo>/content/akhlak`).
 - Last full run (2026-11-09): all pass.

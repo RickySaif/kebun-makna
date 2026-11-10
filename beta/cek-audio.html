@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cek audio kata (beta)</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Scheherazade+New:wght@400;700&display=swap">
+<style>
+  body{margin:0;background:#FFF6DC;color:#2B1D12;font:16px/1.5 Fredoka,system-ui,sans-serif}
+  main{max-width:640px;margin:0 auto;padding:14px 14px 60px}
+  h1{font-size:22px;margin:6px 0}h2{font-size:19px;margin:26px 0 6px;border-bottom:3px solid #2B1D12}
+  .note{background:#fff;border:2px solid #2B1D12;border-radius:10px;padding:8px 12px;font-size:14px}
+  .ay{background:#fff;border:2px solid #2B1D12;border-radius:10px;padding:10px;margin:10px 0}
+  .ay.warn{background:#FFF1B8}.ay>b{font-size:14px}
+  .tr{font-size:13px;color:#6A4E36;margin:2px 0 8px}
+  .ws{display:flex;flex-wrap:wrap;gap:8px;direction:rtl}
+  .w{direction:ltr;border:2px solid #2B1D12;border-radius:10px;background:#E4F7D8;padding:4px 8px;text-align:center;min-width:84px}
+  .w button{font:inherit;cursor:pointer;border:0;background:none;display:block;width:100%;padding:2px}
+  .w .ar{font-family:'Scheherazade New',serif;font-size:28px;line-height:1.5;direction:rtl}
+  .w small{display:block;color:#6A4E36;font-size:12px}
+  .w .old{font-size:12px;color:#8A5A33;text-decoration:underline}
+  .play{margin-top:8px;font:inherit;cursor:pointer;border:2px solid #2B1D12;border-radius:8px;background:#8CC8F5;padding:3px 10px}
+  .now{outline:3px solid #F4B400}
+</style>
+</head>
+<body><main>
+<h1>Cek audio kata</h1>
+<p class="note">Ketuk kata untuk mendengar potongan baru. "Dengar yang lama" memutar potongan lama (versi game klasik) sebagai pembanding. Ayat berlatar kuning adalah yang paling perlu didengar dengan teliti karena ada dengung (ghunnah) yang menyambung dua kata. Rincian: <code>docs/WORD_AUDIO.md</code>.</p>
+<div id="out"></div>
+<script type="module">
+import { DATA, REV, AW, AA } from './js/data.js';
+const WARN = new Set(['105:4','105:5','106:4','111:5','107:4']);
+const player = new Audio(); let timer = 0;
+const play = (src, el, ms) => { clearTimeout(timer); player.pause(); document.querySelectorAll('.now').forEach(x => x.classList.remove('now')); player.src = src; player.currentTime = 0; el && el.classList.add('now'); player.play().catch(() => {}); player.onended = () => el && el.classList.remove('now'); };
+const out = document.getElementById('out');
+for (const s of DATA) {
+  const h = document.createElement('h2'); h.textContent = `Surat ${s.name} (${s.no})`; out.append(h);
+  for (const a of s.ayat) {
+    const key = `${s.no}:${a.n}`, d = document.createElement('div'); d.className = 'ay' + (WARN.has(key) ? ' warn' : '');
+    d.innerHTML = `<b>Ayat ${a.n}</b><div class="tr"></div><div class="ws"></div><button class="play">▶ Putar ayat utuh</button>`;
+    d.querySelector('.tr').textContent = a.tr;
+    const ws = d.querySelector('.ws');
+    a.w.forEach((w, k) => {
+      const c = document.createElement('div'); c.className = 'w';
+      c.innerHTML = `<button class="new"><span class="ar" lang="ar"></span><small></small></button><button class="old">Dengar yang lama</button>`;
+      c.querySelector('.ar').textContent = w.ar; c.querySelector('small').textContent = `${w.id} · ${((a.t[k + 1] - a.t[k]) / 1000).toFixed(2)} dtk`;
+      c.querySelector('.new').onclick = () => play(AW(w.a), c);
+      c.querySelector('.old').onclick = () => play(`../audio/w/${w.a}${REV[w.a] ? '_' + REV[w.a] : ''}.mp3`, c);
+      ws.append(c);
+    });
+    d.querySelector('.play').onclick = () => play(AA(a.a), null);
+    out.append(d);
+  }
+}
+</script>
+</main></body></html>
