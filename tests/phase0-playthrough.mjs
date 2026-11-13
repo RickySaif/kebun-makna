@@ -1,4 +1,4 @@
-// Phase 0 acceptance: drive a full first-surah (An-Nas) playthrough on the classic game (/classic/) and the new game (/),
+// Drive a full first-surah (An-Nas) playthrough of the game (originally also compared with the single-file game, removed 2026-11-13),
 // with seeded Math.random and instant audio, and compare the screen trace + final save.
 import { chromium } from 'playwright';
 import { noModel, startGuest } from './lib.mjs';
@@ -99,6 +99,8 @@ async function run(url, label) {
       if (st.bs.length) {
         log('DLG ' + st.who + ' [' + st.bs.join('/') + ']');
         // full text before advancing so the trace is stable
+        // a celebration pop-up (level up, note) can open on top of the dialog at the same moment: close it first
+        if (await page.$('.celebrate:not(.askparent) button')) { await page.click('.celebrate:not(.askparent) button'); continue; }
         await page.locator('#dlg button').first().click();
         continue;
       }
@@ -123,7 +125,7 @@ async function run(url, label) {
 }
 
 const results = {};
-for (const [label, url] of [['root', BASE + '/classic/index.html'], ['beta', BASE + '/index.html']]) { // 'root' = the classic game (now /classic/), 'beta' = the new game (now /)
+for (const [label, url] of [['beta', BASE + '/index.html']]) { // the original game was removed 2026-11-13: only the playthrough of the game itself is left
   if (only && only !== label) continue;
   results[label] = await run(url, label);
   console.log(`== ${label}: done=${results[label].done} steps=${results[label].trace.length} errors=${results[label].errors.length}`);

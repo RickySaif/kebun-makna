@@ -1,6 +1,10 @@
 # Progress
 
-Live: https://km.generasimerdeka.com/ · Original game: https://km.generasimerdeka.com/classic/ · (old address https://rickysaif.github.io/kebun-makna/ redirects)
+Live: https://km.generasimerdeka.com/ · (old address https://rickysaif.github.io/kebun-makna/ redirects)
+
+## 2026-11-13 — Original game removed (Ricky: "Delete the classic game")
+- `classic/` (the single-file game and its old word clips) is deleted; it is in git history before this commit. `tests/phase0-playthrough.mjs` now only plays the game through (no comparison).
+- The old address rickysaif.github.io/kebun-makna is redirected by `index.html` itself (GitHub Pages kept serving it after the custom domain was attached).
 
 ## 2026-11-13 (late night) — Cutover: the new game is the main game at km.generasimerdeka.com
 - Ricky: "the recitation feature is good enough"; Google Cloud (authorized JavaScript origin) and Supabase (Site URL / Redirect URLs) updated by Ricky; DNS `km CNAME rickysaif.github.io` set.
