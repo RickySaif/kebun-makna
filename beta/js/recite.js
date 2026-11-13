@@ -1,12 +1,12 @@
-// recite.js — on-device recitation recognition (Whisper, transformers.js) and the "Sekarang kamu yang baca" gate.
+// recite.js — on-device recitation recognition (Whisper, transformers.js) and the reading-practice pages in each lesson.
 // Model: tarteel-ai whisper-base-ar-quran (ONNX). Profiles and session options come from tes-whisper.html.
-import { $, esc, toast } from './ui.js';
+import { $, esc } from './ui.js';
 import { S, save } from './state.js';
-import { sfx, voice, play, stopAudio } from './audio.js';
+import { sfx, play, stopAudio } from './audio.js';
 import { AA, AW } from './data.js';
-import { check } from './match.js';
+import { check, checkWord, weight } from './match.js';
 import { RECITE, TRANSFORMERS_ESM, FLAGS } from './config.js';
-import { sb, session, logActivity } from './api.js';
+import { logActivity } from './api.js';
 import { hooks } from './hooks.js';
 
 // One model for everyone (Ricky, 2026-11-13): q4 (~140 MB). Tested on all 48 ayat of Alafasy: the larger fp32-encoder build
@@ -90,7 +90,7 @@ function voicedSeconds(pcm) {
  * or at RECITE.maxMs. Returns { pcm, dur } at 16 kHz mono. ui.onLevel(0..1), ui.stopper(fn) lets the caller stop early.
  */
 export async function record(ui = {}) {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } });
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
   const AC = window.AudioContext || window.webkitAudioContext; const ac = new AC();
   const srcNode = ac.createMediaStreamSource(stream); const an = ac.createAnalyser(); an.fftSize = 1024; srcNode.connect(an);
   const buf = new Float32Array(an.fftSize);
@@ -124,148 +124,131 @@ export async function transcribe(pcm) {
   return (out.text || '').trim();
 }
 
-// ---------------- parent override ----------------
-/** Ask a grown-up to confirm. Signed-in child: parent override PIN (server). Guest: a grown-up question. */
-export function askParent(reason) {
-  return new Promise(resolve => {
-    const guest = !session.user;
-    const a = 6 + Math.floor(Math.random() * 4), b = 6 + Math.floor(Math.random() * 4);
-    const ov = $(`<div class="celebrate askparent"><div class="frame" style="max-width:360px;width:100%">
-      <b style="font-size:20px">🔐 Untuk Ayah/Ibu</b><p class="small" style="margin:6px 0 10px">${esc(reason)}</p>
-      ${guest ? `<label class="field"><span>Berapa ${a} × ${b}?</span><input id="pp" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off"></label>`
-        : `<label class="field"><span>PIN orang tua</span><input id="pp" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></label>`}
-      <div class="row"><button class="btn green" id="ok">Konfirmasi</button><button class="btn ghost" id="no">Batal</button></div><p class="err" id="err"></p></div></div>`);
-    const err = ov.querySelector('#err');
-    const done = v => { ov.remove(); resolve(v); };
-    ov.querySelector('#no').onclick = () => done(false);
-    ov.querySelector('#ok').onclick = async () => {
-      const v = ov.querySelector('#pp').value.trim();
-      if (guest) { if (+v === a * b) done(true); else err.textContent = 'Belum tepat.'; return; }
-      if (!/^[0-9]{4,6}$/.test(v)) { err.textContent = 'PIN 4–6 angka.'; return; }
-      try {
-        const c = await sb(); const { data, error } = await c.rpc('verify_parent_pin', { pin: v });
-        if (error) throw error;
-        if (data === 'ok') done(true);
-        else if (data === 'locked') err.textContent = 'Terlalu banyak salah. Tunggu 10 menit.';
-        else if (data === 'unset') err.textContent = 'PIN orang tua belum diatur. Atur dulu di Halaman Orang Tua.';
-        else err.textContent = 'PIN salah.';
-      } catch (e) { err.textContent = 'Tidak bisa mengecek PIN (cek internet).'; }
+// ---------------- reading practice (never a requirement) ----------------
+// After Kenali: each word. After Cocokkan: parts of 2–3 words. After Susun: the whole ayah.
+// Every try shows "Ketepatan" (share of meaning letters read right) and the words coloured; "Lanjut" always works.
+const COL = { ok: '#BFF0B0', bad: '#F8B9A6', miss: '#E6E0D2' };
+
+/** Split an ayah's words into parts of 2–3 words (one part when the ayah has 3 words or fewer). */
+export function parts(words) {
+  const n = words.length, k = Math.ceil(n / 3); if (k <= 1) return [words];
+  const out = []; let i = 0;
+  for (let p = 0; p < k; p++) { const size = Math.round((n - i) / (k - p)); out.push(words.slice(i, i + size)); i += size; }
+  return out;
+}
+const verdict = acc => acc >= 0.9 ? 'MasyaAllah, jelas sekali!' : acc >= 0.7 ? 'Bagus! Perhatikan kata yang merah, lalu coba lagi kalau mau.'
+  : acc > 0 ? 'Ayo coba lagi pelan-pelan. Dengarkan dulu kata yang merah.' : 'Belum terdengar. Dengarkan dulu, lalu baca pelan-pelan.';
+
+/**
+ * Show one practice page per item (an item = an array of word objects from a.w) and call next() after the last one.
+ * kind: 'kata' | 'bagian' | 'ayat' (used in the title and the activity log).
+ */
+function practice({ body, s, a, items, kind, next }) {
+  let idx = 0, unsub = () => {};
+  const done = () => { unsub(); stopAudio(); next(); };
+  const show = () => {
+    unsub(); stopAudio();
+    const words = items[idx], isLast = idx === items.length - 1;
+    const title = kind === 'kata' ? 'Ayo baca kata ini' : kind === 'bagian' ? 'Ayo baca bagian ini' : 'Sekarang baca satu ayat';
+    const count = items.length > 1 ? `<p class="small" style="margin:0 0 6px">${kind === 'kata' ? 'Kata' : 'Bagian'} ${idx + 1} dari ${items.length}</p>` : '';
+    const v = $(`<div class="frame practice"><h2>${title}</h2>${count}
+      <p class="lead">Dengarkan, lalu ketuk mikrofon dan baca dengan suaramu. Ini latihan: kamu boleh lanjut kapan saja.</p>
+      <div class="ayahbig ar" lang="ar"></div>
+      ${kind === 'kata' ? `<p class="small" style="text-align:center;margin:4px 0 0">${esc(words[0].emo || '')} ${esc(words[0].id)}</p>` : ''}
+      <div class="acc" style="text-align:center;font-weight:700;font-size:20px;min-height:28px;margin-top:6px"></div>
+      <div class="fb" aria-live="polite"></div>
+      <div class="row" style="margin-top:10px"><button class="btn blue" id="hear">▶ Dengar</button><button class="btn green" id="mic" style="flex:1">🎙️ Baca</button></div>
+      <div class="minibar" style="margin-top:8px;height:8px;background:#E8DDBF;border:2px solid var(--ink);border-radius:4px;overflow:hidden"><div id="lvl" style="height:100%;width:0;background:#7CD35E"></div></div>
+      <button class="btn block" id="next" style="margin-top:14px">${isLast ? 'Lanjut ▸' : (kind === 'kata' ? 'Kata berikutnya ▸' : 'Bagian berikutnya ▸')}</button></div>`);
+    const box = v.querySelector('.ayahbig'), fb = v.querySelector('.fb'), mic = v.querySelector('#mic'), lvl = v.querySelector('#lvl'), accEl = v.querySelector('.acc');
+    let busy = false, stopFn = null, tries = 0;
+    const paint = res => box.replaceChildren(...words.flatMap((w, i) => {
+      const sp = $(`<span role="button" tabindex="0">${esc(w.ar)}</span>`);
+      sp.style.cursor = 'pointer';
+      sp.onclick = () => { stopAudio(); play(AW(w.a)); };
+      if (res) { const st = res[i].st; sp.style.borderRadius = '4px'; sp.style.padding = '0 3px'; sp.style.background = COL[st]; if (st !== 'ok') sp.style.textDecoration = 'underline wavy #C0392B'; }
+      return i ? [document.createTextNode(' '), sp] : [sp];
+    }));
+    paint(null);
+    const hear = async () => { stopAudio(); if (kind === 'ayat') return play(AA(a.a)); for (const w of words) { if (!v.isConnected) return; await play(AW(w.a)); } };
+    v.querySelector('#hear').onclick = hear;
+    v.querySelector('#next').onclick = () => { if (stopFn) stopFn(); idx++; if (idx < items.length) show(); else done(); };
+    unsub = onModel(m => {
+      if (busy) return;
+      if (m.status === 'ready') { if (mic.disabled) { mic.disabled = false; if (!tries) { fb.className = 'fb'; fb.textContent = ''; } } v.querySelector('#retry')?.remove(); return; }
+      mic.disabled = true;
+      if (m.status === 'error') {
+        fb.className = 'fb bad'; fb.textContent = 'Pengenal bacaan belum bisa diunduh (cek internet). Kamu tetap bisa lanjut.';
+        if (!v.querySelector('#retry')) { const r = $(`<button class="btn ghost block" id="retry" style="margin-top:8px">🔄 Coba unduh lagi</button>`); r.onclick = () => { r.remove(); loadModel().catch(() => {}); }; fb.after(r); }
+      } else { fb.className = 'fb'; fb.textContent = `Menyiapkan pengenal bacaan… ${modelPct()}% (sekali saja). Sambil menunggu, dengarkan dulu.`; }
+    });
+    mic.onclick = async () => {
+      if (busy) { stopFn && stopFn(); return; }
+      stopAudio(); busy = true; stopFn = null;
+      mic.textContent = '⏹️ Selesai'; fb.className = 'fb'; fb.textContent = 'Mendengarkan… silakan baca.'; accEl.textContent = '';
+      const restore = () => { busy = false; stopFn = null; mic.textContent = '🎙️ Baca lagi'; mic.disabled = false; };
+      let rec;
+      try { rec = await record({ onLevel: x => { lvl.style.width = Math.round(x * 100) + '%'; }, stopper: f => stopFn = f }); }
+      catch (e) {
+        restore();
+        fb.className = 'fb bad'; fb.textContent = e && e.name === 'NotAllowedError' ? 'Mikrofon belum diizinkan. Izinkan mikrofon untuk halaman ini di pengaturan browser. Kamu tetap bisa lanjut.' : 'Mikrofon tidak bisa dipakai: ' + (e.message || e);
+        return;
+      }
+      lvl.style.width = '0';
+      if (!v.isConnected) return;
+      if (voicedSeconds(rec.pcm) < (kind === 'kata' ? 0.25 : 0.6)) { restore(); fb.className = 'fb bad'; fb.textContent = 'Tidak ada suara yang terdengar. Dekatkan HP ke mulut dan coba lagi.'; return; }
+      mic.disabled = true; mic.textContent = '⏳ Memeriksa…'; fb.textContent = 'Sebentar, sedang mendengarkan bacaanmu…';
+      const t0 = performance.now(); let text = '';
+      try { text = await transcribe(rec.pcm); }
+      catch (e) { restore(); fb.className = 'fb bad'; fb.textContent = 'Gagal memeriksa: ' + String(e.message || e).slice(0, 120); return; }
+      if (!v.isConnected) return;
+      const ms = Math.round(performance.now() - t0), r = words.length === 1 ? checkWord(words[0].ar, text) : check(words.map(w => w.ar), text), pct = Math.round(r.acc * 100);
+      tries++; restore(); v.dataset.heard = text; // what the model heard (tests and debugging)
+      // A very short word read on its own (مَا, مِنْ, هُوَ …) is often not heard at all by the model, even from Alafasy.
+      // Don't show a false 0%: say it can't be scored here; it is scored inside the parts and the whole ayah.
+      const unsure = words.length === 1 && weight(words[0].ar) <= 2 && r.acc === 0;
+      if (unsure) {
+        paint(null); accEl.textContent = 'Kata pendek: belum bisa dinilai'; accEl.style.color = '#8A7A5A';
+        fb.className = 'fb'; fb.textContent = 'Pengenal bacaan sulit mendengar kata sependek ini. Dengarkan dan tirukan, lalu lanjut. Kata ini dinilai lagi saat membaca per bagian.';
+      } else {
+        paint(r.res);
+        accEl.textContent = `Ketepatan: ${pct}%`;
+        accEl.style.color = pct >= 90 ? 'var(--ok)' : pct >= 70 ? '#B7791F' : 'var(--no)';
+        fb.className = 'fb ' + (pct >= 90 ? 'good' : ''); fb.textContent = verdict(r.acc);
+        if (pct >= 90) sfx.fanfare(); else if (pct >= 70) sfx.good();
+      }
+      if (kind === 'ayat') { S.recited = S.recited || {}; S.recited[a.a] = true; save(); }
+      logActivity('recitation_try', { ayah: a.a, part: kind, words: words.map(w => w.a.slice(6)).join(','), score: unsure ? null : +r.acc.toFixed(2), ms, rec_s: +rec.dur.toFixed(1),
+        profile: 'q4', heard: text.slice(0, 120), wrong: r.res.filter(x => x.st !== 'ok').slice(0, 6).map(x => `${x.word}→${x.heard || '∅'}`) });
     };
-    document.body.append(ov);
-    setTimeout(() => { const i = ov.querySelector('#pp'); i && i.focus(); }, 50);
-  });
+    body.replaceChildren(v);
+  };
+  show();
 }
 
-// ---------------- the gate ----------------
-const COL = { ok: '#BFF0B0', bad: '#F8B9A6', miss: '#E6E0D2' };
-function gate({ body, bar, s, a, review, next }) {
+// after Kenali (step 1): each word · after Cocokkan (step 2): parts. Reviews skip these to stay short.
+hooks.afterStep = ({ n, body, bar, s, a, review, next }) => {
+  if (!FLAGS.recitationGate || review || (n !== 1 && n !== 2)) return next();
+  const items = n === 1 ? a.w.map(w => [w]) : parts(a.w);
+  // an ayah of 1 word has nothing new to practise in parts; the whole ayah comes after Susun
+  if (n === 2 && (a.w.length <= 1 || items.length === 1)) return next();
+  preloadModel();
+  [...bar.children].forEach((x, k) => x.className = k <= n ? 'past' : '');
+  practice({ body, s, a, items, kind: n === 1 ? 'kata' : 'bagian', next });
+};
+// after Susun: the whole ayah (on murajaah only if it was never read aloud before)
+hooks.afterAyah = ({ body, bar, s, a, review, next }) => {
   S.recited = S.recited || {};
-  // reviews of an ayah already recited don't need the gate again
   if (!FLAGS.recitationGate || (review && S.recited[a.a])) return next();
   preloadModel();
   [...bar.children].forEach(x => x.className = 'past');
-  let fails = 0, busy = false;
-  const words = a.w.map(w => w.ar);
-  const pass = () => { S.recited[a.a] = true; save(); unsub(); next(); };
-  const v = $(`<div class="frame"><h2>Sekarang kamu yang baca</h2>
-    <p class="lead">Baca ayat ini dengan suaramu. Ketuk tombol mikrofon, baca, lalu diam sebentar.</p>
-    <div class="ayahbig ar" lang="ar"></div>
-    <div class="fb" aria-live="polite"></div>
-    <div class="row" style="margin-top:10px"><button class="btn blue" id="hear">▶ Dengar dulu</button></div>
-    <button class="btn green block" id="mic" style="margin-top:12px;font-size:22px">🎙️ Mulai baca</button>
-    <div class="minibar" style="margin-top:8px;height:8px;background:#E8DDBF;border:2px solid var(--ink);border-radius:4px;overflow:hidden"><div id="lvl" style="height:100%;width:0;background:#7CD35E"></div></div>
-    <div id="extra"></div></div>`);
-  const box = v.querySelector('.ayahbig'), fb = v.querySelector('.fb'), mic = v.querySelector('#mic'), extra = v.querySelector('#extra'), lvl = v.querySelector('#lvl');
-  // tap a word to hear it (handy after a red word)
-  const paint = res => box.replaceChildren(...a.w.flatMap((w, i) => {
-    const sp = $(`<span role="button" tabindex="0">${esc(w.ar)}</span>`);
-    sp.style.cursor = 'pointer';
-    sp.onclick = () => { stopAudio(); play(AW(w.a)); };
-    if (res) { const st = res[i].st; sp.style.borderRadius = '4px'; sp.style.padding = '0 3px'; sp.style.background = COL[st]; if (st !== 'ok') sp.style.textDecoration = 'underline wavy #C0392B'; }
-    return i ? [document.createTextNode(' '), sp] : [sp];
-  }));
-  paint(null);
-  v.querySelector('#hear').onclick = () => { stopAudio(); play(AA(a.a)); };
-  const showParentBtn = () => {
-    if (extra.querySelector('#par')) return;
-    const b = $(`<button class="btn ghost block" id="par" style="margin-top:12px">🙋 Minta Ayah/Ibu dengar</button>`);
-    b.onclick = async () => {
-      stopAudio();
-      if (await askParent(`${S.name || 'Anak'} sudah mencoba membaca ${s.name} ayat ${a.n}. Konfirmasi kalau Ayah/Ibu sudah mendengarnya membaca dengan huruf yang benar.`)) {
-        logActivity('recitation_override', { ayah: a.a, fails, model: model.status });
-        toast('Alhamdulillah, Ayah/Ibu sudah mendengar!'); pass();
-      }
-    };
-    extra.append(b);
-  };
-  // model still downloading (it started when the game opened): show progress, enable the mic when ready
-  const unsub = onModel(m => {
-    if (v.dataset.seen && !v.isConnected) return unsub(); // the child left the lesson
-    if (v.isConnected) v.dataset.seen = '1';
-    if (busy) return;
-    if (m.status === 'ready') { if (mic.disabled && !mic.dataset.used) { mic.disabled = false; fb.className = 'fb'; fb.textContent = 'Siap! Ketuk mikrofon dan baca.'; } extra.querySelector('#retry')?.remove(); return; }
-    mic.disabled = true;
-    if (m.status === 'error') {
-      fb.className = 'fb bad'; fb.textContent = 'Pengenal bacaan belum bisa diunduh. Sambungkan ke internet (sebaiknya Wi-Fi), lalu coba lagi.';
-      if (!extra.querySelector('#retry')) {
-        const r = $(`<button class="btn block" id="retry" style="margin-top:10px">🔄 Coba unduh lagi</button>`);
-        r.onclick = () => { r.remove(); loadModel().catch(() => {}); };
-        extra.prepend(r);
-      }
-      showParentBtn();
-    } else { fb.className = 'fb'; fb.textContent = `Menyiapkan pengenal bacaan… ${modelPct()}% (sekali saja). Sambil menunggu, dengarkan ayatnya dulu.`; }
-  });
-  mic.onclick = async () => {
-    stopAudio();
-    busy = true; mic.dataset.used = '1';
-    let stopFn = null;
-    mic.textContent = '⏹️ Selesai membaca'; fb.className = 'fb'; fb.textContent = 'Mendengarkan… silakan baca.';
-    const listen = mic.onclick; mic.onclick = () => stopFn && stopFn();
-    const restore = () => { busy = false; mic.textContent = '🎙️ Baca lagi'; mic.disabled = false; mic.onclick = listen; };
-    let rec;
-    try { rec = await record({ onLevel: x => { lvl.style.width = Math.round(x * 100) + '%'; }, stopper: f => stopFn = f }); }
-    catch (e) {
-      restore();
-      fb.className = 'fb bad'; fb.textContent = e && e.name === 'NotAllowedError' ? 'Mikrofon belum diizinkan. Izinkan mikrofon untuk halaman ini di pengaturan browser, lalu coba lagi.' : 'Mikrofon tidak bisa dipakai: ' + (e.message || e);
-      showParentBtn(); return;
-    }
-    lvl.style.width = '0';
-    if (voicedSeconds(rec.pcm) < 0.6) { restore(); fb.className = 'fb bad'; fb.textContent = 'Tidak ada suara yang terdengar. Dekatkan HP ke mulut dan coba lagi.'; return; }
-    mic.disabled = true; mic.textContent = '⏳ Memeriksa bacaan…'; fb.textContent = 'Sebentar, sedang mendengarkan bacaanmu…';
-    const t0 = performance.now(); let text = '';
-    try { text = await transcribe(rec.pcm); }
-    catch (e) { restore(); fb.className = 'fb bad'; fb.textContent = 'Gagal memeriksa: ' + String(e.message || e).slice(0, 120); showParentBtn(); return; }
-    const ms = Math.round(performance.now() - t0);
-    const r = check(words, text);
-    paint(r.res);
-    const wrong = r.res.filter(x => x.st !== 'ok');
-    const detail = { ayah: a.a, score: +r.score.toFixed(2), ok: r.ok, bad: r.bad, miss: r.miss, ms, rec_s: +rec.dur.toFixed(1), profile: 'q4', heard: text.slice(0, 120),
-      wrong: wrong.slice(0, 6).map(x => `${x.word}→${x.heard || '∅'}`) };
-    if (wrong.length <= RECITE.maxWrong) {
-      logActivity('recitation_pass', detail);
-      sfx.fanfare(); voice('winner', 100);
-      fb.className = 'fb good'; fb.textContent = `MasyaAllah! Semua kata terbaca dengan huruf yang benar (${r.ok}/${words.length}).`;
-      busy = false; mic.textContent = 'Lanjut ▸'; mic.disabled = false; mic.onclick = () => pass();
-    } else {
-      fails++; logActivity('recitation_fail', detail);
-      sfx.bad(); restore();
-      fb.className = 'fb bad';
-      fb.textContent = r.bad
-        ? 'Hampir! Ada huruf yang berubah di kata yang merah, jadi artinya bisa berubah. Ketuk kata merah untuk mendengarnya, lalu baca lagi.'
-        : 'Hampir! Ada kata yang belum terdengar. Baca lagi pelan-pelan dan jelas, ya.';
-      const first = a.w[wrong[0].i];
-      setTimeout(() => { stopAudio(); play(first ? AW(first.a) : AA(a.a)); }, 600);
-      if (fails >= RECITE.failsBeforeParent) showParentBtn();
-    }
-  };
-  body.replaceChildren(v);
-}
-hooks.afterAyah = gate;
+  practice({ body, s, a, items: [a.w], kind: 'ayat', next });
+};
 
 // ---------------- settings box (⚙ → Pengaturan): status only, the download is automatic ----------------
 export function settingsBox() {
   const b = $(`<div class="box"><h3>🎙️ Pengenal bacaan</h3>
-    <p class="small" style="margin:0 0 8px">Setelah belajar arti ayat, anak membaca ayatnya dengan suara sendiri. Yang diperiksa: setiap huruf tetap benar, supaya artinya tidak berubah (misalnya قلب "hati" dan كلب "anjing"). Tajwid belum dinilai. Pengenal bacaan berjalan di perangkat ini (suara tidak dikirim ke internet) dan diunduh otomatis sekali (${MODEL_SIZE}) saat game dibuka.</p>
+    <p class="small" style="margin:0 0 8px">Saat belajar ayat, anak berlatih membaca: setiap kata, lalu per bagian, lalu satu ayat. Setiap percobaan menunjukkan <b>ketepatan</b>: berapa banyak huruf yang terbaca benar, supaya artinya tidak berubah (misalnya قلب "hati" dan كلب "anjing"). Tajwid belum dinilai. Ini latihan, bukan syarat untuk lanjut. Pengenal bacaan berjalan di perangkat ini (suara tidak dikirim ke internet) dan diunduh otomatis sekali (${MODEL_SIZE}) saat game dibuka.</p>
     <div id="rs" class="small" style="margin:6px 0"></div>
     <div class="minibar" style="height:10px;background:#E8DDBF;border:2px solid var(--ink);border-radius:4px;overflow:hidden;margin:6px 0"><div id="rbar" style="height:100%;width:0;background:#7CD35E"></div></div>
     <div class="row"><button class="btn" id="rdl" hidden>🔄 Coba unduh lagi</button></div></div>`);

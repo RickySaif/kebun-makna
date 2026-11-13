@@ -10,7 +10,7 @@ import { badgeFor, loadTiers, fmtDate } from './badges.js';
 const TOTAL_AYAT = DATA.reduce((s, x) => s + x.ayat.length, 0);
 const KIND = {
   login: '🔑 Masuk', ayah_done: '📖 Ayat selesai', surah_done: '🌟 Surat selesai', boss_done: '🏆 Game boss selesai',
-  review_done: '💧 Murajaah', recitation_pass: '🎙️ Bacaan lulus', recitation_fail: '🎙️ Bacaan belum lulus',
+  review_done: '💧 Murajaah', recitation_pass: '🎙️ Bacaan lulus', recitation_fail: '🎙️ Bacaan belum lulus', recitation_try: '🎙️ Latihan baca',
   parent_override: '🔓 Dibantu orang tua', post: '📝 Menulis kiriman', comment: '💬 Komentar', follow: '➕ Mengikuti',
   visit: '🏡 Berkunjung', import_device_progress: '📲 Pakai progres lama', water: '🌧️ Menyiram kebun teman', salam: '👋 Kirim salam',
   model_download: '⬇️ Unduh pengenal bacaan',
@@ -21,7 +21,7 @@ function describe(a) {
   if (a.kind === 'ayah_done' && d.ayah) { const s = BY[+String(d.ayah).slice(0, 3)]; return `${s ? s.name : ''} ayat ${+String(d.ayah).slice(3)}${d.stars ? ' · ' + '★'.repeat(d.stars) : ''}`; }
   if (a.kind === 'surah_done') return d.name || (BY[d.surah] || {}).name || '';
   if (a.kind === 'review_done') return (BY[d.surah] || {}).name || '';
-  if (a.kind.startsWith('recitation')) { const s = d.ayah ? BY[+String(d.ayah).slice(0, 3)] : null; return `${s ? s.name + ' ' + (+String(d.ayah).slice(3)) : ''} · skor ${Math.round((d.score || 0) * 100)}% · ${((d.ms || 0) / 1000).toFixed(1)} dtk${d.wrong && d.wrong.length ? ' · salah: ' + d.wrong.join(', ') : ''}`; }
+  if (a.kind.startsWith('recitation')) { const s = d.ayah ? BY[+String(d.ayah).slice(0, 3)] : null; return `${s ? s.name + ' ' + (+String(d.ayah).slice(3)) : ''}${d.part ? ' (' + d.part + (d.part === 'ayat' ? '' : ' ' + d.words) + ')' : ''} · ${d.score === null ? 'belum bisa dinilai' : (d.part ? 'ketepatan ' : 'skor ') + Math.round((d.score || 0) * 100) + '%'} · ${((d.ms || 0) / 1000).toFixed(1)} dtk${d.wrong && d.wrong.length ? ' · salah: ' + d.wrong.join(', ') : ''}`; }
   if (a.kind === 'boss_done') return `${d.boss || ''}${d.mode === 'pvp' ? ' (lomba teman)' : ''}`;
   return '';
 }

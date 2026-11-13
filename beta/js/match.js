@@ -36,37 +36,73 @@ export function letters(word) {
 }
 const plain = w => letters(w).map(x => x.c).join('');
 
-/** Weighted letter alignment. Returns { hard, cost }: hard = number of meaning-changing edits. */
-export function compare(expWord, heardWord) {
+/**
+ * Weighted letter alignment. Returns { hard, cost }: hard = number of meaning-changing edits.
+ * opts.freeStart / opts.freeEnd: letters heard before / after the word cost nothing. Used only at the edges of a
+ * reading: the model pads short recordings (سَيَدْخُلُونَ for يَدۡخُلُوۡنَ, رَبَّكَ for رَبَّ, كَبِأَصْحَابِ for بِاَصۡحٰبِ,
+ * even on Alafasy's own clips). A changed, missing or added letter INSIDE the word always counts.
+ */
+export function compare(expWord, heardWord, opts = {}) {
+  const atEnd = !!opts.freeEnd;
   const E = letters(expWord), H = letters(heardWord).map(x => ({ c: x.c, soft: SOFT.has(x.c) }));
+  // a word with tanwin read on its own is often heard with its "-n" written out (أحدٌ → أحدن): not an error
+  if (/[\u064B-\u064D]\s*$/.test(String(expWord)) && H.length && H[H.length - 1].c === 'ن') H[H.length - 1].soft = true;
+  // the last word of what was read, ending in a short vowel (اَعُوۡذُ): the model often writes the breath after the vowel
+  // as an extra ه (أعوذه). Only at the very end of the reading, and only if the word itself doesn't end in ه.
+  const lastE = E.length ? E[E.length - 1].c : '';
+  if (atEnd && /[\u064E-\u0650]\s*$/.test(String(expWord)) && lastE !== 'ه' && H.length > E.length && H[H.length - 1].c === 'ه') H[H.length - 1].soft = true;
   const n = E.length, m = H.length, EPS = 0.01;
   // D[i][j] = [hard, cost]; compare lexicographically on cost (hard edits weigh 1, soft ones EPS)
   const D = Array.from({ length: n + 1 }, () => Array(m + 1).fill(null));
   D[0][0] = [0, 0];
+  if (opts.freeStart) for (let j = 1; j <= m; j++) D[0][j] = [0, j * EPS / 10];
+  const endAt = [];
   const put = (i, j, h, c) => { const d = D[i][j]; if (!d || c < d[1]) D[i][j] = [h, c]; };
   for (let i = 0; i <= n; i++) for (let j = 0; j <= m; j++) {
     const d = D[i][j]; if (!d) continue;
-    if (i < n) { const hard = !E[i].soft; put(i + 1, j, d[0] + hard, d[1] + (hard ? 1 : EPS)); }
-    if (j < m) { const hard = !H[j].soft; put(i, j + 1, d[0] + hard, d[1] + (hard ? 1 : EPS)); }
+    // after skipping heard letters for free, the word's first letter must be read (aligned), not dropped
+    if (i < n && !(opts.freeStart && i === 0 && j > 0)) { const hard = !E[i].soft; put(i + 1, j, d[0] + hard, d[1] + (hard ? 1 : EPS)); }
+    if (j < m && !(opts.freeStart && i === 0)) { const hard = !H[j].soft; put(i, j + 1, d[0] + hard, d[1] + (hard ? 1 : EPS)); }
     if (i < n && j < m) {
-      const same = E[i].c === H[j].c, bothSoft = SOFT.has(E[i].c) && H[j].soft;
-      put(i + 1, j + 1, d[0] + (same || bothSoft ? 0 : 1), d[1] + (same ? 0 : bothSoft ? EPS : 1));
+      const same = E[i].c === H[j].c, bothSoft = SOFT.has(E[i].c) && SOFT.has(H[j].c);
+      const h = d[0] + (same || bothSoft ? 0 : 1), c = d[1] + (same ? 0 : bothSoft ? EPS : 1);
+      put(i + 1, j + 1, h, c);
+      // the word's last letter aligned with a heard letter: anything heard after it may be ignored (freeEnd)
+      if (i + 1 === n && (!endAt[j + 1] || c < endAt[j + 1][1])) endAt[j + 1] = [h, c];
     }
   }
-  const [hard, cost] = D[n][m];
-  return { hard, cost };
+  let best = D[n][m];
+  if (opts.freeEnd) for (let j = 1; j < m; j++) if (endAt[j] && endAt[j][1] + (m - j) * EPS / 10 < best[1]) best = [endAt[j][0], endAt[j][1] + (m - j) * EPS / 10];
+  return { hard: best[0], cost: best[1] };
 }
 
 /**
+ * One word read on its own (word pages). The model pads short recordings: it writes sounds before or after the word
+ * (وَشَرِّبْ for شَرِّ, يُكَذِّبُونَ for يُكَذِّبُ), so letters heard BEFORE or AFTER the word are ignored; a changed,
+ * missing or added letter INSIDE the word still counts. Returns the same shape as check() for one word.
+ */
+export function checkWord(word, heard) {
+  const h = String(heard).replace(/\s+/g, ''), L = weight(word);
+  const hard = plain(h) ? Math.min(compare(word, h, { freeStart: true, freeEnd: true }).hard, L) : L;
+  const st = !plain(h) ? 'miss' : hard ? 'bad' : 'ok';
+  return { res: [{ i: 0, word, heard: String(heard).trim(), st, hard }], ok: +(st === 'ok'), bad: +(st === 'bad'), miss: +(st === 'miss'), score: st === 'ok' ? 1 : 0, acc: Math.max(0, 1 - hard / L) };
+}
+
+/** Letters that carry the meaning (consonants), used as the weight of a word in the accuracy score. */
+export const weight = w => Math.max(1, letters(w).filter(x => !x.soft).length);
+
+/**
  * Align the ayah's words with the transcript (in order) and grade each word.
- * Returns { res:[{i, word, heard, st:'ok'|'bad'|'miss'}], ok, bad, miss, score }.
+ * Returns { res:[{i, word, heard, st:'ok'|'bad'|'miss', hard}], ok, bad, miss, score, acc }.
+ * acc = share of meaning letters read right (0..1): a missing word counts all its letters wrong, a wrong word its
+ * changed letters. This is the "Ketepatan" the child sees.
  * 'bad' = heard, but a letter changed (meaning may change). 'miss' = not heard at all.
  */
 export function check(expected, heard) {
   const R = String(heard).split(/\s+/).filter(w => plain(w));
   const n = expected.length, m = R.length, NEG = -1e9;
   // word-pair score: 1 for a perfect match, falling with hard edits (relative to word length)
-  const pair = (e, h) => { const { hard, cost } = compare(e, h); const L = Math.max(1, plain(e).length); return { hard, s: 1 - Math.min(1, cost / L) }; };
+  const pair = (e, h, start, end) => { const { hard, cost } = compare(e, h, { freeStart: start, freeEnd: end }); const L = Math.max(1, plain(e).length); return { hard, s: 1 - Math.min(1, cost / L) }; };
   const D = Array.from({ length: n + 1 }, () => Array(m + 1).fill(NEG)), B = Array.from({ length: n + 1 }, () => Array(m + 1).fill(null));
   D[0][0] = 0;
   const upd = (i, j, v, bk) => { if (v > D[i][j]) { D[i][j] = v; B[i][j] = bk; } };
@@ -74,19 +110,20 @@ export function check(expected, heard) {
     const v = D[i][j]; if (v === NEG) continue;
     if (i < n) upd(i + 1, j, v - 0.35, { t: 'miss', i, j });
     if (j < m) upd(i, j + 1, v - 0.15, { t: 'extra', i, j });
-    if (i < n && j < m) { const p = pair(expected[i], R[j]); upd(i + 1, j + 1, v + p.s - 0.5, { t: 'm', i, j, n: 1, hard: p.hard, h: R[j] }); }
+    if (i < n && j < m) { const p = pair(expected[i], R[j], i === 0 && j === 0, i === n - 1 && j === m - 1); upd(i + 1, j + 1, v + p.s - 0.5, { t: 'm', i, j, n: 1, hard: p.hard, h: R[j] }); }
     // one expected word heard as two (يايها → يا أيها)
-    if (i < n && j + 1 < m) { const p = pair(expected[i], R[j] + R[j + 1]); upd(i + 1, j + 2, v + p.s - 0.55, { t: 'm', i, j, n: 1, hard: p.hard, h: R[j] + ' ' + R[j + 1] }); }
+    if (i < n && j + 1 < m) { const p = pair(expected[i], R[j] + R[j + 1], i === 0 && j === 0, i === n - 1 && j + 1 === m - 1); upd(i + 1, j + 2, v + p.s - 0.55, { t: 'm', i, j, n: 1, hard: p.hard, h: R[j] + ' ' + R[j + 1] }); }
     // two expected words heard as one (برب الناس → بربناس)
-    if (i + 1 < n && j < m) { const p = pair(expected[i] + expected[i + 1], R[j]); if (p.hard === 0) upd(i + 2, j + 1, v + 2 * p.s - 1.05, { t: 'm', i, j, n: 2, hard: 0, h: R[j] }); }
+    if (i + 1 < n && j < m) { const p = pair(expected[i] + expected[i + 1], R[j], i === 0 && j === 0, i + 1 === n - 1 && j === m - 1); if (p.hard === 0) upd(i + 2, j + 1, v + 2 * p.s - 1.05, { t: 'm', i, j, n: 2, hard: 0, h: R[j] }); }
   }
-  const res = expected.map((w, i) => ({ i, word: w, heard: '', st: 'miss' }));
+  const res = expected.map((w, i) => ({ i, word: w, heard: '', st: 'miss', hard: weight(w) }));
   let i = n, j = m;
   while (i > 0 || j > 0) {
     const b = B[i][j]; if (!b) break;
-    if (b.t === 'm') for (let k = 0; k < b.n; k++) res[b.i + k] = { i: b.i + k, word: expected[b.i + k], heard: b.h, st: b.hard ? 'bad' : 'ok' };
+    if (b.t === 'm') for (let k = 0; k < b.n; k++) res[b.i + k] = { i: b.i + k, word: expected[b.i + k], heard: b.h, st: b.hard ? 'bad' : 'ok', hard: Math.min(b.hard, weight(expected[b.i + k])) };
     i = b.i; j = b.j;
   }
   const ok = res.filter(r => r.st === 'ok').length, bad = res.filter(r => r.st === 'bad').length;
-  return { res, ok, bad, miss: n - ok - bad, score: n ? ok / n : 0 };
+  const W = expected.reduce((t, w) => t + weight(w), 0), lost = res.reduce((t, r) => t + r.hard, 0);
+  return { res, ok, bad, miss: n - ok - bad, score: n ? ok / n : 0, acc: W ? Math.max(0, 1 - lost / W) : 0 };
 }

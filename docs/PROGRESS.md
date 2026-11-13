@@ -2,6 +2,16 @@
 
 Beta: https://rickysaif.github.io/kebun-makna/beta/ · Classic (live, untouched): https://rickysaif.github.io/kebun-makna/
 
+## 2026-11-13 (later) — Reading practice inside each lesson (never a requirement) + emoji in Buku Kata
+- **Flow (Ricky's choice):** Dengar → Kenali → **read each word** → Cocokkan → **read parts of 2–3 words** → Susun → **read the whole ayah** → celebration. Every page has ▶ Dengar, 🎙️ Baca and **Lanjut** (always works; nothing blocks). Reviews (murajaah) skip the word and part pages; the whole-ayah page shows on a review only if that ayah was never read aloud. The parent-PIN override is gone (nothing to override).
+- **Score shown to the child:** "Ketepatan: N%" = share of meaning letters (consonants) read right; red wavy words; tap any word to hear it. ≥90% "MasyaAllah, jelas sekali!", ≥70% "Bagus! …", else "Ayo coba lagi pelan-pelan …".
+- **Matcher changes (`match.js`):** letters heard before the first word / after the last word are ignored (the model pads short recordings, even Alafasy's: سَيَدْخُلُونَ, رَبَّكَ, كَبِأَصْحَابِ); a word's first and last letters must still line up, so a changed letter at the edge counts (اَرلّٰهُ, كل are still caught). Tanwin heard as ن is fine.
+- **Very short words read alone** (1–2 consonants: مَا, مِنْ, لَمْ, هُوَ, عَنْ, فِي) are often not heard at all by the model, even from Alafasy. When such a word scores 0% the page says "Kata pendek: belum bisa dinilai" instead of a false 0%; it is scored inside the parts and the whole ayah. Logged with `score: null`.
+- **Mic:** echo cancellation, noise suppression and auto gain are now OFF while recording. With them on, a'uzu (ذ→ز) was caught 2 of 6 times through Chrome's mic path; off: 6 of 6, and Alafasy still 5 of 5 at 100%. **Watch on the iPhone:** without auto gain a soft voice may give "Tidak ada suara"; tell me if that happens.
+- **Measured on Alafasy's own audio (correct readings):** whole ayat 96/96 at 100%; parts 71/74 at 100% (rest 80–86%: the model hears عَوْدٌ for عَنۡ, خَيْرًا for طَيۡرًا); single words read alone 162/201 at 100% (most misses are the short words above; others are the model mishearing a clip cut from continuous recitation, e.g. حَاسِبٍ for حَاسِدٍ). Letter swaps at text level: 478/478 caught.
+- **Logs:** `recitation_try {ayah, part: kata|bagian|ayat, words, score, ms, rec_s, heard, wrong}`; the dashboard shows "Latihan baca".
+- **Buku Kata** cards now show the word's emoji (as the Kenali cards do). **131 of 201 words have no emoji yet** (mostly particles, and every word that refers to Allah). Question for Ricky below.
+
 ## 2026-11-13 — Word clips fixed: 152 of 201 were partly or fully muted (prod bug reported by Ricky)
 - Symptom: on An-Nas 1, بِرَبِّ had no sound and أَعُوۡذُ lost its "dzu".
 - Cause: `recut-words.mjs` seeked with `-ss` after `-i`, so the fades ran on the ayah's timeline; the fade-out landed inside or before the word. The boundaries were right; only the cutting was wrong.

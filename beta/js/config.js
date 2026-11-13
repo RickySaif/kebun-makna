@@ -15,14 +15,13 @@ export const SUPPORT = {
 };
 
 // Recitation recognition. One model for everyone, downloaded in the background when the game opens (~140 MB, once).
-// Grading (beta/js/match.js): a word is wrong only when a letter changes (قلب/كلب); tajwid and harakat are not graded.
+// Practice, never a requirement (Ricky 2026-11-13): after Kenali each word, after Cocokkan parts of 2–3 words, after Susun
+// the whole ayah. Each try shows "Ketepatan" = share of meaning letters read right (beta/js/match.js; قلب/كلب).
 export const RECITE = {
   model: 'eventhorizon0/tarteel-ai-onnx-whisper-base-ar-quran',
   dtype: { encoder_model: 'q4', decoder_model_merged: 'q4' },
-  maxWrong: 0,           // words allowed to be wrong or missing and still pass (0 = every word must keep its letters)
   silenceMs: 1500,       // auto-stop after this much silence
   maxMs: 15000,          // hard stop
-  failsBeforeParent: 3,  // after this many fails, offer "Minta Ayah/Ibu dengar"
 };
 
 export const FLAGS = {

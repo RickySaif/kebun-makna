@@ -355,7 +355,7 @@ export function bookView(){
   panel('Buku Kata',`${got}/${all.length} kartu terkumpul · ${gold} kartu emas`,v=>{
     v.append($(`<p class="lead">Kartu terbuka saat kamu mengenali kata. Kartu jadi emas setelah kamu menjawabnya dengan benar saat menyiram atau melawan boss.</p>`));
     ORDER.forEach(no=>{ const box=$(`<div class="box"><h3>${BY[no].name}</h3><div class="book"></div></div>`);
-      uniq(no).forEach(({w,l})=>{ const c=l>=1?$(`<button class="bk${l>=3?' gold':''}"><div><div class="ar w" lang="ar">${esc(w.ar)}</div><div class="m">${esc(w.id)}</div></div></button>`):$(`<div class="bk lock">?</div>`); if(l>=1) c.onclick=()=>play(AW(w.a)); box.querySelector('.book').append(c); });
+      uniq(no).forEach(({w,l})=>{ const c=l>=1?$(`<button class="bk${l>=3?' gold':''}"><div><div class="ar w" lang="ar">${esc(w.ar)}</div>${w.emo?`<div class="e">${esc(w.emo)}</div>`:''}<div class="m">${esc(w.id)}</div></div></button>`):$(`<div class="bk lock">?</div>`); if(l>=1) c.onclick=()=>play(AW(w.a)); box.querySelector('.book').append(c); });
       v.append(box); });
   });
 }

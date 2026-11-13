@@ -17,7 +17,8 @@ export function lesson(no,j,review){
   const bar=$(`<div class="steps">${steps.map(()=>'<i></i>').join('')}</div>`); body.before(bar);
   const mist={match:0,arrange:0};
   function go(n){ stopAudio(); [...bar.children].forEach((x,k)=>x.className=k<n?'past':k===n?'on':'');
-    body.replaceChildren([dengar,kenali,cocokkan,susun][n](s,a,()=>n<3?go(n+1):(hooks.afterAyah?hooks.afterAyah({body,bar,s,a,review,next:finish}):finish()),mist)); p.scrollTop=0; }
+    const between=f=>hooks.afterStep?hooks.afterStep({n,body,bar,s,a,review,next:()=>{p.scrollTop=0;f();}}):f(); // v4: reading practice between steps
+    body.replaceChildren([dengar,kenali,cocokkan,susun][n](s,a,()=>n<3?between(()=>go(n+1)):(hooks.afterAyah?hooks.afterAyah({body,bar,s,a,review,next:finish}):finish()),mist)); p.scrollTop=0; }
   function finish(){
     const first=!S.ay[a.a]; S.ay[a.a]=true; a.w.forEach(w=>bump(w.a,2));
     const stars=1+(mist.match===0?1:0)+(mist.arrange===0?1:0); S.stars[a.a]=Math.max(S.stars[a.a]||0,stars);
