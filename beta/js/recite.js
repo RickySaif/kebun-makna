@@ -189,48 +189,87 @@ export function prepareScreen() {
 }
 
 // ---------------- recording ----------------
-async function toPCM(blob) {
-  const buf = await blob.arrayBuffer(); const AC = window.AudioContext || window.webkitAudioContext; const ac = new AC();
-  const dec = await new Promise((ok, no) => ac.decodeAudioData(buf, ok, no)); ac.close && ac.close();
-  const n = Math.max(1, Math.ceil(dec.duration * 16000)), off = new OfflineAudioContext(1, n, 16000);
-  const src = off.createBufferSource(); src.buffer = dec; src.connect(off.destination); src.start();
-  const out = await off.startRendering(); return { pcm: out.getChannelData(0), dur: dec.duration };
+// v4 (Ricky's iPhone SE: "often couldn't hear my voice", "sometimes stuck on Mendengarkan"):
+//  * the AudioContext is created/resumed INSIDE the tap (primeMic), before any await: iOS keeps a context made later
+//    suspended, and a suspended context delivers silence;
+//  * raw samples are taken straight from the mic (no MediaRecorder file + decodeAudioData, which can hang on iOS);
+//  * voice is detected relative to the room's own noise (no fixed loudness: with auto-gain off an iPhone mic is quiet);
+//  * the recording is normalised before recognition; every wait has a time limit.
+let micCtx = null;
+/** Call synchronously at the start of the tap that starts recording. */
+export function primeMic() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!micCtx || micCtx.state === 'closed') micCtx = new AC();
+  if (micCtx.state !== 'running') micCtx.resume().catch(() => {});
+  return micCtx;
 }
+const frameRms = x => { let s = 0; for (let i = 0; i < x.length; i++) s += x[i] * x[i]; return Math.sqrt(s / x.length); };
+/** Seconds of voice in a 16 kHz recording, relative to its own quietest part. */
 function voicedSeconds(pcm) {
-  const W = 1600; const rms = [];
-  for (let i = 0; i + W <= pcm.length; i += W) { let s = 0; for (let j = 0; j < W; j++) { const v = pcm[i + j]; s += v * v; } rms.push(Math.sqrt(s / W)); }
-  const sorted = [...rms].sort((a, b) => a - b); const floor = sorted[Math.floor(sorted.length * 0.2)] || 0; const thr = Math.max(0.012, floor * 3);
+  const W = 1600, rms = [];
+  for (let i = 0; i + W <= pcm.length; i += W) rms.push(frameRms(pcm.subarray(i, i + W)));
+  const sorted = [...rms].sort((a, b) => a - b), floor = sorted[Math.floor(sorted.length * 0.15)] || 0;
+  const thr = Math.max(0.002, floor * 2.5);
   return rms.filter(r => r > thr).length * 0.1;
 }
+/** Mono Float32 at rate `from` → 16 kHz (average over each output step: a simple low-pass). */
+function to16k(x, from) {
+  if (from === 16000) return x;
+  const r = from / 16000, n = Math.floor(x.length / r), out = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const a = Math.floor(i * r), b = Math.max(a + 1, Math.floor((i + 1) * r)); let s = 0; for (let j = a; j < b; j++) s += x[j]; out[i] = s / (b - a); }
+  return out;
+}
+/** Scale so the loud parts reach ~0.9 (at most ×30). */
+function normalise(x) {
+  let peak = 0; for (let i = 0; i < x.length; i++) { const v = Math.abs(x[i]); if (v > peak) peak = v; }
+  if (peak < 1e-4) return x;
+  const g = Math.min(30, 0.9 / peak); if (g <= 1.05) return x;
+  for (let i = 0; i < x.length; i++) x[i] *= g;
+  return x;
+}
 /**
- * Record from the mic (must be called from a tap). Auto-stops after RECITE.silenceMs of silence once voice was heard,
- * or at RECITE.maxMs. Returns { pcm, dur } at 16 kHz mono. ui.onLevel(0..1), ui.stopper(fn) lets the caller stop early.
+ * Record from the mic (call primeMic() in the same tap first). Stops RECITE.silenceMs after the voice ends, after 8 s
+ * without any voice, or at RECITE.maxMs. Returns { pcm (16 kHz), dur, heard }. ui.onLevel(0..1), ui.stopper(fn).
  */
 export async function record(ui = {}) {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-  const AC = window.AudioContext || window.webkitAudioContext; const ac = new AC();
-  const srcNode = ac.createMediaStreamSource(stream); const an = ac.createAnalyser(); an.fftSize = 1024; srcNode.connect(an);
-  const buf = new Float32Array(an.fftSize);
-  const types = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm', ''];
-  const type = types.find(t => !t || (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)));
-  const mr = new MediaRecorder(stream, type ? { mimeType: type } : undefined); const chunks = [];
-  mr.ondataavailable = e => e.data.size && chunks.push(e.data);
-  const stopped = new Promise(res => mr.onstop = res);
-  let heard = false, lastLoud = performance.now(); const t0 = performance.now(); let raf;
-  const stop = () => { if (mr.state !== 'inactive') mr.stop(); };
+  const ac = primeMic();
+  const stream = await Promise.race([
+    navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: true } }),
+    new Promise((_, no) => setTimeout(() => no(Object.assign(new Error('Mikrofon tidak merespons.'), { name: 'Timeout' })), 10000)),
+  ]);
+  if (ac.state !== 'running') { try { await Promise.race([ac.resume(), new Promise(r => setTimeout(r, 1500))]); } catch (e) {} }
+  const src = ac.createMediaStreamSource(stream);
+  const proc = ac.createScriptProcessor(4096, 1, 1), mute = ac.createGain(); mute.gain.value = 0;
+  src.connect(proc); proc.connect(mute); mute.connect(ac.destination);
+  const chunks = [], rate = ac.sampleRate, t0 = performance.now();
+  let floor = null, heard = false, loudRun = 0, lastLoud = 0, got = 0, done;
+  const finished = new Promise(r => done = r);
+  let stopped = false;
+  const stop = () => { if (stopped) return; stopped = true; done(); };
   ui.stopper && ui.stopper(stop);
-  const tick = () => {
-    an.getFloatTimeDomainData(buf); let s = 0; for (const v of buf) s += v * v; const rms = Math.sqrt(s / buf.length);
-    ui.onLevel && ui.onLevel(Math.min(1, rms * 12));
-    const now = performance.now();
-    if (rms > 0.02) { heard = true; lastLoud = now; }
-    if ((heard && now - lastLoud > RECITE.silenceMs) || now - t0 > RECITE.maxMs || (!heard && now - t0 > 6000)) { stop(); return; }
-    raf = requestAnimationFrame(tick);
+  proc.onaudioprocess = e => {
+    if (stopped) return;
+    const x = new Float32Array(e.inputBuffer.getChannelData(0)); chunks.push(x); got += x.length;
+    const rms = frameRms(x), now = performance.now();
+    // noise floor: follows the quietest recent level (rises slowly, falls at once)
+    floor = floor === null ? rms : Math.min(rms, floor * 1.02 + 1e-5);
+    const thr = Math.max(0.0015, floor * 3);
+    ui.onLevel && ui.onLevel(Math.min(1, rms / (thr * 4)));
+    if (rms > thr) { loudRun++; if (loudRun >= 2) { heard = true; lastLoud = now; } } else loudRun = 0;
+    if ((heard && now - lastLoud > RECITE.silenceMs) || now - t0 > RECITE.maxMs || (!heard && now - t0 > 8000)) stop();
   };
-  mr.start(250); tick();
-  await stopped; cancelAnimationFrame(raf);
-  stream.getTracks().forEach(t => t.stop()); try { ac.close(); } catch (e) {}
-  return toPCM(new Blob(chunks, { type: mr.mimeType || type }));
+  // if the mic delivers nothing at all (suspended context), give up after 2.5 s instead of waiting forever
+  const watchdog = setInterval(() => { if (!stopped && performance.now() - t0 > 2500 && got === 0) stop(); if (performance.now() - t0 > RECITE.maxMs + 2000) stop(); }, 500);
+  await finished; clearInterval(watchdog);
+  proc.onaudioprocess = null;
+  try { src.disconnect(); proc.disconnect(); mute.disconnect(); } catch (e) {}
+  stream.getTracks().forEach(t => t.stop());
+  // iOS: a running context after recording keeps Safari in "record" mode, which can route playback to the quiet earpiece
+  try { await ac.suspend(); } catch (e) {}
+  if (!got) throw Object.assign(new Error('Mikrofon belum aktif. Ketuk 🎙️ sekali lagi.'), { name: 'NoAudio' });
+  const all = new Float32Array(got); let o = 0; for (const c of chunks) { all.set(c, o); o += c.length; }
+  const pcm = normalise(to16k(all, rate));
+  return { pcm, dur: pcm.length / 16000, heard };
 }
 
 export async function transcribe(pcm) {
@@ -297,15 +336,18 @@ function practice({ body, s, a, items, kind, next }) {
       <button class="btn block" id="next" style="margin-top:14px">${isLast ? 'Lanjut ▸' : (kind === 'kata' ? 'Kata berikutnya ▸' : 'Bagian berikutnya ▸')}</button></div>`);
     // v4 (Ricky): while listening only "Selesai" works; while checking, every button is off and Pak Ustaz thinks.
     const think = $(`<div class="ustaz-think" hidden aria-live="polite"><img class="portrait" alt="Pak Ustaz" src="${portrait(USTAZ.look)}">
-      <div><b>Pak Ustaz</b><p>Sebentar, Ustaz sedang mendengarkan bacaanmu<span class="dots"><i>.</i><i>.</i><i>.</i></span></p></div></div>`);
+      <div><b>Pak Ustaz</b><p><span class="say"></span><span class="dots"><i>.</i><i>.</i><i>.</i></span></p></div></div>`);
     function lock(mode) {
       const off = !!mode, panelEl = v.closest('.panel');
       v.querySelectorAll('#hear, #next, #retry').forEach(b => b.disabled = off);
       if (panelEl) panelEl.querySelector('.ptop button').disabled = off;
       v.querySelector('.ayahbig').classList.toggle('locked', off);
       v.classList.toggle('thinking', mode === 'think');
-      think.hidden = mode !== 'think';
-      if (mode === 'think') think.querySelector('img').src = portrait(USTAZ.look); // follows "tanpa mata"
+      // Pak Ustaz is there while the child reads (listening) and while the reading is checked (thinking)
+      think.hidden = !mode;
+      think.classList.toggle('listening', mode === 'listen');
+      think.querySelector('.say').textContent = mode === 'listen' ? 'Silakan baca, Ustaz mendengarkan' : 'Sebentar, Ustaz sedang memeriksa bacaanmu';
+      if (mode) think.querySelector('img').src = portrait(USTAZ.look); // follows "tanpa mata"
     }
     const box = v.querySelector('.ayahbig'), fb = v.querySelector('.fb'), mic = v.querySelector('#mic'), lvl = v.querySelector('#lvl'), accEl = v.querySelector('.acc');
     const heardEl = $(`<div class="heard" hidden></div>`); accEl.after(heardEl);
@@ -334,23 +376,25 @@ function practice({ body, s, a, items, kind, next }) {
     ensureModel();
     mic.onclick = async () => {
       if (busy) { stopFn && stopFn(); return; }
+      primeMic(); // iOS: the audio engine must start inside this tap
       stopAudio(); busy = true; stopFn = null;
-      mic.textContent = '⏹️ Selesai'; fb.className = 'fb'; fb.textContent = 'Mendengarkan… silakan baca.'; accEl.textContent = ''; heardEl.hidden = true; heardEl.replaceChildren();
+      mic.textContent = '⏹️ Selesai'; fb.className = 'fb'; fb.textContent = ''; accEl.textContent = ''; heardEl.hidden = true; heardEl.replaceChildren();
       lock('listen');
       const restore = () => { busy = false; stopFn = null; mic.textContent = '🎙️ Baca lagi'; mic.disabled = false; lock(null); };
       let rec;
       try { rec = await record({ onLevel: x => { lvl.style.width = Math.round(x * 100) + '%'; }, stopper: f => stopFn = f }); }
       catch (e) {
         restore();
-        fb.className = 'fb bad'; fb.textContent = e && e.name === 'NotAllowedError' ? 'Mikrofon belum diizinkan. Izinkan mikrofon untuk halaman ini di pengaturan browser. Kamu tetap bisa lanjut.' : 'Mikrofon tidak bisa dipakai: ' + (e.message || e);
+        fb.className = 'fb bad'; fb.textContent = e && e.name === 'NotAllowedError' ? 'Mikrofon belum diizinkan. Di iPhone: Pengaturan › Safari › Mikrofon › Izinkan. Kamu tetap bisa lanjut.'
+          : e && (e.name === 'NoAudio' || e.name === 'Timeout') ? e.message : 'Mikrofon tidak bisa dipakai: ' + (e.message || e);
         return;
       }
       lvl.style.width = '0';
       if (!v.isConnected) return;
-      if (voicedSeconds(rec.pcm) < (kind === 'kata' ? 0.25 : 0.6)) { restore(); fb.className = 'fb bad'; fb.textContent = 'Tidak ada suara yang terdengar. Dekatkan HP ke mulut dan coba lagi.'; return; }
+      if (!rec.heard && voicedSeconds(rec.pcm) < (kind === 'kata' ? 0.25 : 0.5)) { restore(); fb.className = 'fb bad'; fb.textContent = 'Tidak ada suara yang terdengar. Dekatkan HP ke mulut dan coba lagi.'; return; }
       mic.disabled = true; mic.textContent = '⏳ Memeriksa…'; fb.textContent = ''; lock('think');
       const t0 = performance.now(); let text = '';
-      try { text = await transcribe(rec.pcm); }
+      try { text = await Promise.race([transcribe(rec.pcm), new Promise((_, no) => setTimeout(() => no(new Error('terlalu lama, coba lagi')), 45000))]); }
       catch (e) { restore(); fb.className = 'fb bad'; fb.textContent = 'Gagal memeriksa: ' + String(e.message || e).slice(0, 120); return; }
       if (!v.isConnected) return;
       const ms = Math.round(performance.now() - t0), r = words.length === 1 ? checkWord(words[0].ar, text) : check(words.map(w => w.ar), text), pct = Math.round(r.acc * 100);

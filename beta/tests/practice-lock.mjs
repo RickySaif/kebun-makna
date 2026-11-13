@@ -15,13 +15,14 @@ await page.evaluate(async () => { document.querySelectorAll('.celebrate').forEac
 for (let i = 0; i < 30; i++) { const t = await page.$eval('#layer .panel h2', e => e.textContent).catch(() => ''); if (t === 'Ayo baca kata ini') break; await driveLessonOnce(page); await page.waitForTimeout(100); }
 await page.click('.practice #next'); // word 2
 await page.waitForFunction(() => !document.querySelector('.practice #mic').disabled, null, { timeout: 120000 });
-await page.evaluate(() => { const t = document.querySelector('.ustaz-think'); new MutationObserver(() => { if (!t.hidden && !window.__think) window.__think = { hear: document.querySelector('#hear').disabled, next: document.querySelector('#next').disabled, back: document.querySelector('.ptop button').disabled, mic: document.querySelector('#mic').disabled }; }).observe(t, { attributes: true }); });
+await page.evaluate(() => { const t = document.querySelector('.practice'); new MutationObserver(() => { if (t.classList.contains('thinking') && !window.__think) window.__think = { hear: document.querySelector('#hear').disabled, next: document.querySelector('#next').disabled, back: document.querySelector('.ptop button').disabled, mic: document.querySelector('#mic').disabled }; }).observe(t, { attributes: true, attributeFilter: ['class'] }); });
 await page.click('.practice #mic');
 await page.waitForTimeout(300);
 const listen = await page.evaluate(() => ({ hear: document.querySelector('#hear').disabled, next: document.querySelector('#next').disabled, back: document.querySelector('.ptop button').disabled, mic: document.querySelector('#mic').disabled }));
 assert(listen.hear && listen.next && listen.back && !listen.mic, 'listening: only "Selesai" works ' + JSON.stringify(listen));
+assert(await page.locator('.ustaz-think:not([hidden])').count() === 1 && /mendengarkan/.test(await page.locator('.ustaz-think .say').innerText()), 'listening: Pak Ustaz is there ("Silakan baca, Ustaz mendengarkan")');
 const cdp = await ctx.newCDPSession(page); await cdp.send('Emulation.setCPUThrottlingRate', { rate: 6 });
-await page.waitForSelector('.ustaz-think:not([hidden])', { timeout: 90000 });
+await page.waitForSelector('.practice.thinking', { timeout: 90000 });
 const think = await page.evaluate(() => window.__think);
 assert(think.hear && think.next && think.back && think.mic, 'checking: every button off, Pak Ustaz shown ' + JSON.stringify(think));
 await page.waitForTimeout(400); await page.screenshot({ path: 'shot-think.png' }); await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });

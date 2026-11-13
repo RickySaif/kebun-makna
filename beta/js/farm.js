@@ -11,7 +11,7 @@ import { play, sfx, stopAudio, voice } from './audio.js';
 import { cartGame, chase, pestGame, race } from './bosses.js';
 import { AW, BOSS, BY, DATA, EVENTS, HOUSE_TIERS, KAKEK, LV_XP, ORDER, QUEST, SLV_NAMES, seedPrice } from './data.js';
 import { celebrate, lesson, lessonStart, makeQ, renderQ, suratUtuh } from './lesson.js';
-import { addReview, addXP, canBuild, flushNotes, journal, note, pLevel, perk, renoNext, renoOpen, renoReady, repXP } from './progress.js';
+import { addReview, addXP, canBuild, flushNotes, journal, levelView, note, pLevel, perk, renoNext, renoOpen, renoReady, repXP } from './progress.js';
 import { CHESTPOS, COLS, ENTRY, FRUIT, GATE, GATE2, ICON, LOTS, OBJ, PLOTS, ROWS, SPOT, T, VC, VR, adjacent, bfs, blocked, drawChest, drawCrop, drawGate, drawHedge, drawHouse, drawHut, drawKid, drawLot, drawPlotSoil, drawShop, drawSign, drawTree, drawTrophy, drawWell, eastOpen, evLook, evName, farOpen, giverNo, hitObject, homeOf, isNight, npcHere, portrait, px, stageOf, villagers } from './render.js';
 import { blit, buildGround, butterflySprite, cloudSprite, fenceSprite, gfxLite, glowSprite, hdCanvas, lowerCap, vignetteSprite } from './art.js';
 import { avatarBuilder } from './avatar.js';
@@ -82,7 +82,7 @@ export function farm(){
   cv.onclick=onTap;
   document.getElementById('gear').onclick=parentView;
   document.getElementById('book').onclick=bookView;
-  document.getElementById('jrn').onclick=journal; document.getElementById('lvl').onclick=journal;
+  document.getElementById('jrn').onclick=journal; document.getElementById('lvl').onclick=levelView; // v4: Lv → Level Petani, 📜 → missions
   setTimeout(flushNotes,700);
   idleDialog();
   const e=activeEvent();

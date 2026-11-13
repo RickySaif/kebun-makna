@@ -33,9 +33,7 @@ export const renoReady=no=>{ if(!renoOpen()) return false; const r=renoNext(no);
 
 /* ---------- Jurnal Misi ---------- */
 export function journal(){
-  panel('Jurnal Misi',`Level ${pLevel()} · ${TITLES[pLevel()]} · ${S.xp||0} XP`,v=>{
-    const L=pLevel(), next=LV_XP[L+1];
-    v.append($(`<div class="box"><h3>Level Petani ${L}: ${TITLES[L]}</h3><div class="xpbar"><div style="width:${next?Math.min(100,((S.xp-LV_XP[L])/(next-LV_XP[L]))*100):100}%"></div></div><p class="small" style="margin:6px 0 0">${next?`${next-S.xp} XP lagi ke Level ${L+1}${PERKS[L+1]?` · hadiah: ${PERKS[L+1]}`:''}${HOUSE_TIERS.find(h=>h.lv===L+1)?` · ${HOUSE_TIERS.find(h=>h.lv===L+1).name} bisa dibangun`:''}`:'Level tertinggi!'}</p></div>`));
+  panel('Jurnal Misi','Misi-misi di desa, satu per satu',v=>{
     const e=activeEvent();
     EVENTS.forEach((ev,i)=>{
       const unlocked=done(ev)||ev===e; const isNum=typeof ev==='number';
@@ -51,3 +49,22 @@ export function journal(){
   });
 }
 
+
+/* ---------- v4: Level Petani (the Lv chip). The 📜 Jurnal shows missions only. ---------- */
+export function levelView(){
+  const L=pLevel(), next=LV_XP[L+1], xp=S.xp||0;
+  panel('Level Petani',`Level ${L} · ${TITLES[L]} · ${xp} XP`,v=>{
+    const pct=next?Math.min(100,((xp-LV_XP[L])/(next-LV_XP[L]))*100):100;
+    v.append($(`<div class="box"><h3>Level ${L}: ${TITLES[L]}</h3><div class="xpbar"><div style="width:${pct}%"></div></div>
+      <p class="small" style="margin:6px 0 0">${next?`${next-xp} XP lagi ke Level ${L+1}${PERKS[L+1]?` · hadiahnya: <b>${PERKS[L+1].split(':')[0]}</b>`:''}`:'Level tertinggi. MasyaAllah!'}</p></div>`));
+    v.append($(`<div class="box"><h3>Cara dapat XP</h3><ul class="xpways">
+      <li><b>+20–35</b> belajar ayat baru (lebih banyak bintang, lebih banyak XP)</li>
+      <li><b>+50</b> Surat Utuh pertama kali</li>
+      <li><b>+80</b> menang misi besar (boss) pertama kali</li>
+      <li><b>+30</b> cerita akhlak selesai</li>
+      <li><b>+25</b> membantu memperbaiki rumah warga · <b>+20</b> rumahmu jadi</li>
+      <li><b>+10</b> panen · <b>+2–10</b> menyiram (murajaah) dan mengulang</li></ul></div>`));
+    const rows=TITLES.map((t,i)=>i?`<li class="${i<=L?'got':''}${i===L?' cur':''}"><b>${i<=L?'✔':'🔒'} Lv ${i}</b> ${esc(t)}${PERKS[i]?`<div class="small">🎁 ${esc(PERKS[i])}</div>`:''}</li>`:'').join('');
+    v.append($(`<div class="box"><h3>Semua level</h3><ul class="lvlist">${rows}</ul></div>`));
+  });
+}

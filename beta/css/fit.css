@@ -70,3 +70,12 @@ body{margin:0}
 .heard .tips{flex-basis:100%;display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
 .heard .tip{background:#fff;border:2px solid #C0392B;border-radius:999px;padding:0 10px;font-size:14px;font-weight:700}
 .heard .tip b{font-size:22px;color:#B03A2E;padding:0 2px}
+.ustaz-think.listening{background:#EAF7E4}
+.ustaz-think.listening .portrait{animation:none}
+
+/* Level Petani page */
+.xpways,.lvlist{margin:0;padding:0;list-style:none;display:grid;gap:4px;font-size:15px}
+.xpways b{color:var(--ok)}
+.lvlist li{padding:4px 8px;border-radius:8px;background:#F1EAD6;color:#8A7A5A}
+.lvlist li.got{background:#E4F7D8;color:var(--ink)}
+.lvlist li.cur{outline:3px solid var(--gold)}
