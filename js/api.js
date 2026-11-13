@@ -67,16 +67,22 @@ async function fn(name, body, auth) {
 
 // ---- Google sign-in for parents via Google Identity Services (the chooser shows Kebun Makna, not supabase.co) ----
 export const GOOGLE_CLIENT_ID = '1066063708944-g4o9rf0sirmi09oicpktq618phnl5vjv.apps.googleusercontent.com';
-let _google = null;
-export async function googleEnabled() {
-  if (_google !== null) return _google;
-  try {
-    const r = await fetch(`${SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: SUPABASE_KEY } });
-    const j = await r.json();
-    _google = !!(j.external && j.external.google);
-  } catch (e) { _google = false; }
-  return _google;
+// v4: the button used to appear only after three steps in a row (Supabase settings → Google's script → render).
+// The answer "is Google enabled" is remembered on the device for a day, and warmGoogle() starts both downloads as soon
+// as the start screen opens, so the parent page usually has everything ready.
+let _google = null, _googleP = null;
+const LS_GOOGLE = 'kebun-makna-google-enabled';
+export function googleEnabled() {
+  if (_google !== null) return Promise.resolve(_google);
+  if (_googleP) return _googleP;
+  const fresh = fetch(`${SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: SUPABASE_KEY } })
+    .then(r => r.json()).then(j => { _google = !!(j.external && j.external.google); try { localStorage.setItem(LS_GOOGLE, JSON.stringify({ v: _google, t: Date.now() })); } catch (e) {} return _google; })
+    .catch(() => { _googleP = null; return _google = false; });
+  try { const c = JSON.parse(localStorage.getItem(LS_GOOGLE) || 'null'); if (c && Date.now() - c.t < 86400000) { _google = c.v; return Promise.resolve(_google); } } catch (e) {}
+  return _googleP = fresh;
 }
+/** Start fetching what the Google button needs (call early; safe to call many times). */
+export function warmGoogle() { googleEnabled().then(on => { if (on) loadGIS().catch(() => {}); }); }
 let _gis = null;
 export function loadGIS() {
   if (window.google && window.google.accounts && window.google.accounts.id) return Promise.resolve(window.google);
@@ -96,8 +102,13 @@ async function sha256hex(t) {
 }
 /** Render the official Google button into `el`. onDone(profile) after sign-in; onError(err). Resolves false if unavailable. */
 export async function renderGoogleButton(el, onDone, onError) {
+  // placeholder in the button's spot until Google has drawn its button
+  el.innerHTML = '<div class="gload" role="status"><span class="gspin"></span>Menyiapkan tombol Google…</div>';
   if (!(await googleEnabled())) return false;
   let g; try { g = await loadGIS(); } catch (e) { return false; }
+  const ph = el.querySelector('.gload');
+  new MutationObserver((ms, o) => { if (el.querySelector('iframe')) { ph && ph.remove(); o.disconnect(); } }).observe(el, { childList: true, subtree: true });
+  setTimeout(() => ph && ph.remove(), 6000);
   const raw = [...crypto.getRandomValues(new Uint8Array(16))].map(x => x.toString(16).padStart(2, '0')).join('');
   g.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID, nonce: await sha256hex(raw), ux_mode: 'popup', use_fedcm_for_prompt: true,

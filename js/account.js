@@ -1,7 +1,7 @@
 // account.js — start screen: parent email/Google login, child family name → avatar → PIN, guest mode.
 import { $, esc, root } from './ui.js';
 import { avatarCanvas, eyesToggle } from './avatar.js';
-import { sb, session, friendly, childList, childSignIn, loadProfile, normFamily, isFamilyName, renderGoogleButton } from './api.js';
+import { sb, session, friendly, childList, childSignIn, loadProfile, normFamily, isFamilyName, renderGoogleButton, warmGoogle } from './api.js';
 
 const LAST_CODE = 'kebun-makna-last-family';
 const MODE = 'kebun-makna-mode'; // 'guest' remembered on this device
@@ -17,6 +17,7 @@ const busy = (btn, on, label) => { btn.disabled = on; if (label) btn.innerHTML =
 
 /** Show the start screen. Calls handlers.{parent, child, guest} when done. */
 export function startScreen(h) {
+  warmGoogle(); // so the parent page has Google's button ready
   root.replaceChildren(title('Ayo bangun kebunmu!'));
   const f = $(`<div class="frame"><p style="margin:0 0 10px">Siapa yang main hari ini?</p>
     <div class="start-choices">
@@ -108,6 +109,7 @@ function pinPad(h, code, kid) {
 
 // ---------- parent ----------
 export function parentLogin(h, mode = 'login', msg = '') {
+  warmGoogle();
   root.replaceChildren(title(mode === 'signup' ? 'Daftar orang tua' : mode === 'reset' ? 'Lupa kata sandi' : 'Masuk orang tua'));
   const f = $(`<div class="frame">
     ${mode === 'signup' ? `<div class="field"><label for="dn"><b>Nama Anda</b></label><input id="dn" maxlength="40" autocomplete="name" placeholder="mis. Ayah Amtar"></div>` : ''}

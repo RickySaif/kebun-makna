@@ -2,6 +2,11 @@
 
 Live: https://km.generasimerdeka.com/ · (old address https://rickysaif.github.io/kebun-makna/ redirects)
 
+## 2026-11-14 — Google button sooner; parents edit their character; model download right after login
+- **Google button (Ricky: "takes a couple of seconds"):** it waited for three steps in a row: Supabase settings → Google's script (only loaded when the parent page opened) → Google draws the button. Now `warmGoogle()` starts both as soon as the start screen opens, the "Google enabled" answer is remembered on the device for a day, `index.html` preconnects to accounts.google.com and Supabase, and a placeholder "Menyiapkan tombol Google…" with a spinner holds the button's place until Google's button appears (removed after 6 s at most; the whole block disappears if Google is off or unreachable).
+- **Parents' character (Ricky: "gender especially"):** "Tokoh saya" on the parent dashboard: preview + "Ubah tokoh" opens the same builder (Laki-laki/Perempuan, skin, hair, clothes, peci/hiasan) with Simpan/Batal; saved to the profile (`updateMyAvatar`). When the parent plays ("Main sebagai saya") their game takes the profile look. **Not tested end to end** (needs the test parent login).
+- **Model download after login (Ricky):** anyone signed in (parent or child) starts the download at once (`preloadModel`, streamed into storage, low memory); the memory-heavy build still waits for the start-up screen. Guests get it on the start-up screen as before.
+
 ## 2026-11-13 — Original game removed (Ricky: "Delete the classic game")
 - `classic/` (the single-file game and its old word clips) is deleted; it is in git history before this commit. `tests/phase0-playthrough.mjs` now only plays the game through (no comparison).
 - The old address rickysaif.github.io/kebun-makna is redirected by `index.html` itself (GitHub Pages kept serving it after the custom domain was attached).

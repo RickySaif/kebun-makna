@@ -108,6 +108,8 @@ async function bootPlayer(p) {
       f.querySelector('#n').onclick = () => res();
     });
   }
+  // v4: a parent may change their look on the dashboard; their game follows the profile
+  if (p.role === 'parent' && S.name && typeof p.avatar === 'number' && (S.avatar | 0) !== p.avatar) { S.avatar = p.avatar; save(); }
   // friends' waterings and salam since the last visit (Phase 4)
   try { const v = await import('./visit.js'); const { note } = await import('./progress.js'); await v.applyVisits(note); } catch (e) {}
   if (!S.name) {
@@ -139,10 +141,10 @@ async function route() {
     // offline: keep a signed-in child playing from the local cache
     try { const c = await sb(); const { data: { session: s } } = await c.auth.getSession(); if (s) { session.user = s.user; p = cachedProfile(); if (p && p.id !== s.user.id) p = null; session.profile = p; } } catch (e2) {}
   }
-  // The recitation model (~140 MB, once) starts downloading as soon as anyone who may play opens the game, so it is
-  // ready by the first ayah. Skipped on the parent dashboard and the parent login (usually a different device).
-  const parentOnly = (p && p.role === 'parent' && !h.startsWith('#/main')) || (!p && h.startsWith('#/ortu'));
-  if (!parentOnly) setTimeout(preloadModel, 1500);
+  // The recitation model (~93 MB, once) starts downloading right after a successful login (Ricky), parents included,
+  // so it is ready by the first ayah. Download only: it is streamed into storage, the memory-heavy build waits for the
+  // start-up screen. Guests get it on that screen.
+  if (p) preloadModel();
   if (h.startsWith('#/tamu')) return bootGuest();
   const soc = h.match(/^#\/(beranda|profil|grup|kunjungi|lomba)(?:\/([^/]+))?/);
   if (soc && p) return socialRoute(soc[1], soc[2]);

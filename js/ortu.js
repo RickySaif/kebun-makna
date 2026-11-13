@@ -2,7 +2,7 @@
 import { $, esc, root, toast } from './ui.js';
 import { DATA, BY, HOUSE_TIERS } from './data.js';
 import { levelOf } from './progress.js';
-import { sb, session, friendly, normFamily, familyCreate, familySetPin, familyDelete, signOut } from './api.js';
+import { sb, session, friendly, normFamily, familyCreate, familySetPin, familyDelete, signOut, updateMyAvatar } from './api.js';
 import { avatarCanvas } from './account.js';
 import { avatarBuilder } from './avatar.js';
 import { badgeFor, loadTiers, fmtDate } from './badges.js';
@@ -78,10 +78,28 @@ function render(h) {
     <div class="row" style="align-items:center"><span class="code" id="code"></span><button class="btn mini" id="copy">Salin</button><button class="btn ghost mini" id="chg">Ganti</button></div>
     <div id="chgbox"></div>
     <p class="small" style="margin:8px 0 0">Nama ini juga dipakai saat mendukung Kebun Makna (tulis <b>#nama</b> di pesan Trakteer) supaya lencana pendukung muncul di akun keluarga. Anak tetap perlu PIN untuk masuk.</p>
+    <div class="mylook"><div class="pv"></div><div style="flex:1;min-width:0"><b>Tokoh saya</b><p class="small" style="margin:2px 0 6px">Tampil di kebun, Beranda dan saat Anda main.</p><button class="btn mini" id="look">Ubah tokoh</button></div></div>
+    <div id="lookbox"></div>
     <button class="btn green block" id="play" style="margin-top:12px">🌱 Main sebagai saya</button>
     <p class="small" style="margin:6px 0 0">Orang tua juga bisa main game lengkapnya. Progres Anda terpisah dari progres anak.</p>
   </div>`);
   head.querySelector('#play').onclick = h.onPlaySelf;
+  // v4 (Ricky): parents can change their own character too, including Laki-laki / Perempuan
+  const pv = head.querySelector('.mylook .pv'), showLook = () => pv.replaceChildren(avatarCanvas(p.avatar | 0, .6));
+  showLook();
+  head.querySelector('#look').onclick = () => {
+    const box = head.querySelector('#lookbox'); if (box.firstChild) { box.replaceChildren(); return; }
+    let av = p.avatar | 0;
+    const f = $(`<div class="frame" style="margin-top:8px"><div class="slot"></div><div class="row" style="margin-top:10px"><button class="btn green" id="ok">Simpan</button><button class="btn ghost" id="no">Batal</button></div><p class="err" id="lerr"></p></div>`);
+    f.querySelector('.slot').append(avatarBuilder(av, v => { av = v; }));
+    f.querySelector('#no').onclick = () => box.replaceChildren();
+    f.querySelector('#ok').onclick = async () => {
+      const b = f.querySelector('#ok'); b.disabled = true;
+      try { await updateMyAvatar(av); if ((session.profile && session.profile.avatar) !== av) throw new Error('Belum tersimpan. Cek internet, lalu coba lagi.'); p.avatar = av; showLook(); box.replaceChildren(); toast('Tokoh tersimpan.'); }
+      catch (e) { b.disabled = false; f.querySelector('#lerr').textContent = friendly(e); }
+    };
+    box.replaceChildren(f);
+  };
   head.querySelector('#out').onclick = async () => { await signOut(); h.onLogout(); };
   const fname = (ctx.family && ctx.family.name) || '';
   head.querySelector('#code').textContent = fname || '—';
