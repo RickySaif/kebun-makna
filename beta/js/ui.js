@@ -25,3 +25,32 @@ export function panel(title,sub,build,onClose){
 }
 export function closePanel(){stopAudio();layer.replaceChildren();}
 
+/* ---------- v4: fit every game screen to the phone's height (no vertical scroll) ----------
+   A screen taller than the visible height is scaled down with CSS zoom (text re-wraps, taps keep working).
+   If it would need to shrink below MIN_ZOOM it is a long list (shop, well, Buku Kata): it then scrolls instead.
+   Covers: panels (lessons, practice, shop …), the celebration pop-up, and the start / onboarding screens.
+   Parent dashboard and social pages (.dash) keep normal page scrolling. */
+const MIN_ZOOM=0.62;
+function fitOne(box,content,over){
+  if(!content) return;
+  content.style.zoom=''; box.classList.remove('scrolly');
+  let z=1;
+  for(let k=0;k<5;k++){ const o=over(); if(o.over<=1) return; z*=o.avail/(o.avail+o.over); if(z<MIN_ZOOM) break; content.style.zoom=z.toFixed(3); }
+  if(over().over>1){ content.style.zoom=''; box.classList.add('scrolly'); }
+}
+function fitAll(){
+  document.querySelectorAll('.panel').forEach(p=>{ const top=p.scrollTop; fitOne(p,p.querySelector(':scope > .wrap'),()=>({avail:p.clientHeight,over:p.scrollHeight-p.clientHeight})); p.scrollTop=top; });
+  document.querySelectorAll('.celebrate').forEach(c=>fitOne(c,c.querySelector(':scope > .frame'),()=>{ const f=c.querySelector(':scope > .frame'), cs=getComputedStyle(c), pad=parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom);
+    return {avail:c.clientHeight-pad,over:f.getBoundingClientRect().height-(c.clientHeight-pad)}; }));
+  const page=root.firstElementChild && !root.querySelector('.farmview,.dash') && !layer.firstElementChild;
+  if(page) fitOne(document.documentElement,root,()=>({avail:innerHeight,over:document.scrollingElement.scrollHeight-innerHeight}));
+  else if(root.style.zoom) root.style.zoom='';
+}
+// at most one fit per frame; never cancel a pending one (the farm clock changes the page every frame and would starve it)
+let fitRaf=0;
+export function fitSoon(){ if(!fitRaf) fitRaf=requestAnimationFrame(()=>{ fitRaf=0; fitAll(); }); }
+new MutationObserver(ms=>{ if(ms.some(m=>{ const el=m.target.nodeType===1?m.target:m.target.parentElement; return !el || !el.closest('#dlg,.hud2,.hud'); })) fitSoon(); })
+  .observe(document.body,{childList:true,subtree:true,characterData:true});
+addEventListener('resize',fitSoon); if(window.visualViewport) visualViewport.addEventListener('resize',fitSoon);
+if(document.fonts) document.fonts.ready.then(fitSoon);
+

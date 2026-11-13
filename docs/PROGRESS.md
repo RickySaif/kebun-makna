@@ -2,6 +2,23 @@
 
 Beta: https://rickysaif.github.io/kebun-makna/beta/ · Classic (live, untouched): https://rickysaif.github.io/kebun-makna/
 
+## 2026-11-13 (evening) — iPhone reload loop fixed; model prepared at start-up; every screen fits the phone height
+**Bug (Ricky, iPhone 13):** after the model finished downloading the page reloaded, downloaded again, reloaded… (3×).
+- **Cause:** building the recognizer briefly needs several times the model's size in memory. Measured in Chrome for the base model: peak ~600 MB right after download, ~1 GB when loading from storage. iOS kills a Safari tab that goes over its limit and Safari reloads it. transformers.js only wrote a file to storage after reading all of it into memory, so the crash lost the download. Since the last change the load started at boot, so every reload crashed again.
+- **Fix (`recite.js`):**
+  1. **Download (`prefetchModel`):** each file is streamed straight into Cache Storage under the key transformers.js looks up. Low memory; finished files survive a crash; a second visit downloads nothing (tested).
+  2. **Build (`loadModel`):** guarded by a marker in localStorage. If the page opens and finds the marker, the last build crashed this tab: the game **never builds again by itself** (no reload loop). It says "Pengenal bacaan berhenti karena memori HP penuh. Tutup aplikasi lain, lalu coba lagi." with **Coba lagi** and **Main tanpa latihan baca**; the reading pages show the same message, and Lanjut always works.
+  3. **Start-up screen (Ricky: "make sure it has been downloaded before it reaches the practice page"):** "Menyiapkan pengenal bacaan" with a progress bar (MB) comes before the farm (guest, child and parent-playing). It downloads, then builds the recognizer while nothing else is loaded yet. The first reading page then has the mic ready at once (tested). Offline: "Sambungkan ke internet …" + Coba lagi / Main tanpa latihan baca.
+- **Smaller model? No.** Tested the tiny Tarteel builds with the same harness. Sharjeelbaig/whisper-tiny-ar-quran-onnx (≈63 MB): Alafasy ayat 47/48, parts 66/74, words 146/201, but a correct reading by a different voice (TTS) passed only **2/10** (base: 8/10), so a child reading correctly would often see red words. aaqibhabib/whisper-tiny-ar-quran-onnx: 0/48 (broken). Kept the base model (`RECITE.id = 'base-q4'`).
+- **Watch on the iPhone:** if the start-up screen shows the memory message, the base model is too big for that phone even at start-up. Next options then: (a) the tiny model, with the accuracy cost above, or (b) recognising on a server (the voice would leave the phone).
+- Tests: new `beta/tests/model-boot.mjs` (fresh device, second visit, simulated crash, offline). Tests that don't need recognition use `noModel()` + `startGuest()` / `skipPrep()` from `lib.mjs`.
+
+**No vertical scroll (Ricky):**
+- **Farm:** exactly one screen tall (`css/fit.css`); the map takes the height left after the HUD and dialog and keeps its shape (`fitCanvas` + ResizeObserver). The walking hint shows only on tall screens (the intro dialog already explains it).
+- **Panels, the celebration pop-up, start and onboarding screens:** `fitAll()` in `ui.js` scales a screen down with CSS `zoom` just enough to fit (text re-wraps, taps keep working). Below 62% it is a long list (shop, house, well, Buku Kata): that list scrolls inside its panel. Parent dashboard and social pages keep normal scrolling.
+- **Avatar builder:** one option group at a time (tabs: Kulit, Rambut, Warna, Baju, Celana, Peci); the long "tanpa mata" note is left out of onboarding (still in ⚙). Kenali with 5+ words: three cards per row. The default 8 px body margin is gone.
+- Tested (`beta/tests/fit-height.mjs`) at Safari's visible height on iPhone 13 (390×664) and iPhone SE (375×548): every screen fits, smallest zoom 0.67 (Cocokkan with 7 words on the SE, still readable).
+
 ## 2026-11-13 (later) — Reading practice inside each lesson (never a requirement) + emoji in Buku Kata
 - **Flow (Ricky's choice):** Dengar → Kenali → **read each word** → Cocokkan → **read parts of 2–3 words** → Susun → **read the whole ayah** → celebration. Every page has ▶ Dengar, 🎙️ Baca and **Lanjut** (always works; nothing blocks). Reviews (murajaah) skip the word and part pages; the whole-ayah page shows on a review only if that ayah was never read aloud. The parent-PIN override is gone (nothing to override).
 - **Score shown to the child:** "Ketepatan: N%" = share of meaning letters (consonants) read right; red wavy words; tap any word to hear it. ≥90% "MasyaAllah, jelas sekali!", ≥70% "Bagus! …", else "Ayo coba lagi pelan-pelan …".

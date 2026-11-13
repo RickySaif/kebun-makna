@@ -1,6 +1,7 @@
 // Phase 0 acceptance: drive a full first-surah (An-Nas) playthrough on root and on /beta/,
 // with seeded Math.random and instant audio, and compare the screen trace + final save.
 import { chromium } from 'playwright';
+import { noModel, startGuest } from './lib.mjs';
 const BASE = process.env.BASE || 'http://127.0.0.1:8765';
 const only = process.argv[2];
 
@@ -16,11 +17,12 @@ async function run(url, label) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   const page = await ctx.newPage();
   const errors = [];
-  page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('console', m => { if (m.type() === 'error' && !/huggingface|transformers/.test(m.location().url || '')) errors.push(m.text()); });
+  if (url.includes('/beta/')) await noModel(page);
   page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));
   await page.addInitScript(INIT);
   await page.goto(url);
-  if (url.includes('/beta/')) { await page.waitForSelector('#guest'); await page.evaluate(async () => { const { hooks } = await import('./js/hooks.js'); hooks.afterAyah = null; hooks.afterStep = null; }); await page.click('#guest'); } // classic flow has no reading practice
+  if (url.includes('/beta/')) { await page.waitForSelector('#guest'); await page.evaluate(async () => { const { hooks } = await import('./js/hooks.js'); hooks.afterAyah = null; hooks.afterStep = null; }); await startGuest(page); } // classic flow has no reading practice
   await page.waitForSelector('#nm');
   await page.fill('#nm', 'Amtar');
   await page.click('#go');

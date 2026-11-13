@@ -9,7 +9,7 @@ import { eyesOff, eyesChosen, setEyesOff, gfxLite, setGfxLite } from './art.js';
 import { eyesToggle } from './avatar.js';
 import { startScreen, parentLogin, newPasswordScreen, rememberGuest, isRememberedGuest } from './account.js';
 import { startCloud, importLegacy, flushNow } from './cloud.js';
-import { settingsBox, preloadModel } from './recite.js';
+import { settingsBox, preloadModel, prepareScreen } from './recite.js';
 
 /* migration for players from earlier versions (verbatim from the classic game; now run after S is chosen) */
 function migrate(){ if(!S.hv2){ S.house=S.house===1?2:S.house===2?3:S.house||0; S.hv2=true; }
@@ -62,8 +62,9 @@ window.addEventListener('km-eyes', () => { if (inGame() && S.name && S.noEyes !=
 window.addEventListener('km-avatar', () => { if (eyesChosen() && S.noEyes !== eyesOff()) { S.noEyes = eyesOff(); save(); } if (mode === 'child' || mode === 'player') updateMyAvatar(S.avatar | 0).catch(() => {}); });
 hooks.atur = box => { accountBox(box); box.prepend(settingsBox()); box.prepend(displayBox()); };
 
-function bootGame() {
+async function bootGame() {
   if (!eyesChosen() && typeof S.noEyes === 'boolean') setEyesOff(S.noEyes, false); // adopt the account's choice on a new device
+  await prepareScreen(); // the recitation recognizer is downloaded and built before the game starts
   migrate();
   import('./akhlak.js').then(m => m.installAkhlak()).catch(() => {}); // next chapter, only after boss4 + 10 surahs
   if (!S.name) onboarding(); else farm();
@@ -112,6 +113,7 @@ async function bootPlayer(p) {
   if (!S.name) {
     S.name = String(p.display_name || '').slice(0, 16); S.avatar = p.avatar | 0;
     if (!eyesChosen() && typeof S.noEyes === 'boolean') setEyesOff(S.noEyes, false);
+    await prepareScreen();
     migrate(); save(); intro();
   } else bootGame();
 }

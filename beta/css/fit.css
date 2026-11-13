@@ -1,0 +1,43 @@
+/* fit.css — v4: every game screen fits the phone's visible height (no vertical page scroll).
+   Panels and pop-ups are fitted by fitAll() in js/ui.js; this file makes the farm exactly one screen tall. */
+
+/* the farm: HUD, day bar, map, dialog in one screen; the map takes what's left (js/farm.js fitCanvas) */
+#root:has(> .farmview){height:100vh;height:100dvh;box-sizing:border-box;overflow:hidden;
+  padding-block:calc(6px + env(safe-area-inset-top,0px)) calc(8px + env(safe-area-inset-bottom,0px))}
+body.has-tabs #root:has(> .farmview){height:calc(100dvh - 64px - env(safe-area-inset-bottom,0px));padding-bottom:6px}
+body:has(#root > .farmview){overflow:hidden;overscroll-behavior:none}
+.farmview{height:100%;display:flex;flex-direction:column}
+.farmview > .hud,.farmview > .hud2,.farmview > .dialog,.farmview > .hint{flex:none}
+.farmview .stagebox{flex:1 1 auto;min-height:0;display:flex;justify-content:center;align-items:center}
+.farmview .stage{flex:none;max-width:100%}
+.farmview .dialog{margin-top:8px}
+/* the walking hint only when there is room for it (the intro dialog already explains it) */
+@media (max-height:800px){.farmview > .hint{display:none}}
+
+/* panels: less dead space at the bottom (the fitter scales the rest) */
+.panel .wrap{padding-block:calc(8px + env(safe-area-inset-top,0px)) calc(12px + env(safe-area-inset-bottom,0px))}
+.panel{overscroll-behavior:contain}
+.panel:not(.scrolly){overflow-y:hidden}
+.celebrate.scrolly{overflow-y:auto;place-items:start center}
+
+/* avatar builder: one option group at a time */
+.avb-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+.avb-tabs button{font-size:14px;font-weight:700;padding:6px 4px;border:2px solid var(--ink);border-radius:8px;background:var(--paper);box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.avb-tabs button.on{background:var(--gold)}
+.avb-rows .avb-row{min-height:76px;align-content:center}
+
+/* the browser's default 8px body margin made every screen 16px too tall */
+body{margin:0}
+
+/* Kenali with 5+ words: three cards per row */
+.cards:has(> .card:nth-child(5)) .card{flex:1 1 calc(33.3% - 10px);min-width:92px;min-height:96px;padding:6px}
+.cards:has(> .card:nth-child(5)) .card .w{font-size:32px;line-height:1.35}
+.cards:has(> .card:nth-child(5)) .card .m{font-size:14px;line-height:1.2}
+.cards:has(> .card:nth-child(5)) .card .e{font-size:20px}
+
+/* onboarding: a smaller title and tighter builder so name + character fit one screen */
+#root:has(#nm) .title{padding-top:0}
+#root:has(#nm) .title h1{font-size:34px}
+#root:has(#nm) .title p{margin:0 0 8px}
+.avb-rows .avb-row{min-height:46px}
+.avb-tabs{margin-bottom:4px}

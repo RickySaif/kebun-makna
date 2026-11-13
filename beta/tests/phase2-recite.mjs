@@ -5,7 +5,7 @@
 //   silence.wav = ffmpeg -f lavfi -i anullsrc=r=16000:cl=mono -t 10 silence.wav
 //   wrong.wav   = 114:1 with أعوذ said "a'uzu" (ذ→ز): say -v Majed -r 120 -o w.aiff 'قُلْ أَعُوزُ بِرَبِّ النَّاسِ' &&
 //                 ffmpeg -i w.aiff -af apad=pad_dur=2.5 -ar 16000 -ac 1 wrong.wav
-// Checks: the model downloads by itself from boot · after Kenali one page per word, after Cocokkan the parts, after
+// Checks: the model is downloaded and built on the start-up screen · after Kenali one page per word, after Cocokkan the parts, after
 // Susun the whole ayah · "Lanjut" always works (never a requirement) · silence → "Tidak ada suara" · Alafasy's word
 // → 100% · a'uzu → below 100% with only أعوذ red · Alafasy's ayah → 100%. With KM_EMAIL/KM_PASS a signed-in child's
 // recitation_try row (part, score, ms, wrong) is checked too.
@@ -55,9 +55,12 @@ try {
   let { ctx, page } = await open('silence.wav');
   const t0 = Date.now();
   await page.goto(BASE + '/beta/');
-  await page.click('#guest'); await page.fill('#nm', 'Uji'); await page.click('#go');
-  await page.waitForFunction(() => import('./js/recite.js').then(m => m.model.status === 'loading' || m.model.status === 'ready'), null, { timeout: 15000 });
-  assert(true, 'the model starts downloading by itself once the game opens');
+  await page.click('#guest');
+  await page.waitForSelector('.prep', { timeout: 15000 });
+  assert(true, 'the model is prepared on a start-up screen before the game');
+  await page.waitForSelector('#nm', { timeout: 600000 });
+  console.log(`  model download+build before the game: ${((Date.now() - t0) / 1000).toFixed(1)} s`);
+  await page.fill('#nm', 'Uji'); await page.click('#go');
   await start(page);
   const seen = []; let silenceDone = false;
   for (let i = 0; i < 80 && !(await page.$('.celebrate')); i++) {
@@ -65,10 +68,7 @@ try {
     if (t && seen[seen.length - 1] !== key) seen.push(key);
     if (t === 'Ayo baca kata ini' && !silenceDone) {
       silenceDone = true;
-      const fb = await page.locator('.practice .fb').innerText();
-      console.log('  first word page:', fb || '(model already ready)');
-      await ready(page);
-      console.log(`  model download+load from boot: ${((Date.now() - t0) / 1000).toFixed(1)} s`);
+      assert(!(await page.locator('.practice #mic').isDisabled()), 'first word page: mic ready at once');
       const r = await read(page);
       assert(/Tidak ada suara/.test(r.fb), 'silence → "Tidak ada suara yang terdengar"');
     }

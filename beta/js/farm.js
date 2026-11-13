@@ -66,7 +66,7 @@ export function farm(){
   stopAudio(); layer.replaceChildren();
   me.x=me.fx=S.pos.x; me.y=me.fy=S.pos.y; me.path=[];
   const vp=villageProgress();
-  root.replaceChildren($(`<div>
+  root.replaceChildren($(`<div class="farmview">
     <div class="hud"><div class="grow">${esc(S.name)}</div>
       <div class="chip" title="Koin Makna"><img alt="" src="${ICON.coin}"><span id="coins">${S.coins}</span></div>
       <button class="chip lvchip" id="lvl" title="Level Petani">Lv ${pLevel()}<span class="minibar"><i style="width:${(()=>{const L=pLevel(),n=LV_XP[L+1];return n?Math.min(100,(S.xp-LV_XP[L])/(n-LV_XP[L])*100):100;})()}%"></i></span></button>
@@ -75,10 +75,10 @@ export function farm(){
       <button class="btn ghost icon" id="gear" aria-label="Untuk orang tua">⚙</button></div>
     <div class="hud2"><div class="clock">Hari ${S.day} · <span id="clk">${clockStr()}</span></div>
       <div class="vbar"><span>Desa</span><div class="track"><div class="fillb" style="width:${vp.done/vp.total*100}%"></div></div><span>${vp.done}/${vp.total}</span></div></div>
-    <div class="stage"><canvas id="farm" width="${VC*T}" height="${VR*T}" aria-label="Kebunmu. Ketuk tempat untuk berjalan."></canvas></div>
+    <div class="stagebox"><div class="stage"><canvas id="farm" width="${VC*T}" height="${VR*T}" aria-label="Kebunmu. Ketuk tempat untuk berjalan."></canvas></div></div>
     <div class="frame dialog" id="dlg"></div>
     <p class="hint" style="color:#E9F7DF;text-shadow:1px 1px 0 #2B1D12;margin:8px 2px 0">Ketuk tanah untuk berjalan. Ketuk orang, toko, petak, peti, rumah, atau sumur untuk menghampirinya. Tidur di rumah untuk lompat ke pagi.</p></div>`));
-  cv=document.getElementById('farm'); fitCanvas();
+  cv=document.getElementById('farm'); fitCanvas(); fitObs.disconnect(); fitObs.observe(root.querySelector('.stagebox'));
   cv.onclick=onTap;
   document.getElementById('gear').onclick=parentView;
   document.getElementById('book').onclick=bookView;
@@ -135,7 +135,14 @@ const PATHS=new Set(); { const a=(x,y)=>PATHS.add(x+','+y); for(let x=1;x<=25;x+
 const HUTROOF=['#C8463A','#3A78C9','#3A9D6A','#8D5BB5','#B8862B','#E0702F','#5B7FD9','#E56B8A','#8E6A3A','#3AA6A0'];
 const TREEV=[0,2,3,0,2,1];
 let ground=null, groundKey='', parts=[], tapFx=null, lastSmoke=0, slowFrames=0, emaDt=16, fxOff=false;
-export function fitCanvas(){ if(cv&&cv.isConnected){ ctx=hdCanvas(cv,VC*T,VR*T); } }
+// v4: the farm is exactly one screen tall (no page scroll). The map takes the height left after the HUD and the
+// dialog, keeping its shape; a ResizeObserver refits it whenever the dialog grows or the screen changes.
+export function fitCanvas(){ if(cv&&cv.isConnected){
+  const box=cv.closest('.stagebox'), st=cv.parentElement;
+  if(box&&st){ const r=box.getBoundingClientRect(), cs=getComputedStyle(st), b=parseFloat(cs.borderLeftWidth)+parseFloat(cs.borderRightWidth);
+    const w=Math.max(150,Math.min(r.width,(r.height-b)*VC/VR+b)); if(Math.abs(parseFloat(st.style.width||0)-w)>.5) st.style.width=w+'px'; }
+  ctx=hdCanvas(cv,VC*T,VR*T); } }
+const fitObs=new ResizeObserver(()=>fitCanvas());
 window.addEventListener('resize',fitCanvas); window.addEventListener('km-gfx',()=>{fxOff=false;fitCanvas();}); window.addEventListener('km-eyes',()=>{ if(document.getElementById('farm')&&!dlgBusy&&!introActive) idleDialog(); });
 let fxSeed=7; const fxRnd=()=>(fxSeed=(fxSeed*16807)%2147483647)/2147483647; // own generator: effects must not consume the game's Math.random
 function puff(x,y,n,col,up){ if(parts.length>60) return; for(let i=0;i<n;i++) parts.push({x:x+fxRnd()*4-2,y:y+fxRnd()*2,vx:(fxRnd()-.5)*.012,vy:up?-.012-fxRnd()*.008:-.004,life:0,max:up?1600:420,col,s:up?2:1.5}); }
@@ -411,11 +418,11 @@ export let renoFx=null;
 export function onboarding(){
   root.replaceChildren($(`<div class="title"><h1>Kebun Makna</h1><p>Ayo bangun kebunmu!</p></div>`));
   const f=$(`<div class="frame"><img class="portrait" alt="" style="float:left;margin:0 12px 6px 0;width:64px;height:64px;border:3px solid var(--ink);image-rendering:pixelated" src="${portrait(KAKEK.look)}">
-    <div class="who" style="font-weight:700;color:var(--red)">Kakek Umar</div><p style="margin:2px 0 10px">Selamat datang di desa! Kakek punya sebidang tanah kosong dan gubuk kecil untukmu. Siapa namamu?</p>
+    <div class="who" style="font-weight:700;color:var(--red)">Kakek Umar</div><p style="margin:2px 0 10px">Selamat datang! Kakek punya tanah dan gubuk kecil untukmu. Siapa namamu?</p>
     <div class="field" style="clear:both"><label for="nm"><b>Namamu</b></label><input id="nm" maxlength="16" autocomplete="off" placeholder="Tulis namamu" value="${esc(S.name)}"></div>
-    <b>Buat tokohmu</b><div class="avslot" style="margin:8px 0 14px"></div>
+    <b>Buat tokohmu</b><div class="avslot" style="margin:6px 0 10px"></div>
     <button class="btn green block" id="go">Mulai berkebun ▸</button><p class="hint" id="err" style="margin:8px 0 0"></p></div>`);
-  f.querySelector('.avslot').append(avatarBuilder(S.avatar,v=>{S.avatar=v;},{eyes:true})); // v3: avatar builder (the look is packed into S.avatar)
+  f.querySelector('.avslot').append(avatarBuilder(S.avatar,v=>{S.avatar=v;},{eyes:true,eyesNote:false})); // v3: avatar builder (the look is packed into S.avatar)
   f.querySelector('#go').onclick=()=>{const n=f.querySelector('#nm').value.trim(); if(!n){f.querySelector('#err').textContent='Tulis namamu dulu, ya.';return;} const isNew=!S.name; S.name=n; save(); window.dispatchEvent(new Event('km-avatar')); sfx.fanfare(); voice('ready'); isNew?intro():farm();};
   root.append(f);
 }

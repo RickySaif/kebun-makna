@@ -40,16 +40,23 @@ export function avatarBuilder(av0, onChange, opts = {}) {
   const av = () => A.packLook(o);
   let dir = 0, tick = 0;
   const timer = setInterval(() => { if (!w.isConnected) { if (tick > 20) clearInterval(timer); tick++; return; } tick++; if (tick % 16 === 0) dir = (dir + 1) % 4; paint(cv, av(), [0, 3, 2, 1][dir], tick % 4); }, 140);
-  const sw = (key, cols, label) => `<div class="avb-row"><span>${label}</span><div class="sws" data-k="${key}">${cols.map((c, i) => `<button type="button" data-v="${i}" style="background:${c}" aria-label="${label} ${i + 1}"></button>`).join('')}</div></div>`;
+  const swatches = (key, cols, label) => `<div class="sws" data-k="${key}">${cols.map((c, i) => `<button type="button" data-v="${i}" style="background:${c}" aria-label="${label} ${i + 1}"></button>`).join('')}</div>`;
+  // v4: one option group at a time (tabs), so the builder fits a phone screen without scrolling
+  let tab = 'skin';
   function build() {
     const g = !!o.girl, hij = g && o.style < 2;
-    rows.innerHTML =
-      sw('skin', A.SKIN, 'Kulit') +
-      `<div class="avb-row"><span>${g ? 'Kepala' : 'Rambut'}</span><div class="seg wrap" data-k="style">${A.STYLES[g ? 'girl' : 'boy'].map((n, i) => `<button type="button" data-v="${i}">${n}</button>`).join('')}</div></div>` +
-      sw('col', hij ? A.HIJABC : A.HAIRC, hij ? 'Warna jilbab' : 'Warna rambut') +
-      sw('shirt', A.SHIRTC, g ? 'Gamis' : 'Baju') +
-      sw('pants', g ? A.SKIRTC.map(c => c || A.SHIRTC[o.shirt]) : A.PANTSC, g ? 'Rok' : 'Celana') +
-      `<div class="avb-row"><span>${g ? 'Hiasan' : 'Peci'}</span><div class="seg" data-k="hat"><button type="button" data-v="0">Tanpa</button><button type="button" data-v="1">${g ? 'Jepit bunga' : 'Pakai peci'}</button></div></div>`;
+    const groups = [
+      ['skin', 'Kulit', () => swatches('skin', A.SKIN, 'Kulit')],
+      ['style', g ? 'Kepala' : 'Rambut', () => `<div class="seg wrap" data-k="style">${A.STYLES[g ? 'girl' : 'boy'].map((n, i) => `<button type="button" data-v="${i}">${n}</button>`).join('')}</div>`],
+      ['col', 'Warna', () => swatches('col', hij ? A.HIJABC : A.HAIRC, hij ? 'Warna jilbab' : 'Warna rambut')],
+      ['shirt', g ? 'Gamis' : 'Baju', () => swatches('shirt', A.SHIRTC, g ? 'Gamis' : 'Baju')],
+      ['pants', g ? 'Rok' : 'Celana', () => swatches('pants', g ? A.SKIRTC.map(c => c || A.SHIRTC[o.shirt]) : A.PANTSC, g ? 'Rok' : 'Celana')],
+      ['hat', g ? 'Hiasan' : 'Peci', () => `<div class="seg" data-k="hat"><button type="button" data-v="0">Tanpa</button><button type="button" data-v="1">${g ? 'Jepit bunga' : 'Pakai peci'}</button></div>`],
+    ];
+    const cur = groups.find(x => x[0] === tab) || groups[0];
+    rows.innerHTML = `<div class="avb-tabs" role="tablist">${groups.map(([k, label]) => `<button type="button" role="tab" data-tab="${k}" class="${k === cur[0] ? 'on' : ''}" aria-selected="${k === cur[0]}">${label}</button>`).join('')}</div>
+      <div class="avb-row" role="tabpanel" aria-label="${cur[1]}">${cur[2]()}</div>`;
+    rows.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; build(); });
     w.querySelectorAll('[data-k]').forEach(grp => grp.querySelectorAll('button').forEach(b => {
       b.type = 'button'; b.classList.toggle('on', (o[grp.dataset.k] | 0) === (b.dataset.v | 0));
       b.onclick = () => { o[grp.dataset.k] = b.dataset.v | 0; if (grp.dataset.k === 'girl') { o.style = 0; o.col = o.girl ? 0 : 1; o.hat = 0; } build(); paint(cv, av(), 0, 0); onChange(av()); };
@@ -58,6 +65,6 @@ export function avatarBuilder(av0, onChange, opts = {}) {
   w.querySelector('[data-rnd]').onclick = () => { o = A.randomLook(o.girl); build(); paint(cv, av()); onChange(av()); };
   build(); paint(cv, av());
   window.addEventListener('km-eyes', () => { if (w.isConnected) paint(cv, av()); });
-  if (opts.eyes) w.append(eyesToggle());
+  if (opts.eyes) w.append(eyesToggle(opts.eyesNote !== false));
   return w;
 }

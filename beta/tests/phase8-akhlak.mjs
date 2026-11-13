@@ -2,7 +2,7 @@
 // appears with a note; story 1 plays through (pick the right hadith, verbatim source card, reward); story 2 opens,
 // story 3 stays locked. Also checks every content file's source_rows match the live `sources` table exactly.
 import fs from 'fs';
-import { BASE, newPage, close, client, assert } from './lib.mjs';
+import { BASE, newPage, close, client, assert, noModel, startGuest, skipPrep } from './lib.mjs';
 
 const errs = [];
 try {
@@ -18,8 +18,8 @@ try {
   }
   // ---- locked on a fresh game ----
   const P = await newPage('guest');
-  await P.goto(BASE + '/beta/');
-  await P.click('#guest'); await P.fill('#nm', 'Uji'); await P.click('#go');
+  await noModel(P); await P.goto(BASE + '/beta/');
+  await startGuest(P); await P.fill('#nm', 'Uji'); await P.click('#go');
   await P.waitForSelector('#farm'); await P.waitForTimeout(1500);
   assert(await P.locator('#akh').count() === 0, 'no 📗 before the original game is finished');
   // ---- finished game ----
@@ -29,7 +29,7 @@ try {
     st.trophies = { boss1: true, boss2: true, boss3: true, boss4: true };
     localStorage.setItem('kebun-makna-v3:beta-guest', JSON.stringify(st));
   });
-  await P.reload();
+  await P.reload(); await skipPrep(P);
   await P.waitForSelector('#akh', { timeout: 15000 });
   assert(true, '📗 appears after 10 surahs + boss4');
   if (await P.$('.celebrate')) { assert(/Akhlak Seorang Muslim/.test(await P.locator('.celebrate').innerText()), 'chapter note shown'); await P.click('.celebrate button'); }

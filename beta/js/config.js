@@ -18,8 +18,10 @@ export const SUPPORT = {
 // Practice, never a requirement (Ricky 2026-11-13): after Kenali each word, after Cocokkan parts of 2–3 words, after Susun
 // the whole ayah. Each try shows "Ketepatan" = share of meaning letters read right (beta/js/match.js; قلب/كلب).
 export const RECITE = {
+  id: 'base-q4',          // changes when the model changes (logged with each attempt)
   model: 'eventhorizon0/tarteel-ai-onnx-whisper-base-ar-quran',
   dtype: { encoder_model: 'q4', decoder_model_merged: 'q4' },
+  size: '≈140 MB', bytes: 145880000, // all files, for the progress bar
   silenceMs: 1500,       // auto-stop after this much silence
   maxMs: 15000,          // hard stop
 };
