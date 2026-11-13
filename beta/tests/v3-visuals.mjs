@@ -6,7 +6,7 @@ const BASE = process.env.BASE || 'http://127.0.0.1:8765';
 const browser = await chromium.launch({ channel: 'chrome' });
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
 const page = await ctx.newPage(); const errors = [];
-page.on('console', m => { if (m.type() === 'error' && !/huggingface|transformers/.test(m.location().url || '')) errors.push(m.text()); }); page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));
+page.on('console', m => { if (m.type() === 'error' && !/huggingface|transformers|\/beta\/models\//.test(m.location().url || '')) errors.push(m.text()); }); page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));
 await page.addInitScript(() => { HTMLMediaElement.prototype.play = function () { setTimeout(() => this.dispatchEvent(new Event('ended')), 30); return Promise.resolve(); }; });
 const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) process.exitCode = 1; };
 await noModel(page); await page.goto(BASE + '/beta/'); await page.waitForSelector('#guest');

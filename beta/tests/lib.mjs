@@ -23,7 +23,7 @@ export async function newPage(label) {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   const page = await ctx.newPage();
   page.errors = [];
-  page.on('console', m => { if (m.type() === 'error' && !/huggingface|transformers/.test(m.location().url || '')) page.errors.push(`[${label}] ${m.text()}`); });
+  page.on('console', m => { if (m.type() === 'error' && !/huggingface|transformers|\/beta\/models\//.test(m.location().url || '')) page.errors.push(`[${label}] ${m.text()}`); });
   page.on('pageerror', e => page.errors.push(`[${label}] PAGEERROR ${e.message}`));
   page.on('response', r => { if (r.status() >= 500) page.errors.push(`[${label}] HTTP ${r.status()} ${r.request().method()} ${r.url().slice(0, 160)}`); });
   await page.addInitScript(INIT);
@@ -86,7 +86,7 @@ export async function driveLessonOnce(page) {
 }
 
 /** For tests that don't need speech recognition: block the model download (call before page.goto). */
-export const noModel = page => page.route(/huggingface\.co|@huggingface\/transformers/, r => r.abort());
+export const noModel = page => page.route(/huggingface\.co|@huggingface\/transformers|\/beta\/models\//, r => r.abort());
 /** Tap "Main sebagai tamu" and get past the model start-up screen ("Main tanpa latihan baca") to onboarding. */
 export async function startGuest(page) {
   await page.click('#guest');

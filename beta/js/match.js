@@ -30,7 +30,7 @@ export function letters(word) {
       while (k < s.length && MARKS.test(s[k])) next += s[k++];
       if (!own && j < s.length && SUN.has(BASE[s[j]] || s[j]) && next.includes(SHADDA)) soft = true;
     }
-    out.push({ c, soft });
+    out.push({ c, soft, raw: ch });
   }
   return out;
 }
@@ -44,7 +44,7 @@ const plain = w => letters(w).map(x => x.c).join('');
  */
 export function compare(expWord, heardWord, opts = {}) {
   const atEnd = !!opts.freeEnd;
-  const E = letters(expWord), H = letters(heardWord).map(x => ({ c: x.c, soft: SOFT.has(x.c) }));
+  const E = letters(expWord), H = letters(heardWord).map(x => ({ c: x.c, soft: SOFT.has(x.c), raw: x.raw }));
   // a word with tanwin read on its own is often heard with its "-n" written out (أحدٌ → أحدن): not an error
   if (/[\u064B-\u064D]\s*$/.test(String(expWord)) && H.length && H[H.length - 1].c === 'ن') H[H.length - 1].soft = true;
   // the last word of what was read, ending in a short vowel (اَعُوۡذُ): the model often writes the breath after the vowel
@@ -57,23 +57,35 @@ export function compare(expWord, heardWord, opts = {}) {
   D[0][0] = [0, 0];
   if (opts.freeStart) for (let j = 1; j <= m; j++) D[0][j] = [0, j * EPS / 10];
   const endAt = [];
-  const put = (i, j, h, c) => { const d = D[i][j]; if (!d || c < d[1]) D[i][j] = [h, c]; };
+  // D[i][j] = [hard, cost, back]; back = [pi, pj, op] (op: 'skip' free edge, 'del' expected letter not heard,
+  // 'ins' extra heard letter, 'sub' different letter, 'eq' same / both soft)
+  const put = (i, j, h, c, back) => { const d = D[i][j]; if (!d || c < d[1]) D[i][j] = [h, c, back]; };
   for (let i = 0; i <= n; i++) for (let j = 0; j <= m; j++) {
     const d = D[i][j]; if (!d) continue;
     // after skipping heard letters for free, the word's first letter must be read (aligned), not dropped
-    if (i < n && !(opts.freeStart && i === 0 && j > 0)) { const hard = !E[i].soft; put(i + 1, j, d[0] + hard, d[1] + (hard ? 1 : EPS)); }
-    if (j < m && !(opts.freeStart && i === 0)) { const hard = !H[j].soft; put(i, j + 1, d[0] + hard, d[1] + (hard ? 1 : EPS)); }
+    if (i < n && !(opts.freeStart && i === 0 && j > 0)) { const hard = !E[i].soft; put(i + 1, j, d[0] + hard, d[1] + (hard ? 1 : EPS), [i, j, 'del']); }
+    if (j < m && !(opts.freeStart && i === 0)) { const hard = !H[j].soft; put(i, j + 1, d[0] + hard, d[1] + (hard ? 1 : EPS), [i, j, 'ins']); }
     if (i < n && j < m) {
       const same = E[i].c === H[j].c, bothSoft = SOFT.has(E[i].c) && SOFT.has(H[j].c);
       const h = d[0] + (same || bothSoft ? 0 : 1), c = d[1] + (same ? 0 : bothSoft ? EPS : 1);
-      put(i + 1, j + 1, h, c);
+      put(i + 1, j + 1, h, c, [i, j, same || bothSoft ? 'eq' : 'sub']);
       // the word's last letter aligned with a heard letter: anything heard after it may be ignored (freeEnd)
-      if (i + 1 === n && (!endAt[j + 1] || c < endAt[j + 1][1])) endAt[j + 1] = [h, c];
+      if (i + 1 === n && (!endAt[j + 1] || c < endAt[j + 1][1])) endAt[j + 1] = [h, c, [i, j, same || bothSoft ? 'eq' : 'sub']];
     }
   }
-  let best = D[n][m];
-  if (opts.freeEnd) for (let j = 1; j < m; j++) if (endAt[j] && endAt[j][1] + (m - j) * EPS / 10 < best[1]) best = [endAt[j][0], endAt[j][1] + (m - j) * EPS / 10];
-  return { hard: best[0], cost: best[1] };
+  let best = D[n][m], endJ = m;
+  if (opts.freeEnd) for (let j = 1; j < m; j++) if (endAt[j] && endAt[j][1] + (m - j) * EPS / 10 < best[1]) { best = [endAt[j][0], endAt[j][1] + (m - j) * EPS / 10, endAt[j][2]]; endJ = j; }
+  // walk back: the meaning-changing letters only (what the child should fix)
+  const ops = [];
+  let i = n, j = endJ, back = best[2];
+  while (back && (i > 0 || j > 0)) {
+    const [pi, pj, op] = back;
+    if (op === 'sub') ops.push({ op, e: E[pi].raw, h: H[pj].raw, at: pi });
+    else if (op === 'del' && !E[pi].soft) ops.push({ op, e: E[pi].raw, at: pi });
+    else if (op === 'ins' && !H[pj].soft) ops.push({ op, h: H[pj].raw, at: pi });
+    i = pi; j = pj; back = D[i][j] ? D[i][j][2] : null;
+  }
+  return { hard: best[0], cost: best[1], ops: ops.reverse() };
 }
 
 /**
@@ -83,9 +95,10 @@ export function compare(expWord, heardWord, opts = {}) {
  */
 export function checkWord(word, heard) {
   const h = String(heard).replace(/\s+/g, ''), L = weight(word);
-  const hard = plain(h) ? Math.min(compare(word, h, { freeStart: true, freeEnd: true }).hard, L) : L;
+  const cmp = plain(h) ? compare(word, h, { freeStart: true, freeEnd: true }) : null;
+  const hard = cmp ? Math.min(cmp.hard, L) : L;
   const st = !plain(h) ? 'miss' : hard ? 'bad' : 'ok';
-  return { res: [{ i: 0, word, heard: String(heard).trim(), st, hard }], ok: +(st === 'ok'), bad: +(st === 'bad'), miss: +(st === 'miss'), score: st === 'ok' ? 1 : 0, acc: Math.max(0, 1 - hard / L) };
+  return { res: [{ i: 0, word, heard: String(heard).trim(), st, hard, ops: cmp && hard ? cmp.ops : [] }], ok: +(st === 'ok'), bad: +(st === 'bad'), miss: +(st === 'miss'), score: st === 'ok' ? 1 : 0, acc: Math.max(0, 1 - hard / L) };
 }
 
 /** Letters that carry the meaning (consonants), used as the weight of a word in the accuracy score. */
@@ -123,6 +136,7 @@ export function check(expected, heard) {
     if (b.t === 'm') for (let k = 0; k < b.n; k++) res[b.i + k] = { i: b.i + k, word: expected[b.i + k], heard: b.h, st: b.hard ? 'bad' : 'ok', hard: Math.min(b.hard, weight(expected[b.i + k])) };
     i = b.i; j = b.j;
   }
+  for (const r of res) if (r.st === 'bad') r.ops = compare(r.word, r.heard.replace(/\s+/g, ''), { freeStart: r.i === 0, freeEnd: r.i === n - 1 }).ops;
   const ok = res.filter(r => r.st === 'ok').length, bad = res.filter(r => r.st === 'bad').length;
   const W = expected.reduce((t, w) => t + weight(w), 0), lost = res.reduce((t, r) => t + r.hard, 0);
   return { res, ok, bad, miss: n - ok - bad, score: n ? ok / n : 0, acc: W ? Math.max(0, 1 - lost / W) : 0 };

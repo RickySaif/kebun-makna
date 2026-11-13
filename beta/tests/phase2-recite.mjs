@@ -107,6 +107,9 @@ try {
   console.log('  a\'uzu:', r.acc, '|', r.fb, JSON.stringify(r.red));
   assert(/Ketepatan: [5-9]\d%/.test(r.acc), 'a\'uzu scores below 100% but most letters right');
   assert(JSON.stringify(r.red) === '[false,true,false,false]', 'only اَعُوۡذُ is marked red');
+  const heard = await page.locator('.practice .heard').innerText();
+  console.log('  heard box:', heard.replace(/\n/g, ' / '));
+  assert(/ذ/.test(heard) && /ز/.test(heard) && /terdengar/.test(heard), '"Yang Ustaz dengar" shows ذ heard as ز');
   await page.screenshot({ path: 'shot-practice-wrong.png' });
   await page.click('.practice #next');
   await page.locator('.celebrate').waitFor({ timeout: 5000 });

@@ -16,7 +16,7 @@ const open = async () => {
   const page = ctx.pages()[0] || await ctx.newPage(); page.on('pageerror', e => errors.push(e.message)); await page.addInitScript(INIT);
   return { ctx, page };
 };
-const hfRequests = page => { const seen = []; page.on('request', r => { if (/huggingface\.co|hf\.co|xethub/.test(r.url())) seen.push(r.url()); }); return seen; };
+const hfRequests = page => { const seen = []; page.on('request', r => { if (/huggingface\.co|hf\.co|xethub|\/beta\/models\//.test(r.url())) seen.push(r.url()); }); return seen; };
 try {
   // ---- 1. fresh device ----
   let { ctx, page } = await open();
@@ -70,7 +70,7 @@ try {
   // ---- 4. offline on a fresh device ----
   fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir);
   ({ ctx, page } = await open());
-  await page.route(/huggingface\.co|hf\.co|xethub/, r => r.abort());
+  await page.route(/huggingface\.co|hf\.co|xethub|\/beta\/models\//, r => r.abort());
   await page.goto(BASE + '/beta/'); await page.click('#guest');
   await page.waitForSelector('.prep .act button', { timeout: 60000 });
   assert(/internet/.test(await page.locator('.prep .st').innerText()), 'offline: asks for internet, with Coba lagi');

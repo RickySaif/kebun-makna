@@ -2,6 +2,19 @@
 
 Beta: https://rickysaif.github.io/kebun-makna/beta/ · Classic (live, untouched): https://rickysaif.github.io/kebun-makna/
 
+## 2026-11-13 (night) — iPhone loop, take 2: a model that fits; Pak Ustaz while checking; "Yang Ustaz dengar"
+**Still looping on Ricky's iPhone 13 (Safari) after the evening fix:** download → reload → (faster) download → reload …
+- **Why the guard didn't hold:** the crash marker was written to localStorage, which Safari puts on disk a moment later in the background; the build blocks the page right away and the tab was killed first, so after the reload no marker was found. Now the marker is written to **Cache Storage** (the promise resolves after the write is done) *and* localStorage, and the build waits 0.5 s after writing it.
+- **Why it crashed at all:** the base decoder (123 MB) keeps the 51865×512 token table in float32 (106 MB), and ONNX Runtime makes a second transposed copy of it for the logits. **New decoder** (`beta/tools/shrink-decoder.py`, same weights): int8 table with a scale per row for the lookup; 8-bit integer weights for the logits (DynamicQuantizeLinear → MatMulInteger, a scale per column); the float32 table is gone. Decoder 123 → 71 MB; all files 146 → 93 MB. Peak memory while building (Chrome, 3 runs): **~450–590 MB, was 600 MB–1 GB**.
+  - Accuracy is the same as the original: Alafasy ayat 48/48, parts 71/74, words 161/201 (was 162), correct TTS reading → 100% 8/10, letter swaps caught 10/12; on every wrong-reading test file it hears exactly the same text as the original.
+  - A 4-bit version (61 MB) was smaller but heard "a'uzu" as أعوذ (lost the ذ/ز difference): rejected. ORT web supports MatMulNBits only at 4 bits, hence the standard-op 8-bit path.
+- **The model is now served from this site** (`beta/models/whisper-base-ar-quran/`, Apache-2.0, see `beta/models/README.md`), not Hugging Face. Old cached files of other models are deleted on the next visit.
+- **If the iPhone still shows the memory message** on the start-up screen: next step is recognising on a server (voice leaves the phone), or the tiny model (correct readings by a different voice passed only 2/10).
+
+**Reading page while checking (Ricky):** while listening only ⏹️ Selesai works; while checking, every button (Dengar, Baca, Lanjut, back ◂, word taps) is off, the ayah is dimmed and **Pak Ustaz** (new villager look: white peci and baju koko; follows "tanpa mata") appears: "Sebentar, Ustaz sedang mendengarkan bacaanmu…". Test: `beta/tests/practice-lock.mjs`.
+
+**"Yang Ustaz dengar" (Ricky):** under the score, for up to 3 red words: the word as written ← what the model heard, **with its harakat**, plus the letters to fix: "ذ terdengar ز", "د tidak terdengar", "ada ر tambahan". `match.js` `compare()` now returns these letter differences (`ops`), only for meaning-changing letters.
+
 ## 2026-11-13 (evening) — iPhone reload loop fixed; model prepared at start-up; every screen fits the phone height
 **Bug (Ricky, iPhone 13):** after the model finished downloading the page reloaded, downloaded again, reloaded… (3×).
 - **Cause:** building the recognizer briefly needs several times the model's size in memory. Measured in Chrome for the base model: peak ~600 MB right after download, ~1 GB when loading from storage. iOS kills a Safari tab that goes over its limit and Safari reloads it. transformers.js only wrote a file to storage after reading all of it into memory, so the crash lost the download. Since the last change the load started at boot, so every reload crashed again.

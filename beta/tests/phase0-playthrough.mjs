@@ -17,7 +17,7 @@ async function run(url, label) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   const page = await ctx.newPage();
   const errors = [];
-  page.on('console', m => { if (m.type() === 'error' && !/huggingface|transformers/.test(m.location().url || '')) errors.push(m.text()); });
+  page.on('console', m => { if (m.type() === 'error' && !/huggingface|transformers|\/beta\/models\//.test(m.location().url || '')) errors.push(m.text()); });
   if (url.includes('/beta/')) await noModel(page);
   page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));
   await page.addInitScript(INIT);

@@ -41,3 +41,32 @@ body{margin:0}
 #root:has(#nm) .title p{margin:0 0 8px}
 .avb-rows .avb-row{min-height:46px}
 .avb-tabs{margin-bottom:4px}
+
+/* reading practice: Pak Ustaz thinks while the reading is checked; everything else is locked */
+.ustaz-think{display:flex;gap:12px;align-items:center;background:#FFF6D6;border:3px solid var(--ink);border-radius:12px;padding:10px 12px;margin:8px 0}
+.ustaz-think[hidden]{display:none}
+.ustaz-think .portrait{flex:none;width:64px;height:64px;border:3px solid var(--ink);border-radius:10px;image-rendering:pixelated;animation:ustaz-nod 1.6s ease-in-out infinite}
+.ustaz-think b{color:var(--red)}
+.ustaz-think p{margin:2px 0 0;font-weight:700}
+.ustaz-think .dots i{font-style:normal;animation:ustaz-dot 1.2s infinite;opacity:.2}
+.ustaz-think .dots i:nth-child(2){animation-delay:.2s}.ustaz-think .dots i:nth-child(3){animation-delay:.4s}
+@keyframes ustaz-dot{0%,100%{opacity:.2}40%{opacity:1}}
+@keyframes ustaz-nod{0%,100%{transform:rotate(0)}50%{transform:rotate(-4deg) translateY(1px)}}
+@media (prefers-reduced-motion:reduce){.ustaz-think .portrait,.ustaz-think .dots i{animation:none;opacity:1}}
+.ayahbig.locked{pointer-events:none}
+.practice.thinking .ayahbig,.practice.thinking .acc{opacity:.45}
+.ptop button[disabled]{opacity:.45;pointer-events:none}
+
+/* "Yang Ustaz dengar": what the model heard for each red word, and the letter to fix */
+.heard{background:#FFF1EC;border:2px dashed #C0392B;border-radius:10px;padding:6px 10px;margin:6px 0}
+.heard[hidden]{display:none}
+.heard .hhead{font-size:13px;font-weight:700;color:#8A3B2A}
+.heard .hrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 10px;padding:2px 0}
+.heard .hrow + .hrow{border-top:1px solid #F3C9BC}
+.heard .w{font-size:28px;line-height:1.5}
+.heard .heardw{color:#B03A2E}
+.heard .arrow{font-size:18px;color:#8A3B2A}
+.heard .tag{font-size:14px;font-weight:700;color:#8A3B2A}
+.heard .tips{flex-basis:100%;display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.heard .tip{background:#fff;border:2px solid #C0392B;border-radius:999px;padding:0 10px;font-size:14px;font-weight:700}
+.heard .tip b{font-size:22px;color:#B03A2E;padding:0 2px}

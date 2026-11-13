@@ -3,7 +3,9 @@
 import { $, esc, root } from './ui.js';
 import { S, save } from './state.js';
 import { sfx, play, stopAudio } from './audio.js';
-import { AA, AW } from './data.js';
+import { AA, AW, USTAZ } from './data.js';
+import { portraitURL } from './art.js';
+const portrait = look => portraitURL(look);
 import { check, checkWord, weight } from './match.js';
 import { RECITE, TRANSFORMERS_ESM, FLAGS } from './config.js';
 import { logActivity } from './api.js';
@@ -24,19 +26,35 @@ import { hooks } from './hooks.js';
 const SO = { graphOptimizationLevel: 'basic', enableCpuMemArena: false, enableMemPattern: false };
 const LS_READY = 'kebun-makna-recite-ready', LS_OLD_PROFILE = 'kebun-makna-recite-profile';
 const LS_LOADING = 'kebun-makna-recite-loading', LS_CRASH = 'kebun-makna-recite-crash';
-const CACHE = 'transformers-cache', HF = 'https://huggingface.co/';
+const CACHE = 'transformers-cache';
+// The model files are served from this site (beta/models/<model>/…), not from Hugging Face: see models/README.md.
+const HOST = new URL('../models/', import.meta.url).href;
+function hostModels(T) { T.env.allowLocalModels = false; T.env.allowRemoteModels = true; T.env.remoteHost = HOST; T.env.remotePathTemplate = '{model}/'; }
 const SUFFIX = { fp32: '', fp16: '_fp16', q8: '_quantized', int8: '_int8', uint8: '_uint8', q4: '_q4', bnb4: '_bnb4' };
 const FILES = () => ['config.json', 'generation_config.json', 'preprocessor_config.json', 'tokenizer.json', 'tokenizer_config.json',
   `onnx/encoder_model${SUFFIX[RECITE.dtype.encoder_model]}.onnx`, `onnx/decoder_model_merged${SUFFIX[RECITE.dtype.decoder_model_merged]}.onnx`];
-const fileURL = f => `${HF}${RECITE.model}/resolve/main/${f}`;
+const fileURL = f => `${HOST}${RECITE.model}/${f}`; // the exact key transformers.js uses for its cache
 export const MODEL_SIZE = RECITE.size;
 
 const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
 export const isReady = () => !!asr;
 
-// a load that started but never finished = the tab was killed while loading (see above)
-if (lsGet(LS_LOADING)) { lsSet(LS_LOADING, null); lsSet(LS_CRASH, String((+lsGet(LS_CRASH) || 0) + 1)); }
+// A build that started but never finished = the tab was killed while building (see above).
+// The marker must be ON DISK before the build starts: Safari writes localStorage to disk a little later, in the
+// background, and the build blocks the page right away, so on Ricky's iPhone the localStorage marker never landed and
+// the loop went on. So the marker goes into Cache Storage (the write is done when the promise resolves) AND
+// localStorage, and the build waits for it.
+const FLAG_CACHE = 'kebun-makna-flags', FLAG_URL = new URL('__km/recite-building', location.href).href;
+async function setMark(on) {
+  lsSet(LS_LOADING, on ? String(Date.now()) : null);
+  try { const c = await caches.open(FLAG_CACHE); if (on) await c.put(FLAG_URL, new Response(String(Date.now()))); else await c.delete(FLAG_URL); } catch (e) {}
+}
+const crashCheck = (async () => {
+  let hit = !!lsGet(LS_LOADING);
+  try { const c = await caches.open(FLAG_CACHE); if (await c.match(FLAG_URL)) { hit = true; await c.delete(FLAG_URL); } } catch (e) {}
+  if (hit) { lsSet(LS_LOADING, null); lsSet(LS_CRASH, String((+lsGet(LS_CRASH) || 0) + 1)); }
+})();
 const crashes = () => +lsGet(LS_CRASH) || 0;
 
 // status: 'idle' | 'downloading' | 'downloaded' | 'loading' | 'ready' | 'blocked' (last load crashed) | 'error'
@@ -54,6 +72,8 @@ export function prefetchModel() {
     if (!('caches' in window)) return; // transformers.js will download in loadModel instead
     if (lsGet(LS_OLD_PROFILE)) { try { await caches.delete(CACHE); } catch (e) {} lsSet(LS_OLD_PROFILE, null); }
     const cache = await caches.open(CACHE);
+    // drop files of any other model (e.g. the 142 MB Hugging Face download from before) to free the phone's storage
+    for (const req of await cache.keys()) if (!req.url.startsWith(HOST + RECITE.model + '/')) await cache.delete(req);
     const missing = [];
     for (const f of FILES()) if (!(await cache.match(fileURL(f)))) missing.push(f);
     if (!missing.length) { if (model.status === 'idle') { model.status = 'downloaded'; emit(); } return; }
@@ -83,12 +103,12 @@ export function loadModel() {
     await prefetchModel().catch(() => {}); // files first (transformers.js downloads whatever is still missing)
     Object.assign(model, { status: 'loading', error: '' }); emit();
     const T = await import(TRANSFORMERS_ESM);
-    T.env.allowLocalModels = false;
     if (T.env.backends && T.env.backends.onnx && T.env.backends.onnx.wasm) T.env.backends.onnx.wasm.numThreads = 1;
-    lsSet(LS_LOADING, String(Date.now()));
+    hostModels(T);
+    await setMark(true); await new Promise(r => setTimeout(r, 500)); // let Safari put the marker on disk first
     let pipe;
     try { pipe = await T.pipeline('automatic-speech-recognition', RECITE.model, { dtype: RECITE.dtype, device: 'wasm', session_options: SO }); }
-    finally { lsSet(LS_LOADING, null); }
+    finally { await setMark(false); }
     asr = pipe; model.ms = Math.round(performance.now() - t0);
     lsSet(LS_CRASH, null); model.crashes = 0;
     const first = lsGet(LS_READY) !== RECITE.id; lsSet(LS_READY, RECITE.id);
@@ -107,8 +127,9 @@ export function preloadModel() {
   prefetchModel().catch(() => setTimeout(() => prefetchModel().catch(() => {}), 15000));
 }
 /** On a reading page: build the recognizer, unless the last attempt crashed this tab (then wait for "Coba lagi"). */
-export function ensureModel(manual = false) {
+export async function ensureModel(manual = false) {
   if (!FLAGS.recitationGate || asr) return;
+  await crashCheck;
   if (!manual && crashes() > 0) { // finish any missing download (safe), then wait for the player's "Coba lagi"
     model.crashes = crashes();
     const block = () => { if (!asr && !loadingP) { model.status = 'blocked'; emit(); } };
@@ -236,6 +257,24 @@ const verdict = acc => acc >= 0.9 ? 'MasyaAllah, jelas sekali!' : acc >= 0.7 ? '
   : acc > 0 ? 'Ayo coba lagi pelan-pelan. Dengarkan dulu kata yang merah.' : 'Belum terdengar. Dengarkan dulu, lalu baca pelan-pelan.';
 
 /**
+ * v4 (Ricky): tell the child what Pak Ustaz heard for each red word, and which letter to fix.
+ * Up to 3 words: the word as written → what the model heard (with its harakat), then the letters that differ.
+ */
+function showHeard(el, res) {
+  const wrong = res.filter(x => x.st !== 'ok').slice(0, 3);
+  if (!wrong.length) { el.hidden = true; el.replaceChildren(); return; }
+  const L = c => `<b class="ar" lang="ar">${esc(c)}</b>`;
+  const rows = wrong.map(x => {
+    if (x.st === 'miss' || !x.heard) return `<div class="hrow"><span class="ar w" lang="ar">${esc(x.word)}</span><span class="tag">belum terdengar</span></div>`;
+    const tips = (x.ops || []).slice(0, 3).map(o => o.op === 'sub' ? `<span class="tip">${L(o.e)} terdengar ${L(o.h)}</span>`
+      : o.op === 'del' ? `<span class="tip">${L(o.e)} tidak terdengar</span>` : `<span class="tip">ada ${L(o.h)} tambahan</span>`).join('');
+    return `<div class="hrow"><span class="ar w" lang="ar">${esc(x.word)}</span><span class="arrow">←</span><span class="ar w heardw" lang="ar">${esc(x.heard)}</span>${tips ? `<div class="tips">${tips}</div>` : ''}</div>`;
+  }).join('');
+  el.innerHTML = `<div class="hhead">Yang Ustaz dengar:</div>${rows}`;
+  el.hidden = false;
+}
+
+/**
  * Show one practice page per item (an item = an array of word objects from a.w) and call next() after the last one.
  * kind: 'kata' | 'bagian' | 'ayat' (used in the title and the activity log).
  */
@@ -256,7 +295,21 @@ function practice({ body, s, a, items, kind, next }) {
       <div class="row" style="margin-top:10px"><button class="btn blue" id="hear">▶ Dengar</button><button class="btn green" id="mic" style="flex:1">🎙️ Baca</button></div>
       <div class="minibar" style="margin-top:8px;height:8px;background:#E8DDBF;border:2px solid var(--ink);border-radius:4px;overflow:hidden"><div id="lvl" style="height:100%;width:0;background:#7CD35E"></div></div>
       <button class="btn block" id="next" style="margin-top:14px">${isLast ? 'Lanjut ▸' : (kind === 'kata' ? 'Kata berikutnya ▸' : 'Bagian berikutnya ▸')}</button></div>`);
+    // v4 (Ricky): while listening only "Selesai" works; while checking, every button is off and Pak Ustaz thinks.
+    const think = $(`<div class="ustaz-think" hidden aria-live="polite"><img class="portrait" alt="Pak Ustaz" src="${portrait(USTAZ.look)}">
+      <div><b>Pak Ustaz</b><p>Sebentar, Ustaz sedang mendengarkan bacaanmu<span class="dots"><i>.</i><i>.</i><i>.</i></span></p></div></div>`);
+    function lock(mode) {
+      const off = !!mode, panelEl = v.closest('.panel');
+      v.querySelectorAll('#hear, #next, #retry').forEach(b => b.disabled = off);
+      if (panelEl) panelEl.querySelector('.ptop button').disabled = off;
+      v.querySelector('.ayahbig').classList.toggle('locked', off);
+      v.classList.toggle('thinking', mode === 'think');
+      think.hidden = mode !== 'think';
+      if (mode === 'think') think.querySelector('img').src = portrait(USTAZ.look); // follows "tanpa mata"
+    }
     const box = v.querySelector('.ayahbig'), fb = v.querySelector('.fb'), mic = v.querySelector('#mic'), lvl = v.querySelector('#lvl'), accEl = v.querySelector('.acc');
+    const heardEl = $(`<div class="heard" hidden></div>`); accEl.after(heardEl);
+    v.querySelector('.fb').before(think);
     let busy = false, stopFn = null, tries = 0;
     const paint = res => box.replaceChildren(...words.flatMap((w, i) => {
       const sp = $(`<span role="button" tabindex="0">${esc(w.ar)}</span>`);
@@ -282,8 +335,9 @@ function practice({ body, s, a, items, kind, next }) {
     mic.onclick = async () => {
       if (busy) { stopFn && stopFn(); return; }
       stopAudio(); busy = true; stopFn = null;
-      mic.textContent = '⏹️ Selesai'; fb.className = 'fb'; fb.textContent = 'Mendengarkan… silakan baca.'; accEl.textContent = '';
-      const restore = () => { busy = false; stopFn = null; mic.textContent = '🎙️ Baca lagi'; mic.disabled = false; };
+      mic.textContent = '⏹️ Selesai'; fb.className = 'fb'; fb.textContent = 'Mendengarkan… silakan baca.'; accEl.textContent = ''; heardEl.hidden = true; heardEl.replaceChildren();
+      lock('listen');
+      const restore = () => { busy = false; stopFn = null; mic.textContent = '🎙️ Baca lagi'; mic.disabled = false; lock(null); };
       let rec;
       try { rec = await record({ onLevel: x => { lvl.style.width = Math.round(x * 100) + '%'; }, stopper: f => stopFn = f }); }
       catch (e) {
@@ -294,7 +348,7 @@ function practice({ body, s, a, items, kind, next }) {
       lvl.style.width = '0';
       if (!v.isConnected) return;
       if (voicedSeconds(rec.pcm) < (kind === 'kata' ? 0.25 : 0.6)) { restore(); fb.className = 'fb bad'; fb.textContent = 'Tidak ada suara yang terdengar. Dekatkan HP ke mulut dan coba lagi.'; return; }
-      mic.disabled = true; mic.textContent = '⏳ Memeriksa…'; fb.textContent = 'Sebentar, sedang mendengarkan bacaanmu…';
+      mic.disabled = true; mic.textContent = '⏳ Memeriksa…'; fb.textContent = ''; lock('think');
       const t0 = performance.now(); let text = '';
       try { text = await transcribe(rec.pcm); }
       catch (e) { restore(); fb.className = 'fb bad'; fb.textContent = 'Gagal memeriksa: ' + String(e.message || e).slice(0, 120); return; }
@@ -308,7 +362,7 @@ function practice({ body, s, a, items, kind, next }) {
         paint(null); accEl.textContent = 'Kata pendek: belum bisa dinilai'; accEl.style.color = '#8A7A5A';
         fb.className = 'fb'; fb.textContent = 'Pengenal bacaan sulit mendengar kata sependek ini. Dengarkan dan tirukan, lalu lanjut. Kata ini dinilai lagi saat membaca per bagian.';
       } else {
-        paint(r.res);
+        paint(r.res); showHeard(heardEl, r.res);
         accEl.textContent = `Ketepatan: ${pct}%`;
         accEl.style.color = pct >= 90 ? 'var(--ok)' : pct >= 70 ? '#B7791F' : 'var(--no)';
         fb.className = 'fb ' + (pct >= 90 ? 'good' : ''); fb.textContent = verdict(r.acc);

@@ -26,7 +26,7 @@ for (const sz of SIZES) {
   const page = await ctx.newPage();
   page.on('pageerror', e => errors.push(e.message));
   await page.addInitScript(INIT);
-  await page.route(/huggingface\.co|@huggingface\/transformers/, r => r.abort()); // keep the 140 MB model out of this test
+  await page.route(/huggingface\.co|@huggingface\/transformers|\/beta\/models\//, r => r.abort()); // keep the 140 MB model out of this test
   const rows = [];
   const check = async label => { await page.waitForTimeout(250); const r = await overflow(page); rows.push([label, r]); };
 

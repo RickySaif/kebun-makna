@@ -58,6 +58,7 @@ Object.assign(QUEST,{
   done:['Dulu pasukan bergajah datang untuk menghancurkan Ka\'bah. Tapi Allah menjadikan tipu daya mereka sia-sia.','Allah mengirim burung yang berbondong-bondong, melempari mereka dengan batu dari tanah liat yang dibakar, sampai mereka seperti daun yang dimakan ulat.','Sekuat apa pun orang sombong, Allah lebih kuat. Aku tidak takut lagi! Benih Semangka ada di toko.'],
   thanks:'Allah Maha Kuat. Aku tidak takut pada orang sombong lagi.'}
 });
+export const USTAZ={npc:'Pak Ustaz',look:{hair:'#2B1D12',shirt:'#F2F2F2',pants:'#3A3A4A',hat:'#F2F2F2'}}; // v4: listens to the child's reading
 export const KAKEK={npc:'Kakek Umar',look:{hair:'#F2F2F2',shirt:'#7A9A3A',pants:'#5A3820',hat:'#E8C15A'}};
 export const THIEF={npc:'Maling Sayur',look:{hair:'#1A1A1A',shirt:'#3B3B4A',pants:'#2A2A33',mask:true}};
 export const BOSS={
