@@ -2,6 +2,12 @@
 
 Beta: https://rickysaif.github.io/kebun-makna/beta/ · Classic (live, untouched): https://rickysaif.github.io/kebun-makna/
 
+## 2026-11-13 — Word clips fixed: 152 of 201 were partly or fully muted (prod bug reported by Ricky)
+- Symptom: on An-Nas 1, بِرَبِّ had no sound and أَعُوۡذُ lost its "dzu".
+- Cause: `recut-words.mjs` seeked with `-ss` after `-i`, so the fades ran on the ayah's timeline; the fade-out landed inside or before the word. The boundaries were right; only the cutting was wrong.
+- Fix: `atrim` + `asetpts=PTS-STARTPTS` before the fades; all 201 clips re-cut (same boundaries, wordcuts.js and WORD_AUDIO.md unchanged).
+- Verified: no clip has audible recitation muted (new check in `word-audio.mjs`, which fails 152 clips on the old files); the clips of every ayah joined back together and run through the recitation model give 201/201 words right; all 48 ayah, 201 word and 8 voice files exist and are audible.
+
 ## 2026-11-13 — Recitation: one model, downloaded from the start; graded on meaning (letters), not tajwid
 - **One model for everyone (Ricky's call):** q4 (~140 MB). The "Kualitas" profile and the picker are gone; a cached "mix" model is deleted once. Tested on all 48 Alafasy ayat: the fp32-encoder build heard exactly the same words and letter swaps, so it wasn't worth +65 MB.
 - **Downloads in the background from boot** (1.5 s after the game opens; not on the parent dashboard or parent login). No grown-up approval step. The gate shows "Menyiapkan pengenal bacaan… N%" and turns the mic on when ready; on a network error it offers "Coba unduh lagi" plus the parent button. Pengaturan shows status only.

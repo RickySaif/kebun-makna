@@ -32,8 +32,12 @@ for (const s of DATA) for (const a of s.ayat) {
   cuts[a.a] = [0, ...e.bounds, old[old.length - 1]]; // keeps the original end value: it times the "Lanjut" button
   a.w.forEach((w, k) => {
     const start = edges[k], end = edges[k + 1], d = (end - start) / 1000, tail = Math.min(FADE_OUT, d / 4);
-    execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', src, '-ss', (start / 1000).toFixed(3), '-t', d.toFixed(3),
-      '-af', `afade=t=in:d=${FADE_IN},afade=t=out:st=${(d - tail).toFixed(3)}:d=${tail.toFixed(3)}`,
+    // Trim inside the filter and reset timestamps to 0 BEFORE the fades. (Bug fixed 2026-11-13: with '-ss' after '-i'
+    // the fades ran on the ayah's timeline, so the fade-out landed inside or before the word: 152 of 201 clips were
+    // cut short and 114:1 "birabbi" was pure silence.)
+    execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', src,
+      '-af', `atrim=start=${(start / 1000).toFixed(3)}:end=${(end / 1000).toFixed(3)},asetpts=PTS-STARTPTS,` +
+        `afade=t=in:st=0:d=${FADE_IN},afade=t=out:st=${(d - tail).toFixed(3)}:d=${tail.toFixed(3)}`,
       '-ac', '1', '-ar', String(SR), '-c:a', 'libmp3lame', '-b:a', '64k', path.join(dir, `${w.a}.mp3`)]);
     const oS = old[k], oE = Math.min(old[k + 1], total);
     const big = (k > 0 && Math.abs(start - oS) > 80) || (k < a.w.length - 1 && Math.abs(end - oE) > 80);
