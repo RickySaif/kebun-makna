@@ -103,5 +103,5 @@ Each phase ships on its own to `/beta/` and should leave the game playable. Work
 - Write the stories in `content/akhlak/*.json` with the same shape as QUEST, plus `sources:[...]` (the `sources.id` values each story relies on). List what each story cites in `docs/CONTENT_REVIEW.md`.
 - Build the stories straight into the `/beta/` game like any other feature: no status flags, no parent-only preview. Ricky's ustaz reviews the whole beta before cutover.
 
-## Cutover (Ricky decides)
-When Ricky approves, move `beta/` to the root and keep the old root as `/classic/`. This is not part of autonomous work.
+## Cutover (done 2026-11-13)
+Ricky approved. `beta/` moved to the root, the old root is kept at `/classic/`, and the game is served at https://km.generasimerdeka.com/.

@@ -1,6 +1,14 @@
 # Progress
 
-Beta: https://rickysaif.github.io/kebun-makna/beta/ · Classic (live, untouched): https://rickysaif.github.io/kebun-makna/
+Live: https://km.generasimerdeka.com/ · Original game: https://km.generasimerdeka.com/classic/ · (old address https://rickysaif.github.io/kebun-makna/ redirects)
+
+## 2026-11-13 (late night) — Cutover: the new game is the main game at km.generasimerdeka.com
+- Ricky: "the recitation feature is good enough"; Google Cloud (authorized JavaScript origin) and Supabase (Site URL / Redirect URLs) updated by Ricky; DNS `km CNAME rickysaif.github.io` set.
+- **Layout:** the new game moved from `beta/` to the repo root (`index.html`, `js/`, `css/`, `models/`, `tools/`, `tests/`, `cek-audio.html`); its re-cut word clips are now `audio/w/`. The original game is unchanged at `classic/` with its own old word clips (`classic/audio/w/`); it shares `audio/a` and `audio/v`. `beta/index.html` redirects to the root and keeps `?query#hash` (old bookmarks, old confirmation/reset emails).
+- Paths fixed: `js/data.js` (`audio/a`, `audio/v`), `js/akhlak.js` (`content/akhlak` via `import.meta.url`), `cek-audio.html`, tools (`tools/recut-words.mjs`, `tools/apply-emoji.mjs`: run from the repo root), tests (`BASE + '/'`, phase0 compares `/classic/` with `/`). `js/recite.js` already resolved `models/` from `import.meta.url`.
+- Tests on the new layout: syntax, word-audio, phase0 (classic vs new, save identical), v3, akhlak, fit-height 81/81, model-boot, phase2-recite, practice-lock: all pass.
+- **Saved progress and the new address:** a browser keeps saves per address. Signed-in children: progress is in the cloud, nothing lost (they sign in again once). Guests and anyone who only played the classic game at rickysaif.github.io: their save stays at the old address, which redirects once the domain is attached. See "Questions for Ricky".
+- Ricky to check after the domain is live: Google sign-in on the new address, a confirmation/reset email link, recitation on the iPhone.
 
 ## 2026-11-13 (night) — iPhone loop, take 2: a model that fits; Pak Ustaz while checking; "Yang Ustaz dengar"
 **Still looping on Ricky's iPhone 13 (Safari) after the evening fix:** download → reload → (faster) download → reload …
