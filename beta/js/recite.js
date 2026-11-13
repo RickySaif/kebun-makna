@@ -3,116 +3,73 @@
 import { $, esc, toast } from './ui.js';
 import { S, save } from './state.js';
 import { sfx, voice, play, stopAudio } from './audio.js';
-import { AA } from './data.js';
+import { AA, AW } from './data.js';
+import { check } from './match.js';
 import { RECITE, TRANSFORMERS_ESM, FLAGS } from './config.js';
 import { sb, session, logActivity } from './api.js';
 import { hooks } from './hooks.js';
 
-export const PROFILES = [
-  { id: 'q4', label: 'Kecil (q4) · sekitar 140 MB · disarankan', size: '≈140 MB', dtype: { encoder_model: 'q4', decoder_model_merged: 'q4' }, device: 'wasm' },
-  { id: 'mix', label: 'Kualitas (encoder penuh + decoder q4) · sekitar 205 MB', size: '≈205 MB', dtype: { encoder_model: 'fp32', decoder_model_merged: 'q4' }, device: 'wasm' },
-];
+// One model for everyone (Ricky, 2026-11-13): q4 (~140 MB). Tested on all 48 ayat of Alafasy: the larger fp32-encoder build
+// heard exactly the same words and the same letter swaps, so it isn't worth +65 MB and the memory on an iPhone.
 const SO = { graphOptimizationLevel: 'basic', enableCpuMemArena: false, enableMemPattern: false };
-const LS_PROFILE = 'kebun-makna-recite-profile', LS_READY = 'kebun-makna-recite-ready';
+const LS_READY = 'kebun-makna-recite-ready', LS_OLD_PROFILE = 'kebun-makna-recite-profile';
 const CACHE = 'transformers-cache';
+export const MODEL_SIZE = '≈140 MB';
 
 const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
-export const currentProfile = () => PROFILES.find(p => p.id === lsGet(LS_PROFILE)) || PROFILES[0];
-export const isReady = () => lsGet(LS_READY) === currentProfile().id;
+export const isReady = () => !!asr;
 
-// ---------------- text matching (from tes-whisper.html: word alignment without tajwid) ----------------
-const MARKS = /[ؐ-ًؚ-ٰٟۖ-ۭـ࣓-ࣿ]/g;
-export function norm(s) {
-  return String(s).replace(MARKS, '')
-    .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ئ/g, 'ي').replace(/ؤ/g, 'و').replace(/ة/g, 'ه').replace(/ء/g, '')
-    .replace(/[^ء-ي\s]/g, ' ').replace(/\s+/g, ' ').trim();
-}
-function lev(a, b) {
-  const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
-  let p = Array.from({ length: n + 1 }, (_, j) => j);
-  for (let i = 1; i <= m; i++) { const c = [i]; for (let j = 1; j <= n; j++) c[j] = Math.min(p[j] + 1, c[j - 1] + 1, p[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); p = c; }
-  return p[n];
-}
-const sim = (a, b) => (!a || !b) ? 0 : 1 - lev(a, b) / Math.max(a.length, b.length);
-function grade(e, h) {
-  const d = lev(e, h), L = e.length;
-  if (d === 0 || (L >= 4 && d === 1) || (L >= 7 && d === 2)) return 'ok';
-  if (d === 1 || (L >= 5 && sim(e, h) >= 0.6)) return 'near';
-  return 'bad';
-}
-/** Align expected ayah words with the transcript (in order). Returns per-word status and a score 0..1. */
-export function check(expected, heard) {
-  const E = expected.map(norm), R = norm(heard).split(' ').filter(Boolean);
-  const n = E.length, m = R.length, NEG = -1e9;
-  const D = Array.from({ length: n + 1 }, () => Array(m + 1).fill(NEG)), B = Array.from({ length: n + 1 }, () => Array(m + 1).fill(null));
-  D[0][0] = 0;
-  const upd = (i, j, v, bk) => { if (v > D[i][j]) { D[i][j] = v; B[i][j] = bk; } };
-  for (let i = 0; i <= n; i++) for (let j = 0; j <= m; j++) {
-    const v = D[i][j]; if (v === NEG) continue;
-    if (i < n) upd(i + 1, j, v - 0.35, { t: 'miss', i, j });
-    if (j < m) upd(i, j + 1, v - 0.15, { t: 'extra', i, j });
-    if (i < n && j < m) { const s = sim(E[i], R[j]); upd(i + 1, j + 1, v + s - 0.5, { t: 'm', i, j, s, h: R[j] }); }
-    if (i < n && j + 1 < m) { const h = R[j] + R[j + 1]; const s = sim(E[i], h); upd(i + 1, j + 2, v + s - 0.55, { t: 'm', i, j, s, h: R[j] + ' ' + R[j + 1] }); }
-    if (i + 1 < n && j < m) { const s = sim(E[i] + E[i + 1], R[j]); if (s >= 0.8) upd(i + 2, j + 1, v + 2 * s - 1.3, { t: 'm2', i, j, s, h: R[j] }); }
-  }
-  const res = expected.map((w, i) => ({ i, word: w, heard: '', st: 'miss' }));
-  let i = n, j = m;
-  while (i > 0 || j > 0) {
-    const b = B[i][j]; if (!b) break;
-    if (b.t === 'm' || b.t === 'm2') {
-      const st = grade(b.t === 'm2' ? E[b.i] + E[b.i + 1] : E[b.i], b.h.replace(/ /g, ''));
-      res[b.i] = { i: b.i, word: expected[b.i], heard: b.h, st };
-      if (b.t === 'm2') res[b.i + 1] = { i: b.i + 1, word: expected[b.i + 1], heard: b.h, st };
-    }
-    i = b.i; j = b.j;
-  }
-  const ok = res.filter(r => r.st === 'ok').length, near = res.filter(r => r.st === 'near').length;
-  return { res, score: n ? (ok + 0.5 * near) / n : 0, ok, near };
-}
+// ---------------- model: downloaded in the background from the moment the game opens ----------------
+// status: 'idle' | 'loading' | 'ready' | 'error'. Listeners get the whole state on every change.
+export const model = { status: 'idle', loaded: 0, total: 0, error: '', ms: 0 };
+const listeners = new Set();
+const emit = () => listeners.forEach(f => { try { f(model); } catch (e) {} });
+/** Subscribe to model progress; calls fn now and on every change. Returns an unsubscribe function. */
+export function onModel(fn) { listeners.add(fn); fn(model); return () => listeners.delete(fn); }
 
-// ---------------- model ----------------
-let asr = null, asrProfile = null, loadingP = null;
-export async function loadModel(onProgress) {
-  const p = currentProfile();
-  if (asr && asrProfile === p.id) return asr;
+let asr = null, loadingP = null;
+export function loadModel() {
+  if (asr) return Promise.resolve(asr);
   if (loadingP) return loadingP;
+  Object.assign(model, { status: 'loading', error: '' }); emit();
   loadingP = (async () => {
     const t0 = performance.now(); const files = {};
+    // players of the old "Kualitas" profile: drop its 205 MB from the cache once
+    if (lsGet(LS_OLD_PROFILE) === 'mix') { try { await caches.delete(CACHE); } catch (e) {} }
+    lsSet(LS_OLD_PROFILE, null);
     const T = await import(TRANSFORMERS_ESM);
     T.env.allowLocalModels = false;
     if (T.env.backends && T.env.backends.onnx && T.env.backends.onnx.wasm) T.env.backends.onnx.wasm.numThreads = 1;
     const pipe = await T.pipeline('automatic-speech-recognition', RECITE.model, {
-      dtype: p.dtype, device: p.device, session_options: SO,
+      dtype: RECITE.dtype, device: 'wasm', session_options: SO,
       progress_callback: e => {
         if (e.status === 'progress' && e.file) {
           files[e.file] = { l: e.loaded, t: e.total };
-          const L = Object.values(files).reduce((a, b) => a + b.l, 0), Tt = Object.values(files).reduce((a, b) => a + b.t, 0);
-          onProgress && onProgress(L, Tt);
-        } else if (e.status === 'ready') onProgress && onProgress(1, 1, 'ready');
+          model.loaded = Object.values(files).reduce((a, b) => a + b.l, 0);
+          model.total = Object.values(files).reduce((a, b) => a + b.t, 0);
+          emit();
+        }
       },
     });
-    asr = pipe; asrProfile = p.id; lsSet(LS_READY, p.id);
-    return { ms: performance.now() - t0 };
-  })();
-  try { const r = await loadingP; return r; } finally { loadingP = null; }
+    asr = pipe; model.ms = Math.round(performance.now() - t0);
+    const first = !lsGet(LS_READY); lsSet(LS_READY, 'q4');
+    if (first) logActivity('model_download', { profile: 'q4', ms: model.ms });
+    Object.assign(model, { status: 'ready', loaded: model.total || 1, total: model.total || 1 }); emit();
+    return asr;
+  })().catch(e => {
+    Object.assign(model, { status: 'error', error: String(e && e.message || e).slice(0, 160) }); emit();
+    loadingP = null; throw e;
+  });
+  return loadingP;
 }
-export async function cacheSize() {
-  try {
-    if (!('caches' in window)) return 0;
-    const c = await caches.open(CACHE); let total = 0;
-    for (const req of await c.keys()) {
-      if (!req.url.includes('whisper')) continue;
-      const r = await c.match(req); const len = +(r.headers.get('content-length') || 0);
-      total += len || (await r.blob()).size;
-    }
-    return total;
-  } catch (e) { return 0; }
+/** Start (or resume) the download without waiting. Safe to call many times. Retries once after a network error. */
+let retried = false;
+export function preloadModel() {
+  if (!FLAGS.recitationGate) return;
+  loadModel().catch(() => { if (!retried) { retried = true; setTimeout(() => preloadModel(), 15000); } });
 }
-export async function deleteModel() {
-  asr = null; asrProfile = null; lsSet(LS_READY, null);
-  try { await caches.delete(CACHE); } catch (e) {}
-}
+export const modelPct = () => model.status === 'ready' ? 100 : model.total ? Math.min(99, Math.floor(100 * model.loaded / model.total)) : 0;
 
 // ---------------- recording ----------------
 async function toPCM(blob) {
@@ -160,10 +117,10 @@ export async function record(ui = {}) {
 }
 
 export async function transcribe(pcm) {
-  if (!asr) await loadModel();
-  let out;
-  try { out = await asr(pcm, { language: 'arabic', task: 'transcribe', is_multilingual: true, chunk_length_s: 30 }); }
-  catch (e1) { out = await asr(pcm, { chunk_length_s: 30 }); }
+  await loadModel();
+  // No language/task options: this fine-tuned model's generation config has no language table (passing language
+  // throws "Cannot read properties of null (reading '<|ar|>')"), and it only knows Qur'anic Arabic anyway.
+  const out = await asr(pcm, { chunk_length_s: 30 });
   return (out.text || '').trim();
 }
 
@@ -200,17 +157,16 @@ export function askParent(reason) {
 }
 
 // ---------------- the gate ----------------
+const COL = { ok: '#BFF0B0', bad: '#F8B9A6', miss: '#E6E0D2' };
 function gate({ body, bar, s, a, review, next }) {
   S.recited = S.recited || {};
   // reviews of an ayah already recited don't need the gate again
   if (!FLAGS.recitationGate || (review && S.recited[a.a])) return next();
+  preloadModel();
   [...bar.children].forEach(x => x.className = 'past');
-  let fails = 0;
+  let fails = 0, busy = false;
   const words = a.w.map(w => w.ar);
-  const pass = (score, how) => {
-    S.recited[a.a] = true; save();
-    next();
-  };
+  const pass = () => { S.recited[a.a] = true; save(); unsub(); next(); };
   const v = $(`<div class="frame"><h2>Sekarang kamu yang baca</h2>
     <p class="lead">Baca ayat ini dengan suaramu. Ketuk tombol mikrofon, baca, lalu diam sebentar.</p>
     <div class="ayahbig ar" lang="ar"></div>
@@ -219,56 +175,61 @@ function gate({ body, bar, s, a, review, next }) {
     <button class="btn green block" id="mic" style="margin-top:12px;font-size:22px">🎙️ Mulai baca</button>
     <div class="minibar" style="margin-top:8px;height:8px;background:#E8DDBF;border:2px solid var(--ink);border-radius:4px;overflow:hidden"><div id="lvl" style="height:100%;width:0;background:#7CD35E"></div></div>
     <div id="extra"></div></div>`);
-  const box = v.querySelector('.ayahbig'), fb = v.querySelector('.fb'), mic = v.querySelector('#mic'), extra = v.querySelector('#extra');
+  const box = v.querySelector('.ayahbig'), fb = v.querySelector('.fb'), mic = v.querySelector('#mic'), extra = v.querySelector('#extra'), lvl = v.querySelector('#lvl');
+  // tap a word to hear it (handy after a red word)
   const paint = res => box.replaceChildren(...a.w.flatMap((w, i) => {
-    const sp = $(`<span>${esc(w.ar)}</span>`);
-    if (res) { const st = res[i].st; sp.style.borderRadius = '4px'; sp.style.padding = '0 3px'; sp.style.background = st === 'ok' ? '#BFF0B0' : st === 'near' ? '#FFE9A8' : '#F8D2C6'; }
+    const sp = $(`<span role="button" tabindex="0">${esc(w.ar)}</span>`);
+    sp.style.cursor = 'pointer';
+    sp.onclick = () => { stopAudio(); play(AW(w.a)); };
+    if (res) { const st = res[i].st; sp.style.borderRadius = '4px'; sp.style.padding = '0 3px'; sp.style.background = COL[st]; if (st !== 'ok') sp.style.textDecoration = 'underline wavy #C0392B'; }
     return i ? [document.createTextNode(' '), sp] : [sp];
   }));
   paint(null);
-  v.querySelector('#hear').onclick = () => play(AA(a.a));
+  v.querySelector('#hear').onclick = () => { stopAudio(); play(AA(a.a)); };
   const showParentBtn = () => {
     if (extra.querySelector('#par')) return;
     const b = $(`<button class="btn ghost block" id="par" style="margin-top:12px">🙋 Minta Ayah/Ibu dengar</button>`);
     b.onclick = async () => {
       stopAudio();
-      if (await askParent(`${S.name || 'Anak'} sudah mencoba membaca ${s.name} ayat ${a.n}. Konfirmasi kalau Ayah/Ibu sudah mendengarnya membaca.`)) {
-        logActivity('recitation_override', { ayah: a.a, fails });
-        toast('Alhamdulillah, Ayah/Ibu sudah mendengar!'); pass(0, 'parent');
+      if (await askParent(`${S.name || 'Anak'} sudah mencoba membaca ${s.name} ayat ${a.n}. Konfirmasi kalau Ayah/Ibu sudah mendengarnya membaca dengan huruf yang benar.`)) {
+        logActivity('recitation_override', { ayah: a.a, fails, model: model.status });
+        toast('Alhamdulillah, Ayah/Ibu sudah mendengar!'); pass();
       }
     };
     extra.append(b);
   };
-  const needModel = () => {
+  // model still downloading (it started when the game opened): show progress, enable the mic when ready
+  const unsub = onModel(m => {
+    if (v.dataset.seen && !v.isConnected) return unsub(); // the child left the lesson
+    if (v.isConnected) v.dataset.seen = '1';
+    if (busy) return;
+    if (m.status === 'ready') { if (mic.disabled && !mic.dataset.used) { mic.disabled = false; fb.className = 'fb'; fb.textContent = 'Siap! Ketuk mikrofon dan baca.'; } extra.querySelector('#retry')?.remove(); return; }
     mic.disabled = true;
-    fb.className = 'fb'; fb.innerHTML = `Pengenal bacaan belum diunduh di perangkat ini. Minta Ayah/Ibu mengunduhnya (${esc(currentProfile().size)}, sekali saja, sebaiknya pakai Wi-Fi), atau minta Ayah/Ibu mendengarkanmu membaca.`;
-    const d = $(`<button class="btn block" id="dl" style="margin-top:10px">⬇️ Ayah/Ibu: unduh pengenal bacaan</button>`);
-    d.onclick = async () => {
-      if (!(await askParent('Mengunduh pengenal bacaan (sekali saja). Lanjutkan?'))) return;
-      d.disabled = true;
-      try {
-        const r = await loadModel((l, t, st) => { d.textContent = st === 'ready' ? 'Menyiapkan…' : `Mengunduh… ${t ? Math.round(100 * l / t) : 0}%`; });
-        logActivity('model_download', { profile: currentProfile().id, ms: Math.round(r.ms || 0) });
-        d.remove(); mic.disabled = false; fb.textContent = 'Siap! Ketuk mikrofon dan baca.';
-      } catch (e) { d.disabled = false; d.textContent = '⬇️ Coba unduh lagi'; fb.textContent = 'Gagal mengunduh: ' + String(e.message || e).slice(0, 120); }
-    };
-    extra.prepend(d);
-    showParentBtn();
-  };
+    if (m.status === 'error') {
+      fb.className = 'fb bad'; fb.textContent = 'Pengenal bacaan belum bisa diunduh. Sambungkan ke internet (sebaiknya Wi-Fi), lalu coba lagi.';
+      if (!extra.querySelector('#retry')) {
+        const r = $(`<button class="btn block" id="retry" style="margin-top:10px">🔄 Coba unduh lagi</button>`);
+        r.onclick = () => { r.remove(); loadModel().catch(() => {}); };
+        extra.prepend(r);
+      }
+      showParentBtn();
+    } else { fb.className = 'fb'; fb.textContent = `Menyiapkan pengenal bacaan… ${modelPct()}% (sekali saja). Sambil menunggu, dengarkan ayatnya dulu.`; }
+  });
   mic.onclick = async () => {
     stopAudio();
+    busy = true; mic.dataset.used = '1';
     let stopFn = null;
     mic.textContent = '⏹️ Selesai membaca'; fb.className = 'fb'; fb.textContent = 'Mendengarkan… silakan baca.';
-    mic.onclick2 = mic.onclick; mic.onclick = () => stopFn && stopFn();
-    const restore = () => { mic.textContent = '🎙️ Baca lagi'; mic.disabled = false; mic.onclick = mic.onclick2; };
+    const listen = mic.onclick; mic.onclick = () => stopFn && stopFn();
+    const restore = () => { busy = false; mic.textContent = '🎙️ Baca lagi'; mic.disabled = false; mic.onclick = listen; };
     let rec;
-    try { rec = await record({ onLevel: x => { v.querySelector('#lvl').style.width = Math.round(x * 100) + '%'; }, stopper: f => stopFn = f }); }
+    try { rec = await record({ onLevel: x => { lvl.style.width = Math.round(x * 100) + '%'; }, stopper: f => stopFn = f }); }
     catch (e) {
       restore();
       fb.className = 'fb bad'; fb.textContent = e && e.name === 'NotAllowedError' ? 'Mikrofon belum diizinkan. Izinkan mikrofon untuk halaman ini di pengaturan browser, lalu coba lagi.' : 'Mikrofon tidak bisa dipakai: ' + (e.message || e);
       showParentBtn(); return;
     }
-    v.querySelector('#lvl').style.width = '0';
+    lvl.style.width = '0';
     if (voicedSeconds(rec.pcm) < 0.6) { restore(); fb.className = 'fb bad'; fb.textContent = 'Tidak ada suara yang terdengar. Dekatkan HP ke mulut dan coba lagi.'; return; }
     mic.disabled = true; mic.textContent = '⏳ Memeriksa bacaan…'; fb.textContent = 'Sebentar, sedang mendengarkan bacaanmu…';
     const t0 = performance.now(); let text = '';
@@ -277,49 +238,48 @@ function gate({ body, bar, s, a, review, next }) {
     const ms = Math.round(performance.now() - t0);
     const r = check(words, text);
     paint(r.res);
-    const detail = { ayah: a.a, score: +r.score.toFixed(2), ms, rec_s: +rec.dur.toFixed(1), profile: currentProfile().id, heard: text.slice(0, 120) };
-    if (r.score >= RECITE.passRatio) {
+    const wrong = r.res.filter(x => x.st !== 'ok');
+    const detail = { ayah: a.a, score: +r.score.toFixed(2), ok: r.ok, bad: r.bad, miss: r.miss, ms, rec_s: +rec.dur.toFixed(1), profile: 'q4', heard: text.slice(0, 120),
+      wrong: wrong.slice(0, 6).map(x => `${x.word}→${x.heard || '∅'}`) };
+    if (wrong.length <= RECITE.maxWrong) {
       logActivity('recitation_pass', detail);
       sfx.fanfare(); voice('winner', 100);
-      fb.className = 'fb good'; fb.textContent = `MasyaAllah! Bacaanmu terdengar jelas (${r.ok + r.near}/${words.length} kata).`;
-      mic.textContent = 'Lanjut ▸'; mic.disabled = false; mic.onclick = () => pass(r.score, 'asr');
+      fb.className = 'fb good'; fb.textContent = `MasyaAllah! Semua kata terbaca dengan huruf yang benar (${r.ok}/${words.length}).`;
+      busy = false; mic.textContent = 'Lanjut ▸'; mic.disabled = false; mic.onclick = () => pass();
     } else {
       fails++; logActivity('recitation_fail', detail);
       sfx.bad(); restore();
-      fb.className = 'fb bad'; fb.textContent = 'Hampir! Dengar sekali lagi, yuk.';
-      setTimeout(() => play(AA(a.a)), 600);
+      fb.className = 'fb bad';
+      fb.textContent = r.bad
+        ? 'Hampir! Ada huruf yang berubah di kata yang merah, jadi artinya bisa berubah. Ketuk kata merah untuk mendengarnya, lalu baca lagi.'
+        : 'Hampir! Ada kata yang belum terdengar. Baca lagi pelan-pelan dan jelas, ya.';
+      const first = a.w[wrong[0].i];
+      setTimeout(() => { stopAudio(); play(first ? AW(first.a) : AA(a.a)); }, 600);
       if (fails >= RECITE.failsBeforeParent) showParentBtn();
     }
   };
   body.replaceChildren(v);
-  if (!isReady()) needModel();
 }
 hooks.afterAyah = gate;
 
-// ---------------- settings box (⚙ → Pengaturan) ----------------
+// ---------------- settings box (⚙ → Pengaturan): status only, the download is automatic ----------------
 export function settingsBox() {
   const b = $(`<div class="box"><h3>🎙️ Pengenal bacaan</h3>
-    <p class="small" style="margin:0 0 8px">Setelah belajar arti ayat, anak membaca ayatnya dengan suara sendiri. Pengenal bacaan berjalan di perangkat ini (tanpa mengirim suara ke internet). Perlu unduhan sekali, lalu bisa dipakai tanpa internet. Sebaiknya pakai Wi-Fi.</p>
-    <label class="field"><span>Versi</span><select id="rp">${PROFILES.map(p => `<option value="${p.id}">${esc(p.label)}</option>`).join('')}</select></label>
+    <p class="small" style="margin:0 0 8px">Setelah belajar arti ayat, anak membaca ayatnya dengan suara sendiri. Yang diperiksa: setiap huruf tetap benar, supaya artinya tidak berubah (misalnya قلب "hati" dan كلب "anjing"). Tajwid belum dinilai. Pengenal bacaan berjalan di perangkat ini (suara tidak dikirim ke internet) dan diunduh otomatis sekali (${MODEL_SIZE}) saat game dibuka.</p>
     <div id="rs" class="small" style="margin:6px 0"></div>
     <div class="minibar" style="height:10px;background:#E8DDBF;border:2px solid var(--ink);border-radius:4px;overflow:hidden;margin:6px 0"><div id="rbar" style="height:100%;width:0;background:#7CD35E"></div></div>
-    <div class="row"><button class="btn" id="rdl">⬇️ Unduh model</button><button class="btn ghost" id="rdel">Hapus model</button></div></div>`);
-  const sel = b.querySelector('#rp'), st = b.querySelector('#rs'), bar = b.querySelector('#rbar'), dl = b.querySelector('#rdl'), del = b.querySelector('#rdel');
-  sel.value = currentProfile().id;
-  const refresh = async () => {
-    if (isReady()) { const sz = await cacheSize(); st.innerHTML = `<b class="ok">Siap ✓</b> · ${currentProfile().id === 'q4' ? 'versi kecil' : 'versi kualitas'} · memakai ${(sz / 1048576).toFixed(0)} MB`; bar.style.width = '100%'; dl.hidden = true; del.hidden = false; }
-    else { st.textContent = `Belum diunduh (${currentProfile().size}).`; bar.style.width = '0'; dl.hidden = false; del.hidden = true; }
-  };
-  sel.onchange = () => { lsSet(LS_PROFILE, sel.value); refresh(); };
-  dl.onclick = async () => {
-    dl.disabled = true; sel.disabled = true;
-    try {
-      const r = await loadModel((l, t, s2) => { bar.style.width = (t ? 100 * l / t : 0) + '%'; st.textContent = s2 === 'ready' ? 'Menyiapkan model…' : `Mengunduh… ${(l / 1048576).toFixed(0)} / ${(t / 1048576).toFixed(0)} MB`; });
-      logActivity('model_download', { profile: currentProfile().id, ms: Math.round(r.ms || 0) });
-    } catch (e) { st.textContent = 'Gagal: ' + String(e.message || e).slice(0, 160); }
-    dl.disabled = false; sel.disabled = false; refresh();
-  };
-  del.onclick = async () => { await deleteModel(); refresh(); };
-  refresh();
+    <div class="row"><button class="btn" id="rdl" hidden>🔄 Coba unduh lagi</button></div></div>`);
+  const st = b.querySelector('#rs'), bar = b.querySelector('#rbar'), dl = b.querySelector('#rdl');
+  const unsub = onModel(m => {
+    if (b.dataset.seen && !b.isConnected) return unsub(); // settings closed
+    if (b.isConnected) b.dataset.seen = '1';
+    bar.style.width = modelPct() + '%';
+    dl.hidden = m.status !== 'error';
+    st.innerHTML = m.status === 'ready' ? '<b class="ok">Siap ✓</b>'
+      : m.status === 'error' ? 'Belum bisa diunduh: ' + esc(m.error)
+      : m.total ? `Mengunduh… ${(m.loaded / 1048576).toFixed(0)} / ${(m.total / 1048576).toFixed(0)} MB` : 'Menyiapkan…';
+  });
+  dl.onclick = () => loadModel().catch(() => {});
+  preloadModel();
   return b;
 }

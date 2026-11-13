@@ -2,6 +2,15 @@
 
 Beta: https://rickysaif.github.io/kebun-makna/beta/ · Classic (live, untouched): https://rickysaif.github.io/kebun-makna/
 
+## 2026-11-13 — Recitation: one model, downloaded from the start; graded on meaning (letters), not tajwid
+- **One model for everyone (Ricky's call):** q4 (~140 MB). The "Kualitas" profile and the picker are gone; a cached "mix" model is deleted once. Tested on all 48 Alafasy ayat: the fp32-encoder build heard exactly the same words and letter swaps, so it wasn't worth +65 MB.
+- **Downloads in the background from boot** (1.5 s after the game opens; not on the parent dashboard or parent login). No grown-up approval step. The gate shows "Menyiapkan pengenal bacaan… N%" and turns the mic on when ready; on a network error it offers "Coba unduh lagi" plus the parent button. Pengaturan shows status only.
+- **Grading (`beta/js/match.js`, Ricky: "pronunciation without changing the meaning", e.g. qalb/kalb):** a word is wrong when a consonant changes, or one is added or dropped. Ignored: harakat and tajwid, hamza seats, ة/ه, ى/ي, long-vowel letters ا و ي (mushaf vs. modern spelling) and the assimilated lam of al- + sun letter. **Every word must be right to pass** (`RECITE.maxWrong = 0`). Wrong words are red with a wavy underline; tap any word to hear it; after a fail the first red word plays.
+- **Measured:** Alafasy 96/96 ayat pass with every word ✓ (no false fails). Text-level letter swaps on every word: 478/478 caught. TTS (macOS Majed) swaps: 8 of 10 caught by q4 + An-Nas 1 ذ→ز and ن→م caught. **Limit:** the model was trained on correct recitation and sometimes "hears" the right word anyway (خلك → خلق, and كل → قل in one build). When it flags a letter it's reliable; it can miss some. Real data from Amtar will tell how often.
+- **Bug fixed:** `transcribe()` passed `language/task`, which this model's generation config rejects (`reading '<|ar|>'`), so every call went through the fallback. It now calls the plain form directly.
+- Logs now include `ok/bad/miss` and `wrong: ["أعوذ→أعوز"]`; the dashboard shows "salah: …".
+- Verified: `phase2-recite.mjs` (rewritten; new `wrong.wav`, see the header) all ok, model ready 49.8 s after boot on desktop; `phase0-playthrough` ok.
+
 ## 2026-11-10 (later) — Word audio boundaries re-checked for all 201 words
 
 - **Problem (Ricky):** a word card sometimes played only part of its word, and the rest played on the next card. Example: 114:1 "aʿūdhu" played "aʿū", and the "dhu" played on "birabbi".

@@ -9,7 +9,7 @@ import { eyesOff, eyesChosen, setEyesOff, gfxLite, setGfxLite } from './art.js';
 import { eyesToggle } from './avatar.js';
 import { startScreen, parentLogin, newPasswordScreen, rememberGuest, isRememberedGuest } from './account.js';
 import { startCloud, importLegacy, flushNow } from './cloud.js';
-import { settingsBox } from './recite.js';
+import { settingsBox, preloadModel } from './recite.js';
 
 /* migration for players from earlier versions (verbatim from the classic game; now run after S is chosen) */
 function migrate(){ if(!S.hv2){ S.house=S.house===1?2:S.house===2?3:S.house||0; S.hv2=true; }
@@ -137,6 +137,10 @@ async function route() {
     // offline: keep a signed-in child playing from the local cache
     try { const c = await sb(); const { data: { session: s } } = await c.auth.getSession(); if (s) { session.user = s.user; p = cachedProfile(); if (p && p.id !== s.user.id) p = null; session.profile = p; } } catch (e2) {}
   }
+  // The recitation model (~140 MB, once) starts downloading as soon as anyone who may play opens the game, so it is
+  // ready by the first ayah. Skipped on the parent dashboard and the parent login (usually a different device).
+  const parentOnly = (p && p.role === 'parent' && !h.startsWith('#/main')) || (!p && h.startsWith('#/ortu'));
+  if (!parentOnly) setTimeout(preloadModel, 1500);
   if (h.startsWith('#/tamu')) return bootGuest();
   const soc = h.match(/^#\/(beranda|profil|grup|kunjungi|lomba)(?:\/([^/]+))?/);
   if (soc && p) return socialRoute(soc[1], soc[2]);

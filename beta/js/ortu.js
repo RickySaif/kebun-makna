@@ -21,7 +21,7 @@ function describe(a) {
   if (a.kind === 'ayah_done' && d.ayah) { const s = BY[+String(d.ayah).slice(0, 3)]; return `${s ? s.name : ''} ayat ${+String(d.ayah).slice(3)}${d.stars ? ' · ' + '★'.repeat(d.stars) : ''}`; }
   if (a.kind === 'surah_done') return d.name || (BY[d.surah] || {}).name || '';
   if (a.kind === 'review_done') return (BY[d.surah] || {}).name || '';
-  if (a.kind.startsWith('recitation')) { const s = d.ayah ? BY[+String(d.ayah).slice(0, 3)] : null; return `${s ? s.name + ' ' + (+String(d.ayah).slice(3)) : ''} · skor ${Math.round((d.score || 0) * 100)}% · ${((d.ms || 0) / 1000).toFixed(1)} dtk · ${d.profile || ''}`; }
+  if (a.kind.startsWith('recitation')) { const s = d.ayah ? BY[+String(d.ayah).slice(0, 3)] : null; return `${s ? s.name + ' ' + (+String(d.ayah).slice(3)) : ''} · skor ${Math.round((d.score || 0) * 100)}% · ${((d.ms || 0) / 1000).toFixed(1)} dtk${d.wrong && d.wrong.length ? ' · salah: ' + d.wrong.join(', ') : ''}`; }
   if (a.kind === 'boss_done') return `${d.boss || ''}${d.mode === 'pvp' ? ' (lomba teman)' : ''}`;
   return '';
 }
