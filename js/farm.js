@@ -84,7 +84,7 @@ export function farm(){
   document.getElementById('book').onclick=bookView;
   document.getElementById('jrn').onclick=journal; document.getElementById('lvl').onclick=levelView; // v4: Lv → Level Petani, 📜 → missions
   setTimeout(flushNotes,700);
-  idleDialog();
+  if(introActive) introDialog(); else idleDialog();
   const e=activeEvent();
   if(S.pendingPlant) dialog(KAKEK,[`Kamu punya Benih ${QUEST[S.pendingPlant].cropName}! Jalan ke petak tanah yang kosong, lalu ketuk petaknya untuk menanam.`]);
   walkers=[];
@@ -426,10 +426,10 @@ export function onboarding(){
   f.querySelector('#go').onclick=()=>{const n=f.querySelector('#nm').value.trim(); if(!n){f.querySelector('#err').textContent='Tulis namamu dulu, ya.';return;} const isNew=!S.name; S.name=n; save(); window.dispatchEvent(new Event('km-avatar')); sfx.fanfare(); voice('ready'); isNew?intro():farm();};
   root.append(f);
 }
-export function intro(){
-  introActive=true; farm();
+function introDialog(){
   dialog(KAKEK,[`Ini kebunmu, ${S.name}. Masih kosong: hanya ada gubuk kecil dan tanah.`,'Di desa ini, benih dibeli dengan Koin Makna. Koin didapat saat kamu memahami arti ayat Al-Qur\'an untuk membantu warga.','Tanam benih, siram setiap hari dengan murajaah, lalu tidur. Besok pagi tanamanmu tumbuh!',`Lihat jam di atas. Satu hari di desa sekitar 16 menit. Nanti warga desa akan datang membawa masalah. Cari orang dengan tanda seru (!).`],[['Siap!',()=>{introActive=false;idleDialog();stepEvents();},'green']]);
 }
+export function intro(){ introActive=true; farm(); }
 
 /* ---------- parent view ---------- */
 export function parentView(){
