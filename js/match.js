@@ -1,7 +1,8 @@
 // match.js — does a recitation keep the meaning? Compares the ayah's words with what the model heard, letter by letter.
 // Goal (Ricky): not tajwid perfection, but no change of meaning. In Arabic one consonant changes the word
 // (qalb قلب "heart" vs kalb كلب "dog"), so:
-//   • HARD (the word is wrong): a different consonant (ق/ك, ح/ه, ع/ء, ص/س, ض/د, ط/ت, ظ/ذ/ز, ث/س …), or a consonant added or dropped.
+//   • HARD (the word is wrong): a consonant that sounds clearly different (ن/م, ب/ف, ر/ل …), or a consonant added or dropped.
+//     Letters that sound alike to a non-native child are accepted (see GROUP below, Ricky 2026-11-14).
 //   • SOFT (ignored): harakat and tajwid marks, hamza seats (أ إ آ ٱ ؤ ئ ء), ة/ه, ى/ي, and the long-vowel letters ا و ي —
 //     the mushaf spelling (الكفرون, عبدون, لايلف) and the model's spelling (الكافرون, عابدون, لإيلاف) differ in exactly these.
 //   • The assimilated lam of al- before a sun letter (النَّاس is said an-nās) may be missing from what was heard.
@@ -9,7 +10,12 @@
 
 const MARKS = /[ؐ-ًؚ-ٰٟۖ-ۭـ࣓-ࣿ]/;
 const SHADDA = 'ّ';
-const SOFT = new Set(['ا', 'و', 'ي']);
+const SOFT = new Set(['ا', 'و', 'ي', 'ع']);
+// v4 (Ricky, 2026-11-14): the players are not native Arabic speakers. Letters that sound alike to an Indonesian child
+// count as right: ا/ء/ع · ه/ح/خ · س/ص/ث · ز/ذ/ظ · ق/ك · د/ض · ت/ط. (ع is also soft like ا: dropping it is not an error.)
+const GROUP = {};
+['اع', 'هحخ', 'سصث', 'زذظ', 'قك', 'دض', 'تط'].forEach((g, i) => [...g].forEach(c => GROUP[c] = i));
+const alike = (a, b) => a === b || (GROUP[a] !== undefined && GROUP[a] === GROUP[b]);
 const SUN = new Set([...'تثدذرزسشصضطظلن']);
 const BASE = { 'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ٱ': 'ا', 'ء': 'ا', 'ى': 'ي', 'ئ': 'ي', 'ؤ': 'و', 'ة': 'ه', 'ک': 'ك', 'ی': 'ي' };
 
@@ -66,7 +72,7 @@ export function compare(expWord, heardWord, opts = {}) {
     if (i < n && !(opts.freeStart && i === 0 && j > 0)) { const hard = !E[i].soft; put(i + 1, j, d[0] + hard, d[1] + (hard ? 1 : EPS), [i, j, 'del']); }
     if (j < m && !(opts.freeStart && i === 0)) { const hard = !H[j].soft; put(i, j + 1, d[0] + hard, d[1] + (hard ? 1 : EPS), [i, j, 'ins']); }
     if (i < n && j < m) {
-      const same = E[i].c === H[j].c, bothSoft = SOFT.has(E[i].c) && SOFT.has(H[j].c);
+      const same = alike(E[i].c, H[j].c), bothSoft = SOFT.has(E[i].c) && SOFT.has(H[j].c);
       const h = d[0] + (same || bothSoft ? 0 : 1), c = d[1] + (same ? 0 : bothSoft ? EPS : 1);
       put(i + 1, j + 1, h, c, [i, j, same || bothSoft ? 'eq' : 'sub']);
       // the word's last letter aligned with a heard letter: anything heard after it may be ignored (freeEnd)

@@ -2,6 +2,13 @@
 
 Live: https://km.generasimerdeka.com/ · (old address https://rickysaif.github.io/kebun-makna/ redirects)
 
+## 2026-11-14 — Reading: per ayah; word pointer; similar letters accepted; 70% is good
+- **Order (Ricky):** no reading per word or part. Each ayah is read once after Susun (meaning and quizzes done); Surat Utuh ends with "Baca Surat …", one full ayah per page.
+- **Players can already read hijaiyah, not fluently (Ricky):** the reading page has a **word pointer**: while reading, the first word is highlighted and each tap moves it on; ▶ Dengar moves it with the reciter. Text: "Ketuk 🎙️ lalu baca sendiri. Butuh bantuan? Tekan ▶ Dengar dulu."
+- **Similar letters count as right (Ricky: players are not native Arabic speakers):** ا/ء/ع · ه/ح/خ · س/ص/ث · ز/ذ/ظ · ق/ك · د/ض · ت/ط (`GROUP` in `js/match.js`); ع is also soft like ا. Still marked: clearly different letters (ن/م, ب/ف, ر/ل …), dropped or added consonants. This replaces the earlier qalb/kalb strictness. Alafasy still 96/96.
+- **≥70% is good (Ricky):** green score, fanfare, "Bagus! Bacaanmu sudah benar. Mau lebih sempurna? Perhatikan kata yang merah."
+- Learning-design research: `../reports/Desain belajar hafalan surat anak.md` (outside the repo). Next: a new per-surah flow proposal for Ricky to review.
+
 ## 2026-11-14 — Google button sooner; parents edit their character; model download right after login
 - **Google button (Ricky: "takes a couple of seconds"):** it waited for three steps in a row: Supabase settings → Google's script (only loaded when the parent page opened) → Google draws the button. Now `warmGoogle()` starts both as soon as the start screen opens, the "Google enabled" answer is remembered on the device for a day, `index.html` preconnects to accounts.google.com and Supabase, and a placeholder "Menyiapkan tombol Google…" with a spinner holds the button's place until Google's button appears (removed after 6 s at most; the whole block disappears if Google is off or unreachable).
 - **Parents' character (Ricky: "gender especially"):** "Tokoh saya" on the parent dashboard: preview + "Ubah tokoh" opens the same builder (Laki-laki/Perempuan, skin, hair, clothes, peci/hiasan) with Simpan/Batal; saved to the profile (`updateMyAvatar`). When the parent plays ("Main sebagai saya") their game takes the profile look. **Not tested end to end** (needs the test parent login).

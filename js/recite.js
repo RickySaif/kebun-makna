@@ -292,7 +292,8 @@ export function parts(words) {
   for (let p = 0; p < k; p++) { const size = Math.round((n - i) / (k - p)); out.push(words.slice(i, i + size)); i += size; }
   return out;
 }
-const verdict = acc => acc >= 0.9 ? 'MasyaAllah, jelas sekali!' : acc >= 0.7 ? 'Bagus! Perhatikan kata yang merah, lalu coba lagi kalau mau.'
+// 70% and up is already good (Ricky): the child hears praise, not a correction
+const verdict = acc => acc >= 0.9 ? 'MasyaAllah, jelas sekali!' : acc >= 0.7 ? 'Bagus! Bacaanmu sudah benar. Mau lebih sempurna? Perhatikan kata yang merah.'
   : acc > 0 ? 'Ayo coba lagi pelan-pelan. Dengarkan dulu kata yang merah.' : 'Belum terdengar. Dengarkan dulu, lalu baca pelan-pelan.';
 
 /**
@@ -426,9 +427,9 @@ function practice({ body, s, a, items, kind, next, ayat }) {
       } else {
         paint(r.res); showHeard(heardEl, r.res);
         accEl.textContent = `Ketepatan: ${pct}%`;
-        accEl.style.color = pct >= 90 ? 'var(--ok)' : pct >= 70 ? '#B7791F' : 'var(--no)';
-        fb.className = 'fb ' + (pct >= 90 ? 'good' : ''); fb.textContent = verdict(r.acc);
-        if (pct >= 90) sfx.fanfare(); else if (pct >= 70) sfx.good();
+        accEl.style.color = pct >= 70 ? 'var(--ok)' : pct >= 50 ? '#B7791F' : 'var(--no)';
+        fb.className = 'fb ' + (pct >= 70 ? 'good' : ''); fb.textContent = verdict(r.acc);
+        if (pct >= 70) sfx.fanfare(); else if (pct >= 50) sfx.good();
       }
       if (whole) { S.recited = S.recited || {}; S.recited[cur.a] = true; save(); }
       logActivity('recitation_try', { ayah: cur.a, part: kind, words: words.map(w => w.a.slice(6)).join(','), score: unsure ? null : +r.acc.toFixed(2), ms, rec_s: +rec.dur.toFixed(1),

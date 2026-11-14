@@ -3,7 +3,8 @@
 //   recite.wav  = ffmpeg -i audio/a/114001.mp3 -af apad=pad_dur=2.5 -ar 16000 -ac 1 recite.wav
 //   word.wav    = ffmpeg -i audio/w/114001002.mp3 -af adelay=300,apad=pad_dur=2.5 -ar 16000 -ac 1 word.wav
 //   silence.wav = ffmpeg -f lavfi -i anullsrc=r=16000:cl=mono -t 10 silence.wav
-//   wrong.wav   = 114:1 with أعوذ said "a'uzu" (ذ→ز): say -v Majed -r 120 -o w.aiff 'قُلْ أَعُوزُ بِرَبِّ النَّاسِ' &&
+//   wrong.wav   = 114:1 with النَّاسِ said "al-mas" (ن→م; similar letters like ذ/ز are accepted since 2026-11-14):
+//                 say -v Majed -r 120 -o w.aiff 'قُلْ أَعُوذُ بِرَبِّ الْمَاسِ' &&
 //                 ffmpeg -i w.aiff -af apad=pad_dur=2.5 -ar 16000 -ac 1 wrong.wav
 // Checks: the model is downloaded and built on the start-up screen · each ayah is read once after Susun · Surat Utuh
 // ends with reading the surah ayah by ayah · "Lanjut" always works (never a requirement) · silence → "Tidak ada suara" · Alafasy's word
@@ -112,12 +113,12 @@ try {
   assert(await until(page, /^Sekarang baca satu ayat$/), 'whole-ayah page appears after Susun');
   await ready(page);
   let r = await read(page);
-  console.log('  a\'uzu:', r.acc, '|', r.fb, JSON.stringify(r.red));
-  assert(/Ketepatan: [5-9]\d%/.test(r.acc), 'a\'uzu scores below 100% but most letters right');
-  assert(JSON.stringify(r.red) === '[false,true,false,false]', 'only اَعُوۡذُ is marked red');
+  console.log('  al-mas:', r.acc, '|', r.fb, JSON.stringify(r.red));
+  assert(/Ketepatan: [5-9]\d%/.test(r.acc), 'al-mas scores below 100% but most letters right');
+  assert(JSON.stringify(r.red) === '[false,false,false,true]', 'only النَّاسِ is marked red');
   const heard = await page.locator('.practice .heard').innerText();
   console.log('  heard box:', heard.replace(/\n/g, ' / '));
-  assert(/ذ/.test(heard) && /ز/.test(heard) && /terdengar/.test(heard), '"Yang Ustaz dengar" shows ذ heard as ز');
+  assert(/ن/.test(heard) && /م/.test(heard) && /terdengar/.test(heard), '"Yang Ustaz dengar" shows ن heard as م');
   await page.screenshot({ path: 'shot-practice-wrong.png' });
   await page.click('.practice #next');
   await page.locator('.celebrate').waitFor({ timeout: 5000 });
