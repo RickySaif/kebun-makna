@@ -80,7 +80,7 @@ export async function driveLessonOnce(page) {
       for (const w of words) [...document.querySelectorAll('.pool .tile:not(.used)')].find(t => t.textContent === w).click();
     }, [m[1].trim(), +m[2]]);
     await page.click('#nx:not([disabled])'); await page.waitForTimeout(50); await page.click('#nx');
-  } else if (/^(Ayo baca|Sekarang baca)/.test(h2)) { await page.click('.practice #next'); return 'practice'; } // reading practice never blocks
+  } else if (/^(Ayo baca|Sekarang baca|Baca Surat)/.test(h2)) { await page.click('.practice #next'); return 'practice'; } // reading practice never blocks
   else return 'other:' + h2;
   return h2;
 }

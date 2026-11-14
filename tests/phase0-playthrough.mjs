@@ -22,7 +22,7 @@ async function run(url, label) {
   page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));
   await page.addInitScript(INIT);
   await page.goto(url);
-  if (!url.includes('/classic/')) { await page.waitForSelector('#guest'); await page.evaluate(async () => { const { hooks } = await import('./js/hooks.js'); hooks.afterAyah = null; hooks.afterStep = null; }); await startGuest(page); } // classic flow has no reading practice
+  if (!url.includes('/classic/')) { await page.waitForSelector('#guest'); await page.evaluate(async () => { const { hooks } = await import('./js/hooks.js'); hooks.afterAyah = null; hooks.afterWhole = null; }); await startGuest(page); } // classic flow has no reading practice
   await page.waitForSelector('#nm');
   await page.fill('#nm', 'Amtar');
   await page.click('#go');

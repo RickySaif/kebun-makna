@@ -17,8 +17,7 @@ export function lesson(no,j,review){
   const bar=$(`<div class="steps">${steps.map(()=>'<i></i>').join('')}</div>`); body.before(bar);
   const mist={match:0,arrange:0};
   function go(n){ stopAudio(); [...bar.children].forEach((x,k)=>x.className=k<n?'past':k===n?'on':'');
-    const between=f=>hooks.afterStep?hooks.afterStep({n,body,bar,s,a,review,next:()=>{p.scrollTop=0;f();}}):f(); // v4: reading practice between steps
-    body.replaceChildren([dengar,kenali,cocokkan,susun][n](s,a,()=>n<3?between(()=>go(n+1)):(hooks.afterAyah?hooks.afterAyah({body,bar,s,a,review,next:finish}):finish()),mist)); p.scrollTop=0; }
+    body.replaceChildren([dengar,kenali,cocokkan,susun][n](s,a,()=>n<3?go(n+1):(hooks.afterAyah?hooks.afterAyah({body,bar,s,a,review,next:finish}):finish()),mist)); p.scrollTop=0; }
   function finish(){
     const first=!S.ay[a.a]; S.ay[a.a]=true; a.w.forEach(w=>bump(w.a,2));
     const stars=1+(mist.match===0?1:0)+(mist.arrange===0?1:0); S.stars[a.a]=Math.max(S.stars[a.a]||0,stars);
@@ -133,7 +132,7 @@ export function suratUtuh(no,review){
   const body=pn.querySelector('.pbody');
   const bar=$(`<div class="steps"><i></i><i></i><i></i></div>`); body.before(bar);
   let mist=0;
-  const go=n=>{ stopAudio(); [...bar.children].forEach((x,k)=>x.className=k<n?'past':k===n?'on':''); body.replaceChildren([cerita,urutan,jelaskan][n](()=>n<2?go(n+1):finish())); pn.scrollTop=0; };
+  const go=n=>{ stopAudio(); [...bar.children].forEach((x,k)=>x.className=k<n?'past':k===n?'on':''); body.replaceChildren([cerita,urutan,jelaskan][n](()=>n<2?go(n+1):(hooks.afterWhole?hooks.afterWhole({body,bar,s,review,next:finish}):finish()))); pn.scrollTop=0; };
   function cerita(next){
     const v=$(`<div class="frame"><h2>Cerita Surat ${esc(s.name)}</h2><p class="lead">Dengarkan surat utuh. Arti tiap ayat muncul seperti cerita. Nanti ada jeda pertanyaan.</p><div class="story"></div><div class="qh"></div><button class="btn green block" id="nx" style="margin-top:12px" hidden>Lanjut ▸</button></div>`);
     const story=v.querySelector('.story'), qh=v.querySelector('.qh');

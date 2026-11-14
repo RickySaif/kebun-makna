@@ -315,16 +315,16 @@ function showHeard(el, res) {
 
 /**
  * Show one practice page per item (an item = an array of word objects from a.w) and call next() after the last one.
- * kind: 'kata' | 'bagian' | 'ayat' (used in the title and the activity log).
+ * kind: 'kata' | 'bagian' | 'ayat' | 'surat' (used in the title and the activity log). For 'surat', ayat[] holds the ayah of each item.
  */
-function practice({ body, s, a, items, kind, next }) {
+function practice({ body, s, a, items, kind, next, ayat }) {
   let idx = 0, unsub = () => {};
   const done = () => { unsub(); stopAudio(); next(); };
   const show = () => {
     unsub(); stopAudio();
-    const words = items[idx], isLast = idx === items.length - 1;
-    const title = kind === 'kata' ? 'Ayo baca kata ini' : kind === 'bagian' ? 'Ayo baca bagian ini' : 'Sekarang baca satu ayat';
-    const count = items.length > 1 ? `<p class="small" style="margin:0 0 6px">${kind === 'kata' ? 'Kata' : 'Bagian'} ${idx + 1} dari ${items.length}</p>` : '';
+    const words = items[idx], isLast = idx === items.length - 1, cur = ayat ? ayat[idx] : a, whole = kind === 'ayat' || kind === 'surat';
+    const title = kind === 'kata' ? 'Ayo baca kata ini' : kind === 'bagian' ? 'Ayo baca bagian ini' : kind === 'surat' ? `Baca Surat ${s.name}` : 'Sekarang baca satu ayat';
+    const count = items.length > 1 ? `<p class="small" style="margin:0 0 6px">${kind === 'kata' ? 'Kata' : kind === 'surat' ? 'Ayat' : 'Bagian'} ${idx + 1} dari ${items.length}</p>` : '';
     const v = $(`<div class="frame practice"><h2>${title}</h2>${count}
       <p class="lead">Dengarkan, lalu ketuk mikrofon dan baca dengan suaramu. Ini latihan: kamu boleh lanjut kapan saja.</p>
       <div class="ayahbig ar" lang="ar"></div>
@@ -333,7 +333,7 @@ function practice({ body, s, a, items, kind, next }) {
       <div class="fb" aria-live="polite"></div>
       <div class="row" style="margin-top:10px"><button class="btn blue" id="hear">▶ Dengar</button><button class="btn green" id="mic" style="flex:1">🎙️ Baca</button></div>
       <div class="minibar" style="margin-top:8px;height:8px;background:#E8DDBF;border:2px solid var(--ink);border-radius:4px;overflow:hidden"><div id="lvl" style="height:100%;width:0;background:#7CD35E"></div></div>
-      <button class="btn block" id="next" style="margin-top:14px">${isLast ? 'Lanjut ▸' : (kind === 'kata' ? 'Kata berikutnya ▸' : 'Bagian berikutnya ▸')}</button></div>`);
+      <button class="btn block" id="next" style="margin-top:14px">${isLast ? 'Lanjut ▸' : (kind === 'kata' ? 'Kata berikutnya ▸' : kind === 'surat' ? 'Ayat berikutnya ▸' : 'Bagian berikutnya ▸')}</button></div>`);
     // v4 (Ricky): while listening only "Selesai" works; while checking, every button is off and Pak Ustaz thinks.
     const think = $(`<div class="ustaz-think" hidden aria-live="polite"><img class="portrait" alt="Pak Ustaz" src="${portrait(USTAZ.look)}">
       <div><b>Pak Ustaz</b><p><span class="say"></span><span class="dots"><i>.</i><i>.</i><i>.</i></span></p></div></div>`);
@@ -361,7 +361,7 @@ function practice({ body, s, a, items, kind, next }) {
       return i ? [document.createTextNode(' '), sp] : [sp];
     }));
     paint(null);
-    const hear = async () => { stopAudio(); if (kind === 'ayat') return play(AA(a.a)); for (const w of words) { if (!v.isConnected) return; await play(AW(w.a)); } };
+    const hear = async () => { stopAudio(); if (whole) return play(AA(cur.a)); for (const w of words) { if (!v.isConnected) return; await play(AW(w.a)); } };
     v.querySelector('#hear').onclick = hear;
     v.querySelector('#next').onclick = () => { if (stopFn) stopFn(); idx++; if (idx < items.length) show(); else done(); };
     unsub = onModel(m => {
@@ -412,8 +412,8 @@ function practice({ body, s, a, items, kind, next }) {
         fb.className = 'fb ' + (pct >= 90 ? 'good' : ''); fb.textContent = verdict(r.acc);
         if (pct >= 90) sfx.fanfare(); else if (pct >= 70) sfx.good();
       }
-      if (kind === 'ayat') { S.recited = S.recited || {}; S.recited[a.a] = true; save(); }
-      logActivity('recitation_try', { ayah: a.a, part: kind, words: words.map(w => w.a.slice(6)).join(','), score: unsure ? null : +r.acc.toFixed(2), ms, rec_s: +rec.dur.toFixed(1),
+      if (whole) { S.recited = S.recited || {}; S.recited[cur.a] = true; save(); }
+      logActivity('recitation_try', { ayah: cur.a, part: kind, words: words.map(w => w.a.slice(6)).join(','), score: unsure ? null : +r.acc.toFixed(2), ms, rec_s: +rec.dur.toFixed(1),
         profile: RECITE.id, heard: text.slice(0, 120), wrong: r.res.filter(x => x.st !== 'ok').slice(0, 6).map(x => `${x.word}→${x.heard || '∅'}`) });
     };
     body.replaceChildren(v);
@@ -421,15 +421,8 @@ function practice({ body, s, a, items, kind, next }) {
   show();
 }
 
-// after Kenali (step 1): each word · after Cocokkan (step 2): parts. Reviews skip these to stay short.
-hooks.afterStep = ({ n, body, bar, s, a, review, next }) => {
-  if (!FLAGS.recitationGate || review || (n !== 1 && n !== 2)) return next();
-  const items = n === 1 ? a.w.map(w => [w]) : parts(a.w);
-  // an ayah of 1 word has nothing new to practise in parts; the whole ayah comes after Susun
-  if (n === 2 && (a.w.length <= 1 || items.length === 1)) return next();
-  [...bar.children].forEach((x, k) => x.className = k <= n ? 'past' : '');
-  practice({ body, s, a, items, kind: n === 1 ? 'kata' : 'bagian', next });
-};
+// Ricky (2026-11-14): no reading per word or per part. Each ayah is read once, after its meaning and quizzes (Susun);
+// at the end of Surat Utuh the child reads the whole surah, ayah by ayah.
 // after Susun: the whole ayah (on murajaah only if it was never read aloud before)
 hooks.afterAyah = ({ body, bar, s, a, review, next }) => {
   S.recited = S.recited || {};
@@ -438,10 +431,17 @@ hooks.afterAyah = ({ body, bar, s, a, review, next }) => {
   practice({ body, s, a, items: [a.w], kind: 'ayat', next });
 };
 
+// end of Surat Utuh (after the story, the order of the ayat and "jelaskan"): read the surah, one full ayah per page
+hooks.afterWhole = ({ body, bar, s, review, next }) => {
+  if (!FLAGS.recitationGate) return next();
+  [...bar.children].forEach(x => x.className = 'past');
+  practice({ body, s, a: s.ayat[0], items: s.ayat.map(x => x.w), ayat: s.ayat, kind: 'surat', next });
+};
+
 // ---------------- settings box (⚙ → Pengaturan): status only, the download is automatic ----------------
 export function settingsBox() {
   const b = $(`<div class="box"><h3>🎙️ Pengenal bacaan</h3>
-    <p class="small" style="margin:0 0 8px">Saat belajar ayat, anak berlatih membaca: setiap kata, lalu per bagian, lalu satu ayat. Setiap percobaan menunjukkan <b>ketepatan</b>: berapa banyak huruf yang terbaca benar, supaya artinya tidak berubah (misalnya قلب "hati" dan كلب "anjing"). Tajwid belum dinilai. Ini latihan, bukan syarat untuk lanjut. Pengenal bacaan berjalan di perangkat ini (suara tidak dikirim ke internet) dan disiapkan saat game dibuka (unduhan sekali, ${MODEL_SIZE}).</p>
+    <p class="small" style="margin:0 0 8px">Setelah memahami arti setiap ayat, anak membaca ayat itu dengan suaranya; di akhir surat (Surat Utuh) anak membaca suratnya ayat demi ayat. Setiap percobaan menunjukkan <b>ketepatan</b>: berapa banyak huruf yang terbaca benar, supaya artinya tidak berubah (misalnya قلب "hati" dan كلب "anjing"). Tajwid belum dinilai. Ini latihan, bukan syarat untuk lanjut. Pengenal bacaan berjalan di perangkat ini (suara tidak dikirim ke internet) dan disiapkan saat game dibuka (unduhan sekali, ${MODEL_SIZE}).</p>
     <div id="rs" class="small" style="margin:6px 0"></div>
     <div class="minibar" style="height:10px;background:#E8DDBF;border:2px solid var(--ink);border-radius:4px;overflow:hidden;margin:6px 0"><div id="rbar" style="height:100%;width:0;background:#7CD35E"></div></div>
     <div class="row"><button class="btn" id="rdl" hidden>🔄 Coba lagi</button></div></div>`);

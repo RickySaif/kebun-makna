@@ -60,7 +60,7 @@ for (const sz of SIZES) {
         seen.add('kenali-open'); const n = await page.locator('.card').count(); for (let c = 0; c < n; c++) await page.locator('.card').nth(c).click();
         await check(`${no}:${j + 1} Kenali (all cards open)`); await page.click('#nx:not([disabled])'); continue;
       }
-      if (/^(Ayo baca|Sekarang baca)/.test(t)) { await page.click('.practice #next'); await page.waitForTimeout(80); continue; }
+      if (/^(Ayo baca|Sekarang baca|Baca Surat)/.test(t)) { await page.click('.practice #next'); await page.waitForTimeout(80); continue; }
       await driveLessonOnce(page); await page.waitForTimeout(100);
     }
     await check(`${no}:${j + 1} celebration`);

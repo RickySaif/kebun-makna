@@ -12,8 +12,7 @@ await page.goto(BASE + '/'); await page.waitForSelector('#guest, #farm');
 if (await page.$('#guest')) { await page.click('#guest'); await page.waitForSelector('#nm', { timeout: 300000 }); await page.fill('#nm', 'Amtar'); await page.click('#go'); }
 await page.waitForSelector('#farm', { timeout: 300000 });
 await page.evaluate(async () => { document.querySelectorAll('.celebrate').forEach(x => x.remove()); (await import('./js/lesson.js')).lesson(114, 0, false); });
-for (let i = 0; i < 30; i++) { const t = await page.$eval('#layer .panel h2', e => e.textContent).catch(() => ''); if (t === 'Ayo baca kata ini') break; await driveLessonOnce(page); await page.waitForTimeout(100); }
-await page.click('.practice #next'); // word 2
+for (let i = 0; i < 30; i++) { const t = await page.$eval('#layer .panel h2', e => e.textContent).catch(() => ''); if (t === 'Sekarang baca satu ayat') break; await driveLessonOnce(page); await page.waitForTimeout(100); }
 await page.waitForFunction(() => !document.querySelector('.practice #mic').disabled, null, { timeout: 120000 });
 await page.evaluate(() => { const t = document.querySelector('.practice'); new MutationObserver(() => { if (t.classList.contains('thinking') && !window.__think) window.__think = { hear: document.querySelector('#hear').disabled, next: document.querySelector('#next').disabled, back: document.querySelector('.ptop button').disabled, mic: document.querySelector('#mic').disabled }; }).observe(t, { attributes: true, attributeFilter: ['class'] }); });
 await page.click('.practice #mic');

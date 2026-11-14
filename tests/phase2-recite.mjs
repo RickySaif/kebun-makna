@@ -5,8 +5,8 @@
 //   silence.wav = ffmpeg -f lavfi -i anullsrc=r=16000:cl=mono -t 10 silence.wav
 //   wrong.wav   = 114:1 with أعوذ said "a'uzu" (ذ→ز): say -v Majed -r 120 -o w.aiff 'قُلْ أَعُوزُ بِرَبِّ النَّاسِ' &&
 //                 ffmpeg -i w.aiff -af apad=pad_dur=2.5 -ar 16000 -ac 1 wrong.wav
-// Checks: the model is downloaded and built on the start-up screen · after Kenali one page per word, after Cocokkan the parts, after
-// Susun the whole ayah · "Lanjut" always works (never a requirement) · silence → "Tidak ada suara" · Alafasy's word
+// Checks: the model is downloaded and built on the start-up screen · each ayah is read once after Susun · Surat Utuh
+// ends with reading the surah ayah by ayah · "Lanjut" always works (never a requirement) · silence → "Tidak ada suara" · Alafasy's word
 // → 100% · a'uzu → below 100% with only أعوذ red · Alafasy's ayah → 100%. With KM_EMAIL/KM_PASS a signed-in child's
 // recitation_try row (part, score, ms, wrong) is checked too.
 import { chromium } from 'playwright';
@@ -29,7 +29,7 @@ async function open(wav) {
 }
 const h2 = page => page.$eval('#layer .panel h2', e => e.textContent).catch(() => '');
 const sub = page => page.locator('.practice .small').first().innerText({ timeout: 300 }).catch(() => '');
-const isPractice = t => /^(Ayo baca|Sekarang baca)/.test(t);
+const isPractice = t => /^(Ayo baca|Sekarang baca|Baca Surat)/.test(t);
 /** Drive the lesson until the panel title matches re (practice pages are skipped with "Lanjut" on the way). */
 async function until(page, re) {
   for (let i = 0; i < 80; i++) {
@@ -66,9 +66,9 @@ try {
   for (let i = 0; i < 80 && !(await page.$('.celebrate')); i++) {
     const t = await h2(page), key = t + (isPractice(t) ? ' ' + await sub(page) : '');
     if (t && seen[seen.length - 1] !== key) seen.push(key);
-    if (t === 'Ayo baca kata ini' && !silenceDone) {
+    if (t === 'Sekarang baca satu ayat' && !silenceDone) {
       silenceDone = true;
-      assert(!(await page.locator('.practice #mic').isDisabled()), 'first word page: mic ready at once');
+      assert(!(await page.locator('.practice #mic').isDisabled()), 'ayah page: mic ready at once');
       const r = await read(page);
       assert(/Tidak ada suara/.test(r.fb), 'silence → "Tidak ada suara yang terdengar"');
     }
@@ -79,22 +79,30 @@ try {
   const code = s => s.startsWith('Dengarkan') ? 'D' : s.startsWith('Kenali') ? 'K' : s.startsWith('Cocokkan') ? 'C' : s.startsWith('Susun') ? 'S'
     : s.startsWith('Ayo baca kata') ? 'w' : s.startsWith('Ayo baca bagian') ? 'p' : s.startsWith('Sekarang baca') ? 'A' : '?';
   const order = seen.map(code).join('');
-  assert(order === 'DKwwwwCppSA', 'order: Dengar, Kenali, 4 words, Cocokkan, 2 parts, Susun, whole ayah (' + order + ')');
+  assert(order === 'DKCSA', 'order: Dengar, Kenali, Cocokkan, Susun, then read the ayah (' + order + ')');
   assert(await page.$('.celebrate'), 'skipping every reading still finishes the ayah (never a requirement)');
   await ctx.close();
 
-  // ---- 2. one word: Alafasy's أَعُوۡذُ on its word page → 100% ----
-  ({ ctx, page } = await open('word.wav'));
+  // ---- 2. end of Surat Utuh: the surah is read ayah by ayah ----
+  ({ ctx, page } = await open('recite.wav'));
   await page.goto(BASE + '/'); await page.waitForSelector('#farm');
-  await start(page);
-  assert(await until(page, /^Ayo baca kata ini$/), 'word page appears');
-  await page.click('.practice #next'); // word 2
-  assert((await page.locator('.practice .ayahbig').innerText()).trim() === 'اَعُوۡذُ', 'second word page shows اَعُوۡذُ');
-  await ready(page);
-  let r = await read(page);
-  console.log('  word:', r.acc, '|', r.fb);
-  assert(r.acc === 'Ketepatan: 100%', 'Alafasy\'s اَعُوۡذُ scores 100%');
-  await page.screenshot({ path: 'shot-practice-word.png' });
+  // open Surat Utuh and jump to its last step (the story/order/explain pages have their own tests in phase0)
+  await page.evaluate(async () => {
+    document.querySelectorAll('.celebrate').forEach(x => x.remove());
+    const L = await import('./js/lesson.js'), { hooks } = await import('./js/hooks.js'), { BY } = await import('./js/data.js');
+    L.suratUtuh(114, false);
+    const p = document.querySelector('#layer .panel'), body = p.querySelector('.pbody'), bar = p.querySelector('.steps');
+    hooks.afterWhole({ body, bar, s: BY[114], review: false, next: () => { window.__surahDone = true; } });
+  });
+  const surahPages = [];
+  for (let i = 0; i < 10; i++) {
+    const t = await h2(page);
+    if (!/^Baca Surat/.test(t) || await page.evaluate(() => window.__surahDone === true)) break;
+    surahPages.push(await sub(page)); await page.click('.practice #next'); await page.waitForTimeout(150);
+  }
+  console.log('  surah reading pages:', surahPages.join(' · '));
+  assert(surahPages.length === 6 && surahPages[0] === 'Ayat 1 dari 6', 'Surat Utuh ends with reading An-Nas ayah by ayah (6 pages)');
+  assert(await page.evaluate(() => window.__surahDone === true), 'then Surat Utuh continues to its celebration');
   await ctx.close();
 
   // ---- 3. whole ayah with ذ→ز: red word, a score, still free to continue ----
@@ -103,7 +111,7 @@ try {
   await start(page);
   assert(await until(page, /^Sekarang baca satu ayat$/), 'whole-ayah page appears after Susun');
   await ready(page);
-  r = await read(page);
+  let r = await read(page);
   console.log('  a\'uzu:', r.acc, '|', r.fb, JSON.stringify(r.red));
   assert(/Ketepatan: [5-9]\d%/.test(r.acc), 'a\'uzu scores below 100% but most letters right');
   assert(JSON.stringify(r.red) === '[false,true,false,false]', 'only اَعُوۡذُ is marked red');

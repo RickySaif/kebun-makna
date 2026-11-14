@@ -15,8 +15,8 @@ export const SUPPORT = {
 };
 
 // Recitation recognition. One model for everyone, downloaded in the background when the game opens (~140 MB, once).
-// Practice, never a requirement (Ricky 2026-11-13): after Kenali each word, after Cocokkan parts of 2–3 words, after Susun
-// the whole ayah. Each try shows "Ketepatan" = share of meaning letters read right (js/match.js; قلب/كلب).
+// Practice, never a requirement: each ayah is read once after its quizzes (Susun), and the whole surah ayah by ayah at
+// the end of Surat Utuh (Ricky 2026-11-14). Each try shows "Ketepatan" = share of meaning letters read right (js/match.js; قلب/كلب).
 export const RECITE = {
   id: 'base-km8',         // changes when the model changes (logged with each attempt)
   // Tarteel whisper-base, served from models/ with a smaller decoder that fits iPhone Safari (see models/README.md)
