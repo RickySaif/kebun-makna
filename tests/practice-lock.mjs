@@ -3,10 +3,10 @@
 // screenshot the reading page while Pak Ustaz thinks, and check that every button is locked
 import { chromium } from 'playwright';
 import path from 'path';
-import { BASE, INIT, driveLessonOnce, assert, startGuest } from './lib.mjs';
+import { BASE, INIT, SHORT_SILENCE, driveLessonOnce, assert, startGuest } from './lib.mjs';
 const ctx = await chromium.launchPersistentContext('./chrome-lock', { channel: 'chrome', viewport: { width: 390, height: 664 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true,
   args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', `--use-file-for-fake-audio-capture=${path.resolve('word.wav')}`], permissions: ['microphone'] });
-const page = ctx.pages()[0] || await ctx.newPage(); await page.addInitScript(INIT);
+const page = ctx.pages()[0] || await ctx.newPage(); await page.addInitScript(INIT); await page.addInitScript(SHORT_SILENCE);
 const errs = []; page.on('pageerror', e => errs.push(e.message));
 await page.goto(BASE + '/'); await page.waitForSelector('#guest, #farm');
 if (await page.$('#guest')) { await page.click('#guest'); await page.waitForSelector('#nm', { timeout: 300000 }); await page.fill('#nm', 'Amtar'); await page.click('#go'); }
@@ -19,7 +19,7 @@ await page.click('.practice #mic');
 await page.waitForTimeout(300);
 const listen = await page.evaluate(() => ({ hear: document.querySelector('#hear').disabled, next: document.querySelector('#next').disabled, back: document.querySelector('.ptop button').disabled, mic: document.querySelector('#mic').disabled }));
 assert(listen.hear && listen.next && listen.back && !listen.mic, 'listening: only "Selesai" works ' + JSON.stringify(listen));
-assert(await page.locator('.ustaz-think:not([hidden])').count() === 1 && /Silakan baca/.test(await page.locator('.ustaz-think .say').innerText()), 'listening: Pak Ustaz is there ("Silakan baca, Ustaz mendengarkan")');
+assert(await page.locator('.practice.recording').count() === 1 && await page.locator('.practice .lead').isHidden(), 'listening: only the ayah and Selesai are shown (no scrolling)');
 const cdp = await ctx.newCDPSession(page); await cdp.send('Emulation.setCPUThrottlingRate', { rate: 6 });
 await page.waitForSelector('.practice.thinking', { timeout: 90000 });
 const think = await page.evaluate(() => window.__think);

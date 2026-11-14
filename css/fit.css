@@ -91,9 +91,13 @@ body{margin:0}
 .mylook .pv{flex:none;width:52px;height:72px;border:3px solid var(--ink);border-radius:10px;background:#BFE7FA;display:grid;place-items:center;overflow:hidden}
 .mylook .pv canvas{image-rendering:pixelated}
 
-/* word pointer on the reading page (like a teacher's finger on the mushaf) */
-.practice .ayahbig span.now{background:#FFE07A;box-shadow:0 0 0 3px var(--gold);border-radius:6px}
-.practice .ayahbig.reading{cursor:pointer;border:2px dashed #E3C766;border-radius:12px}
-.practice .ayahbig.reading span.now{animation:km-point 1.2s ease-in-out infinite}
-@keyframes km-point{50%{box-shadow:0 0 0 5px var(--gold)}}
-@media (prefers-reduced-motion:reduce){.practice .ayahbig.reading span.now{animation:none}}
+
+/* whole-surah reading page: ayah end marks, smaller text so the surah fits */
+.practice .aend{font-style:normal;display:inline-block;min-width:1.4em;padding:0 .2em;border:2px solid #C9A227;border-radius:50%;font-size:.55em;line-height:1.6;text-align:center;color:#8A6A12;vertical-align:middle}
+.practice.surat .ayahbig{font-size:28px;line-height:2}
+/* while the child reads: only the ayah (big) and the Selesai button, so nothing has to be scrolled */
+.practice.recording .lead,.practice.recording .acc,.practice.recording .heard,.practice.recording .fb,
+.practice.recording #hear,.practice.recording #next,.practice.recording > .small,.practice.recording #retry{display:none}
+.practice.recording .ayahbig{font-size:36px;line-height:2.2;padding:12px 4px}
+.practice.recording.surat .ayahbig{font-size:30px}
+.practice.recording #mic{font-size:22px;padding:16px}

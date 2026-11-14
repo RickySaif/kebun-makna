@@ -2,6 +2,13 @@
 
 Live: https://km.generasimerdeka.com/ · (old address https://rickysaif.github.io/kebun-makna/ redirects)
 
+## 2026-11-14 (later) — Reading made simpler (Ricky tested it with Amtar)
+- **Pass at 50%:** a passing reading gets praise only (all words green, no red marks, no "Yang Ustaz dengar" box). Corrections show only below 50% (`PASS` in `js/recite.js`).
+- **Word pointer removed** ("tanda per kata bikin anak bingung, harus geser-geser"). Live word-by-word tracking while the child speaks isn't possible with this recogniser (it works on the finished recording, several seconds on an iPhone); noted as a later idea.
+- **Record everything:** reading pages no longer stop at a pause; the child taps "Selesai membaca" (a long silence still ends it: 6 s for an ayah, 8 s for a surah; `RECITE.ayahSilenceMs` / `surahSilenceMs`). While recording only the ayah (bigger) and the Selesai button are shown, so nothing has to be scrolled; Pak Ustaz appears while checking.
+- **End of Surat Utuh: the whole surah at once** (one page with ayah-end marks, one recording, ▶ Dengar plays all ayat), not ayah by ayah again.
+- Fitting: `fitOne()` now finds the largest zoom that fits (binary search) and skips refits when nothing changed size (boss games update text every frame). Tests set a short silence (`SHORT_SILENCE` in `tests/lib.mjs`) because the fake mic loops its file.
+
 ## 2026-11-14 — Reading: per ayah; word pointer; similar letters accepted; 70% is good
 - **Order (Ricky):** no reading per word or part. Each ayah is read once after Susun (meaning and quizzes done); Surat Utuh ends with "Baca Surat …", one full ayah per page.
 - **Players can already read hijaiyah, not fluently (Ricky):** the reading page has a **word pointer**: while reading, the first word is highlighted and each tap moves it on; ▶ Dengar moves it with the reciter. Text: "Ketuk 🎙️ lalu baca sendiri. Butuh bantuan? Tekan ▶ Dengar dulu."

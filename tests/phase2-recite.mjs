@@ -7,17 +7,18 @@
 //                 say -v Majed -r 120 -o w.aiff 'قُلْ أَعُوذُ بِرَبِّ الْمَاسِ' &&
 //                 ffmpeg -i w.aiff -af apad=pad_dur=2.5 -ar 16000 -ac 1 wrong.wav
 // Checks: the model is downloaded and built on the start-up screen · each ayah is read once after Susun · Surat Utuh
-// ends with reading the surah ayah by ayah · "Lanjut" always works (never a requirement) · silence → "Tidak ada suara" · Alafasy's word
+// ends with reading the whole surah at once · "Lanjut" always works (never a requirement) · silence → "Tidak ada suara" · Alafasy's word
 // → 100% · a'uzu → below 100% with only أعوذ red · Alafasy's ayah → 100%. With KM_EMAIL/KM_PASS a signed-in child's
 // recitation_try row (part, score, ms, wrong) is checked too.
 import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
-import { BASE, INIT, driveLessonOnce, assert, parentClient, familyFn } from './lib.mjs';
+import { BASE, INIT, SHORT_SILENCE, driveLessonOnce, assert, parentClient, familyFn } from './lib.mjs';
 
 const tmp = fs.mkdtempSync(path.join(process.cwd(), 'chrome-'));
 const errors = [];
 async function open(wav) {
+  curWav = wav;
   const ctx = await chromium.launchPersistentContext(tmp, {
     channel: 'chrome', viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true,
     args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', `--use-file-for-fake-audio-capture=${path.resolve(wav)}`],
@@ -25,7 +26,7 @@ async function open(wav) {
   });
   const page = ctx.pages()[0] || await ctx.newPage();
   page.on('pageerror', e => errors.push(e.message));
-  await page.addInitScript(INIT);
+  await page.addInitScript(INIT); await page.addInitScript(SHORT_SILENCE);
   return { ctx, page };
 }
 const h2 = page => page.$eval('#layer .panel h2', e => e.textContent).catch(() => '');
@@ -42,8 +43,12 @@ async function until(page, re) {
 }
 const start = page => page.evaluate(async () => { (await import('./js/lesson.js')).lesson(114, 0, false); }); // always An-Nas 1 (lessonStart would move on to ayah 2)
 const ready = page => page.waitForFunction(() => !document.querySelector('.practice #mic').disabled, null, { timeout: 600000 });
+// the child taps Selesai when done (the fake mic loops its file, so the test taps it after one play-through)
+const SECS = {};
+let curWav = 'silence.wav';
 async function read(page) {
   await page.click('.practice #mic');
+  if (SECS[curWav]) { await page.waitForTimeout(SECS[curWav] * 1000); if (/Selesai/.test(await page.locator('.practice #mic').innerText())) await page.click('.practice #mic'); }
   await page.waitForFunction(() => /Ketepatan|Tidak ada suara|Gagal/.test(document.querySelector('.practice').innerText), null, { timeout: 120000 });
   return { acc: await page.locator('.practice .acc').innerText(), fb: await page.locator('.practice .fb').innerText(),
     red: await page.$$eval('.practice .ayahbig span', els => els.map(e => e.style.textDecoration.includes('wavy'))) };
@@ -99,10 +104,10 @@ try {
   for (let i = 0; i < 10; i++) {
     const t = await h2(page);
     if (!/^Baca Surat/.test(t) || await page.evaluate(() => window.__surahDone === true)) break;
-    surahPages.push(await sub(page)); await page.click('.practice #next'); await page.waitForTimeout(150);
+    surahPages.push(t + ' [' + await page.locator('.practice .aend').count() + ' tanda ayat]'); await page.click('.practice #next'); await page.waitForTimeout(150);
   }
   console.log('  surah reading pages:', surahPages.join(' · '));
-  assert(surahPages.length === 6 && surahPages[0] === 'Ayat 1 dari 6', 'Surat Utuh ends with reading An-Nas ayah by ayah (6 pages)');
+  assert(surahPages.length === 1 && /Baca Surat An-Nas sekaligus \[6 tanda ayat\]/.test(surahPages[0]), 'Surat Utuh ends with reading the whole of An-Nas at once (one page, 6 ayah marks)');
   assert(await page.evaluate(() => window.__surahDone === true), 'then Surat Utuh continues to its celebration');
   await ctx.close();
 
@@ -114,11 +119,9 @@ try {
   await ready(page);
   let r = await read(page);
   console.log('  al-mas:', r.acc, '|', r.fb, JSON.stringify(r.red));
-  assert(/Ketepatan: [5-9]\d%/.test(r.acc), 'al-mas scores below 100% but most letters right');
-  assert(JSON.stringify(r.red) === '[false,false,false,true]', 'only النَّاسِ is marked red');
-  const heard = await page.locator('.practice .heard').innerText();
-  console.log('  heard box:', heard.replace(/\n/g, ' / '));
-  assert(/ن/.test(heard) && /م/.test(heard) && /terdengar/.test(heard), '"Yang Ustaz dengar" shows ن heard as م');
+  assert(/Ketepatan: [5-9]\d%/.test(r.acc) && /bagus/i.test(r.fb), 'al-mas (≥50%) passes with praise');
+  assert(JSON.stringify(r.red) === '[false,false,false,false]', 'a passing reading shows no red word (Ricky: no criticism)');
+  assert(await page.locator('.practice .heard:not([hidden])').count() === 0, 'a passing reading shows no "Yang Ustaz dengar" box');
   await page.screenshot({ path: 'shot-practice-wrong.png' });
   await page.click('.practice #next');
   await page.locator('.celebrate').waitFor({ timeout: 5000 });

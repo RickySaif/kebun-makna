@@ -9,6 +9,8 @@ export const BASE = process.env.BASE || 'http://127.0.0.1:8765';
 export const SUPABASE_URL = 'https://vnzmvmlvicyggylgukaz.supabase.co';
 export const SUPABASE_KEY = 'sb_publishable_obFuN_gARWpT-HHQWBEDXg_37CaxUE5';
 
+/** Tests: the fake mic loops its file; a short silence ends a reading at the file's quiet tail (the game waits 6–8 s). */
+export const SHORT_SILENCE = () => { import('./js/config.js').then(c => { c.RECITE.ayahSilenceMs = c.RECITE.surahSilenceMs = 1500; }).catch(() => {}); };
 export const INIT = () => {
   HTMLMediaElement.prototype.play = function () { setTimeout(() => this.dispatchEvent(new Event('ended')), 30); return Promise.resolve(); };
   HTMLMediaElement.prototype.pause = function () {};

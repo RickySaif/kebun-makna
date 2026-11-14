@@ -31,12 +31,21 @@ export function closePanel(){stopAudio();layer.replaceChildren();}
    Covers: panels (lessons, practice, shop …), the celebration pop-up, and the start / onboarding screens.
    Parent dashboard and social pages (.dash) keep normal page scrolling. */
 const MIN_ZOOM=0.62;
+const fitSig=new WeakMap();
 function fitOne(box,content,over){
   if(!content) return;
+  // skip when nothing that matters changed (boss games update their text every frame)
+  const sig=box.clientWidth+'x'+box.clientHeight+':'+content.scrollHeight+':'+(content.style.zoom||'1');
+  if(fitSig.get(content)===sig) return;
   content.style.zoom=''; box.classList.remove('scrolly');
-  let z=1;
-  for(let k=0;k<5;k++){ const o=over(); if(o.over<=1) return; z*=o.avail/(o.avail+o.over); if(z<MIN_ZOOM) break; content.style.zoom=z.toFixed(3); }
-  if(over().over>1){ content.style.zoom=''; box.classList.add('scrolly'); }
+  const done=()=>fitSig.set(content,box.clientWidth+'x'+box.clientHeight+':'+content.scrollHeight+':'+(content.style.zoom||'1'));
+  if(over().over<=1) return done();
+  // largest zoom that still fits (binary search: text re-wraps, so the height is not proportional to the zoom)
+  let lo=MIN_ZOOM, hi=1;
+  content.style.zoom=String(lo);
+  if(over().over>1){ content.style.zoom=''; box.classList.add('scrolly'); return done(); }
+  for(let k=0;k<7;k++){ const mid=(lo+hi)/2; content.style.zoom=mid.toFixed(3); if(over().over<=1) lo=mid; else hi=mid; }
+  content.style.zoom=lo.toFixed(3); done();
 }
 function fitAll(){
   document.querySelectorAll('.panel').forEach(p=>{ const top=p.scrollTop; fitOne(p,p.querySelector(':scope > .wrap'),()=>({avail:p.clientHeight,over:p.scrollHeight-p.clientHeight})); p.scrollTop=top; });

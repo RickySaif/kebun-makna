@@ -31,7 +31,7 @@ try {
   assert(await page.evaluate(async () => (await import('./js/recite.js')).model.status === 'ready'), 'the recognizer is ready before the game starts');
   await page.fill('#nm', 'Uji'); await page.click('#go'); await page.waitForTimeout(500);
   await page.evaluate(async () => { document.querySelectorAll('.celebrate').forEach(x => x.remove()); (await import('./js/lesson.js')).lesson(114, 0, false); });
-  for (let i = 0; i < 30; i++) { const t = await page.$eval('#layer .panel h2', e => e.textContent).catch(() => ''); if (t === 'Ayo baca kata ini') break; await driveLessonOnce(page); await page.waitForTimeout(100); }
+  for (let i = 0; i < 30; i++) { const t = await page.$eval('#layer .panel h2', e => e.textContent).catch(() => ''); if (t === 'Sekarang baca satu ayat') break; await driveLessonOnce(page); await page.waitForTimeout(100); }
   assert(!(await page.locator('.practice #mic').isDisabled()), 'first reading page: mic ready at once (no waiting)');
   await ctx.close();
 
@@ -60,7 +60,7 @@ try {
   await page.waitForSelector('#farm', { timeout: 10000 });
   assert(true, '"Main tanpa latihan baca" starts the game');
   await page.evaluate(async () => { document.querySelectorAll('.celebrate').forEach(x => x.remove()); (await import('./js/lesson.js')).lesson(114, 0, false); });
-  for (let i = 0; i < 30; i++) { const t = await page.$eval('#layer .panel h2', e => e.textContent).catch(() => ''); if (t === 'Ayo baca kata ini') break; await driveLessonOnce(page); await page.waitForTimeout(100); }
+  for (let i = 0; i < 30; i++) { const t = await page.$eval('#layer .panel h2', e => e.textContent).catch(() => ''); if (t === 'Sekarang baca satu ayat') break; await driveLessonOnce(page); await page.waitForTimeout(100); }
   assert(await page.locator('.practice #retry').count() === 1 && /memori HP penuh/.test(await page.locator('.practice .fb').innerText()), 'reading page: memory message + Coba lagi');
   await page.click('.practice #retry');
   await page.waitForFunction(() => !document.querySelector('.practice #mic').disabled, null, { timeout: 120000 });

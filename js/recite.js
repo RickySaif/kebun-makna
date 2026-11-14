@@ -1,6 +1,6 @@
 // recite.js — on-device recitation recognition (Whisper, transformers.js) and the reading-practice pages in each lesson.
 // Model: tarteel-ai whisper-base-ar-quran (ONNX). Profiles and session options come from tes-whisper.html.
-import { $, esc, root } from './ui.js';
+import { $, esc, root, fitSoon } from './ui.js';
 import { S, save } from './state.js';
 import { sfx, play, stopAudio } from './audio.js';
 import { AA, AW, USTAZ } from './data.js';
@@ -232,6 +232,7 @@ function normalise(x) {
  * without any voice, or at RECITE.maxMs. Returns { pcm (16 kHz), dur, heard }. ui.onLevel(0..1), ui.stopper(fn).
  */
 export async function record(ui = {}) {
+  const maxMs = ui.maxMs || RECITE.maxMs, silenceMs = ui.silenceMs || RECITE.silenceMs;
   const ac = primeMic();
   const stream = await Promise.race([
     navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: true } }),
@@ -256,10 +257,10 @@ export async function record(ui = {}) {
     const thr = Math.max(0.0015, floor * 3);
     ui.onLevel && ui.onLevel(Math.min(1, rms / (thr * 4)));
     if (rms > thr) { loudRun++; if (loudRun >= 2) { heard = true; lastLoud = now; } } else loudRun = 0;
-    if ((heard && now - lastLoud > RECITE.silenceMs) || now - t0 > RECITE.maxMs || (!heard && now - t0 > 8000)) stop();
+    if ((heard && now - lastLoud > silenceMs) || now - t0 > maxMs || (!heard && now - t0 > 8000)) stop();
   };
   // if the mic delivers nothing at all (suspended context), give up after 2.5 s instead of waiting forever
-  const watchdog = setInterval(() => { if (!stopped && performance.now() - t0 > 2500 && got === 0) stop(); if (performance.now() - t0 > RECITE.maxMs + 2000) stop(); }, 500);
+  const watchdog = setInterval(() => { if (!stopped && performance.now() - t0 > 2500 && got === 0) stop(); if (performance.now() - t0 > maxMs + 2000) stop(); }, 500);
   await finished; clearInterval(watchdog);
   proc.onaudioprocess = null;
   try { src.disconnect(); proc.disconnect(); mute.disconnect(); } catch (e) {}
@@ -292,8 +293,10 @@ export function parts(words) {
   for (let p = 0; p < k; p++) { const size = Math.round((n - i) / (k - p)); out.push(words.slice(i, i + size)); i += size; }
   return out;
 }
-// 70% and up is already good (Ricky): the child hears praise, not a correction
-const verdict = acc => acc >= 0.9 ? 'MasyaAllah, jelas sekali!' : acc >= 0.7 ? 'Bagus! Bacaanmu sudah benar. Mau lebih sempurna? Perhatikan kata yang merah.'
+// Ricky (2026-11-14): 50% and up passes. A passing reading gets praise only: all words green, no red marks, no
+// "Yang Ustaz dengar" box. Corrections are shown only below 50%.
+export const PASS = 0.5;
+const verdict = acc => acc >= 0.85 ? 'MasyaAllah, bacaanmu bagus sekali!' : acc >= PASS ? 'Bagus! Bacaanmu sudah benar. Lanjutkan!'
   : acc > 0 ? 'Ayo coba lagi pelan-pelan. Dengarkan dulu kata yang merah.' : 'Belum terdengar. Dengarkan dulu, lalu baca pelan-pelan.';
 
 /**
@@ -324,9 +327,9 @@ function practice({ body, s, a, items, kind, next, ayat }) {
   const show = () => {
     unsub(); stopAudio();
     const words = items[idx], isLast = idx === items.length - 1, cur = ayat ? ayat[idx] : a, whole = kind === 'ayat' || kind === 'surat';
-    const title = kind === 'kata' ? 'Ayo baca kata ini' : kind === 'bagian' ? 'Ayo baca bagian ini' : kind === 'surat' ? `Baca Surat ${s.name}` : 'Sekarang baca satu ayat';
+    const title = kind === 'kata' ? 'Ayo baca kata ini' : kind === 'bagian' ? 'Ayo baca bagian ini' : kind === 'surat' ? `Baca Surat ${s.name} sekaligus` : 'Sekarang baca satu ayat';
     const count = items.length > 1 ? `<p class="small" style="margin:0 0 6px">${kind === 'kata' ? 'Kata' : kind === 'surat' ? 'Ayat' : 'Bagian'} ${idx + 1} dari ${items.length}</p>` : '';
-    const v = $(`<div class="frame practice"><h2>${title}</h2>${count}
+    const v = $(`<div class="frame practice ${kind}"><h2>${title}</h2>${count}
       <p class="lead">Ketuk 🎙️ lalu baca sendiri. Butuh bantuan? Tekan ▶ Dengar dulu. Ini latihan: kamu boleh lanjut kapan saja.</p>
       <div class="ayahbig ar" lang="ar"></div>
       ${kind === 'kata' ? `<p class="small" style="text-align:center;margin:4px 0 0">${esc(words[0].emo || '')} ${esc(words[0].id)}</p>` : ''}
@@ -342,45 +345,33 @@ function practice({ body, s, a, items, kind, next, ayat }) {
       const off = !!mode, panelEl = v.closest('.panel');
       v.querySelectorAll('#hear, #next, #retry').forEach(b => b.disabled = off);
       if (panelEl) panelEl.querySelector('.ptop button').disabled = off;
-      // while the child reads, the ayah is NOT locked: a tap moves the word pointer (see below)
-      v.querySelector('.ayahbig').classList.toggle('locked', mode === 'think');
-      v.querySelector('.ayahbig').classList.toggle('reading', mode === 'listen');
-      if (mode === 'listen') point(0); else if (mode !== 'think') point(-1);
+      v.querySelector('.ayahbig').classList.toggle('locked', off);
       v.classList.toggle('thinking', mode === 'think');
       // Pak Ustaz is there while the child reads (listening) and while the reading is checked (thinking)
-      think.hidden = !mode;
+      // while reading, only the ayah and "Selesai" are on screen (no scrolling); Pak Ustaz appears while checking
+      think.hidden = mode !== 'think';
+      v.classList.toggle('recording', mode === 'listen');
+      fitSoon(); // refit: the page got shorter or taller
       think.classList.toggle('listening', mode === 'listen');
-      think.querySelector('.say').textContent = mode === 'listen' ? (words.length > 1 ? 'Silakan baca. Ketuk ayatnya untuk pindah ke kata berikutnya' : 'Silakan baca, Ustaz mendengarkan') : 'Sebentar, Ustaz sedang memeriksa bacaanmu';
+      think.querySelector('.say').textContent = mode === 'listen' ? 'Silakan baca, Ustaz mendengarkan' : 'Sebentar, Ustaz sedang memeriksa bacaanmu';
       if (mode) think.querySelector('img').src = portrait(USTAZ.look); // follows "tanpa mata"
     }
     const box = v.querySelector('.ayahbig'), fb = v.querySelector('.fb'), mic = v.querySelector('#mic'), lvl = v.querySelector('#lvl'), accEl = v.querySelector('.acc');
     const heardEl = $(`<div class="heard" hidden></div>`); accEl.after(heardEl);
     v.querySelector('.fb').before(think);
     let busy = false, stopFn = null, tries = 0;
+    const ends = new Map(); if (kind === 'surat') { let k = -1; s.ayat.forEach(x => { k += x.w.length; ends.set(k, x.n); }); }
     const paint = res => box.replaceChildren(...words.flatMap((w, i) => {
       const sp = $(`<span role="button" tabindex="0">${esc(w.ar)}</span>`);
       sp.style.cursor = 'pointer';
-      sp.onclick = () => { if (busy) { point(ptr + 1); return; } stopAudio(); play(AW(w.a)); };
+      sp.onclick = () => { stopAudio(); play(AW(w.a)); };
       if (res) { const st = res[i].st; sp.style.borderRadius = '4px'; sp.style.padding = '0 3px'; sp.style.background = COL[st]; if (st !== 'ok') sp.style.textDecoration = 'underline wavy #C0392B'; }
-      return i ? [document.createTextNode(' '), sp] : [sp];
+      const end = kind === 'surat' && ends.has(i) ? [document.createTextNode(' '), $(`<i class="aend">${String(ends.get(i)).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d])}</i>`)] : [];
+      return (i ? [document.createTextNode(' '), sp] : [sp]).concat(end);
     }));
     paint(null);
-    // v4 (Ricky): a word pointer, like a teacher's finger on the mushaf. While the child reads, a tap anywhere on the
-    // ayah moves it to the next word; while Dengar plays, it follows the reciter word by word.
-    let ptr = -1;
-    function point(i) {
-      const spans = [...box.querySelectorAll('span')];
-      ptr = Math.max(-1, Math.min(i, spans.length - 1));
-      spans.forEach((sp, k) => sp.classList.toggle('now', k === ptr));
-    }
-    box.addEventListener('click', e => { if (busy && !e.target.closest('span')) point(ptr + 1); });
-    const hear = async () => {
-      stopAudio();
-      if (whole && cur.t) { await play(AA(cur.a), ms => { const i = cur.t.findIndex((x, k) => ms >= x && ms < cur.t[k + 1]); if (i >= 0) point(i); }); if (!busy) point(-1); return; }
-      if (whole) return play(AA(cur.a));
-      for (let i = 0; i < words.length; i++) { if (!v.isConnected) return; point(i); await play(AW(words[i].a)); }
-      if (!busy) point(-1);
-    };
+    // (the word pointer was removed: Ricky, "tanda per kata bikin anak bingung")
+    const hear = async () => { stopAudio(); if (kind === 'surat') { for (const x of s.ayat) { if (!v.isConnected) return; await play(AA(x.a)); } return; } if (whole) return play(AA(cur.a)); for (const w of words) { if (!v.isConnected) return; await play(AW(w.a)); } };
     v.querySelector('#hear').onclick = hear;
     v.querySelector('#next').onclick = () => { if (stopFn) stopFn(); idx++; if (idx < items.length) show(); else done(); };
     unsub = onModel(m => {
@@ -397,11 +388,12 @@ function practice({ body, s, a, items, kind, next, ayat }) {
       if (busy) { stopFn && stopFn(); return; }
       primeMic(); // iOS: the audio engine must start inside this tap
       stopAudio(); busy = true; stopFn = null;
-      mic.textContent = '⏹️ Selesai'; fb.className = 'fb'; fb.textContent = ''; accEl.textContent = ''; heardEl.hidden = true; heardEl.replaceChildren();
+      mic.textContent = '⏹️ Selesai membaca'; fb.className = 'fb'; fb.textContent = ''; accEl.textContent = ''; heardEl.hidden = true; heardEl.replaceChildren();
       lock('listen');
       const restore = () => { busy = false; stopFn = null; mic.textContent = '🎙️ Baca lagi'; mic.disabled = false; lock(null); };
       let rec;
-      try { rec = await record({ onLevel: x => { lvl.style.width = Math.round(x * 100) + '%'; }, stopper: f => stopFn = f }); }
+      try { rec = await record({ onLevel: x => { lvl.style.width = Math.round(x * 100) + '%'; }, stopper: f => stopFn = f, // Ricky: record everything, don't stop at a pause; the child taps Selesai (a long silence still ends it)
+        ...(kind === 'surat' ? { maxMs: RECITE.surahMaxMs, silenceMs: RECITE.surahSilenceMs } : { maxMs: RECITE.ayahMaxMs, silenceMs: RECITE.ayahSilenceMs }) }); }
       catch (e) {
         restore();
         fb.className = 'fb bad'; fb.textContent = e && e.name === 'NotAllowedError' ? 'Mikrofon belum diizinkan. Di iPhone: Pengaturan › Safari › Mikrofon › Izinkan. Kamu tetap bisa lanjut.'
@@ -425,13 +417,16 @@ function practice({ body, s, a, items, kind, next, ayat }) {
         paint(null); accEl.textContent = 'Kata pendek: belum bisa dinilai'; accEl.style.color = '#8A7A5A';
         fb.className = 'fb'; fb.textContent = 'Pengenal bacaan sulit mendengar kata sependek ini. Dengarkan dan tirukan, lalu lanjut. Kata ini dinilai lagi saat membaca per bagian.';
       } else {
-        paint(r.res); showHeard(heardEl, r.res);
+        const pass = r.acc >= PASS;
+        if (pass) { paint(r.res.map(x => ({ ...x, st: 'ok' }))); showHeard(heardEl, []); } // passed: all green, no criticism
+        else { paint(r.res); showHeard(heardEl, r.res); }
         accEl.textContent = `Ketepatan: ${pct}%`;
-        accEl.style.color = pct >= 70 ? 'var(--ok)' : pct >= 50 ? '#B7791F' : 'var(--no)';
-        fb.className = 'fb ' + (pct >= 70 ? 'good' : ''); fb.textContent = verdict(r.acc);
-        if (pct >= 70) sfx.fanfare(); else if (pct >= 50) sfx.good();
+        accEl.style.color = pass ? 'var(--ok)' : 'var(--no)';
+        fb.className = 'fb ' + (pass ? 'good' : ''); fb.textContent = verdict(r.acc);
+        if (pass) sfx.fanfare(); else sfx.good();
       }
-      if (whole) { S.recited = S.recited || {}; S.recited[cur.a] = true; save(); }
+      if (kind === 'surat') { S.recited = S.recited || {}; s.ayat.forEach(x => S.recited[x.a] = true); save(); }
+      else if (whole) { S.recited = S.recited || {}; S.recited[cur.a] = true; save(); }
       logActivity('recitation_try', { ayah: cur.a, part: kind, words: words.map(w => w.a.slice(6)).join(','), score: unsure ? null : +r.acc.toFixed(2), ms, rec_s: +rec.dur.toFixed(1),
         profile: RECITE.id, heard: text.slice(0, 120), wrong: r.res.filter(x => x.st !== 'ok').slice(0, 6).map(x => `${x.word}→${x.heard || '∅'}`) });
     };
@@ -454,7 +449,9 @@ hooks.afterAyah = ({ body, bar, s, a, review, next }) => {
 hooks.afterWhole = ({ body, bar, s, review, next }) => {
   if (!FLAGS.recitationGate) return next();
   [...bar.children].forEach(x => x.className = 'past');
-  practice({ body, s, a: s.ayat[0], items: s.ayat.map(x => x.w), ayat: s.ayat, kind: 'surat', next });
+  // Ricky (2026-11-14): each ayah was already read after its lesson, so here the whole surah is read at once:
+  // one page, one recording (longer limit, and a pause between ayat does not stop it)
+  practice({ body, s, a: s.ayat[0], items: [s.ayat.flatMap(x => x.w)], kind: 'surat', next });
 };
 
 // ---------------- settings box (⚙ → Pengaturan): status only, the download is automatic ----------------

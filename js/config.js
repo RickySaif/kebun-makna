@@ -23,8 +23,10 @@ export const RECITE = {
   model: 'whisper-base-ar-quran',
   dtype: { encoder_model: 'q4', decoder_model_merged: 'q4' },
   size: '≈90 MB', bytes: 93160438, // all files, for the progress bar
-  silenceMs: 1500,       // auto-stop after this much silence
+  silenceMs: 1500,       // auto-stop after this much silence (short checks)
   maxMs: 15000,          // hard stop
+  // reading pages (Ricky: record everything, the child taps Selesai; only a long silence ends it)
+  ayahSilenceMs: 6000, ayahMaxMs: 60000, surahSilenceMs: 8000, surahMaxMs: 150000,
 };
 
 export const FLAGS = {
