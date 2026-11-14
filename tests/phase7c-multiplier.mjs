@@ -1,6 +1,6 @@
 import { BASE, newPage, close, assert } from './lib.mjs';
 const P = await newPage('parent'); P.on('response', r => { if (r.status() === 403) console.log('403 URL:', r.url().slice(0, 160)); });
-await P.goto(BASE + '/'); await P.click('#ortu');
+await P.goto(BASE + '/');
 await P.fill('#em', process.env.KM_EMAIL); await P.fill('#pw', process.env.KM_PASS); await P.click('#go');
 await P.waitForSelector('#code', { timeout: 20000 });
 const b = await P.locator('.dash .badge').first().innerText();

@@ -65,7 +65,7 @@ try {
   assert(await B.locator('a', { hasText: 'Kunjungi kebun' }).count() === 1, 'B follows A; visit button offered (same role)');
   // ---- parent's feed: no children's posts ----
   const P = await newPage('parent');
-  await P.goto(BASE + '/'); await P.click('#ortu');
+  await P.goto(BASE + '/');
   await P.fill('#em', process.env.KM_EMAIL); await P.fill('#pw', process.env.KM_PASS); await P.click('#go');
   await P.waitForSelector('#code', { timeout: 20000 });
   await P.goto(BASE + '/#/beranda/jelajah');

@@ -1,13 +1,13 @@
-// main.js — boot: route between start screen, child game (cloud save), guest game, parent dashboard.
+// main.js — boot: route between login screen, signed-in game (cloud save), trial (nothing saved), old device save.
 import { farm, onboarding, intro, introActive } from './farm.js';
 import { checkSurahLevels } from './progress.js';
-import { S, save } from './state.js';
+import { S, save, setS, fresh, normalize, setPersist } from './state.js';
 import { $, esc, root, toast } from './ui.js';
 import { hooks } from './hooks.js';
 import { sb, session, loadProfile, signOut, updateMyAvatar } from './api.js';
 import { eyesOff, eyesChosen, setEyesOff, gfxLite, setGfxLite } from './art.js';
 import { eyesToggle } from './avatar.js';
-import { startScreen, parentLogin, newPasswordScreen, rememberGuest, isRememberedGuest } from './account.js';
+import { startScreen, hasLocalSave, newPasswordScreen, rememberGuest, isRememberedGuest } from './account.js';
 import { startCloud, importLegacy, flushNow } from './cloud.js';
 import { settingsBox, preloadModel, prepareScreen } from './recite.js';
 
@@ -20,29 +20,24 @@ const PROFILE_CACHE = 'kebun-makna-profile';
 const cacheProfile = p => { try { localStorage.setItem(PROFILE_CACHE, JSON.stringify(p)); } catch (e) {} };
 const cachedProfile = () => { try { return JSON.parse(localStorage.getItem(PROFILE_CACHE) || 'null'); } catch (e) { return null; } };
 
-let mode = null; // 'start' | 'guest' | 'child' | 'player' (parent playing) | 'parent' | 'page'
+let mode = null; // 'start' | 'guest' (trial, nothing saved) | 'local' (old save on this device) | 'child' (older child account) | 'player' (signed in) | 'page' | 'social'
 const handlers = {
-  parent: () => { location.hash = '#/ortu'; route(); },
+  login: p => { cacheProfile(p); bootPlayer(p); },
   child: p => { cacheProfile(p); bootPlayer(p); },
   guest: () => bootGuest(),
+  local: () => { rememberGuest(true); bootLocal(); },
 };
 
 function accountBox(box) {
   const p = session.profile;
-  if (mode === 'player' && p) {
-    const b = $(`<div class="box"><h3>Akun</h3><p class="small" style="margin:0 0 8px">Anda bermain sebagai <b></b> (orang tua). Progres Anda terpisah dari progres anak-anak.</p>
-      <div class="row"><button class="btn ghost" id="bk">Kembali ke Halaman Orang Tua</button></div></div>`);
-    b.querySelector('b').textContent = p.display_name;
-    b.querySelector('#bk').onclick = async () => { flushNow(); await new Promise(r => setTimeout(r, 400)); location.hash = '#/ortu'; location.reload(); };
-    box.prepend(b);
-  } else if (mode === 'child' && p) {
+  if ((mode === 'player' || mode === 'child') && p) {
     const b = $(`<div class="box"><h3>Akun</h3><p class="small" style="margin:0 0 8px">Masuk sebagai <b></b>. Progres tersimpan di akun (cloud) dan di perangkat ini, jadi aman walau ganti HP.</p>
-      <div class="row"><button class="btn ghost" id="sw">Ganti pemain / keluar</button></div></div>`);
+      <div class="row"><button class="btn ghost" id="sw">Keluar</button></div></div>`);
     b.querySelector('b').textContent = p.display_name;
     b.querySelector('#sw').onclick = async () => { flushNow(); await new Promise(r => setTimeout(r, 400)); await signOut(); location.hash = ''; location.reload(); };
     box.prepend(b);
-  } else if (mode === 'guest') {
-    const b = $(`<div class="box" style="background:#FFF6CC"><h3>Mode tamu</h3><p class="small" style="margin:0 0 8px">Progres hanya tersimpan di browser ini. Minta Ayah/Ibu membuat akun keluarga supaya progres aman, bisa main di perangkat lain, dan bisa ikut Beranda.</p>
+  } else if (mode === 'guest' || mode === 'local') {
+    const b = $(`<div class="box" style="background:#FFF6CC"><h3>${mode === 'guest' ? 'Uji coba' : 'Belum masuk'}</h3><p class="small" style="margin:0 0 8px">${mode === 'guest' ? '<b>Uji coba. Hasil tidak disimpan.</b> Masuk atau buat akun supaya progres tersimpan, bisa main di perangkat lain, dan bisa ikut Beranda.' : 'Progres hanya tersimpan di browser ini. Masuk atau buat akun supaya progres aman, bisa main di perangkat lain, dan bisa ikut Beranda. Progres di perangkat ini bisa dipindahkan ke akunmu.'}</p>
       <div class="row"><button class="btn ghost" id="ac">Masuk / buat akun</button></div></div>`);
     b.querySelector('#ac').onclick = () => { rememberGuest(false); location.hash = ''; location.reload(); };
     box.prepend(b);
@@ -57,7 +52,7 @@ function displayBox() {
   b.querySelector('#lite').onchange = e => setGfxLite(e.target.checked);
   return b;
 }
-const inGame = () => mode === 'guest' || mode === 'child' || mode === 'player';
+const inGame = () => mode === 'guest' || mode === 'local' || mode === 'child' || mode === 'player';
 window.addEventListener('km-eyes', () => { if (inGame() && S.name && S.noEyes !== eyesOff()) { S.noEyes = eyesOff(); save(); } });
 window.addEventListener('km-avatar', () => { if (eyesChosen() && S.noEyes !== eyesOff()) { S.noEyes = eyesOff(); save(); } if (mode === 'child' || mode === 'player') updateMyAvatar(S.avatar | 0).catch(() => {}); });
 hooks.atur = box => { accountBox(box); box.prepend(settingsBox()); box.prepend(displayBox()); };
@@ -70,10 +65,24 @@ async function bootGame() {
   if (!S.name) onboarding(); else farm();
 }
 
+// Trial: a fresh game that is never written to the device or the cloud.
 function bootGuest() {
   mode = 'guest';
+  setS(fresh()); normalize(); setPersist(false);
+  trialRibbon();
   bootGame();
-  setTimeout(() => toast('Mode tamu: progres hanya di perangkat ini.'), 1200);
+  setTimeout(() => toast('Uji coba. Hasil tidak disimpan.'), 1200);
+}
+// The old save on this device (players from before accounts): kept and saved as before, until they sign in and import it.
+function bootLocal() {
+  mode = 'local';
+  bootGame();
+  setTimeout(() => toast('Belum masuk: progres hanya di perangkat ini.'), 1200);
+}
+function trialRibbon() {
+  const r = $(`<a class="trial-ribbon" href="#">Uji coba. Hasil tidak disimpan. <u>Masuk</u></a>`);
+  r.onclick = e => { e.preventDefault(); location.hash = ''; location.reload(); };
+  document.body.append(r);
 }
 
 // supporter badge next to the player's name in the game HUD (the HUD is re-rendered by the classic code)
@@ -88,14 +97,14 @@ function hudBadge(p) {
 
 async function bootPlayer(p) {
   hudBadge(p);
-  mode = p.role === 'parent' ? 'player' : 'child';
-  if (p.role === 'child') addTabs('kebun');
+  mode = p.role === 'child' ? 'child' : 'player';
+  addTabs('kebun');
   import('./online.js').then(o => o.joinOnline()).catch(() => {});
   root.replaceChildren($(`<div class="title"><h1>Kebun Makna</h1><p>Memuat kebunmu…</p></div>`));
   // A newer save from another device redraws the farm. If Kakek Umar's welcome is still open, redraw it too:
   // a plain farm() would drop its "Siap!" button and leave introActive stuck, so no villager ever arrives.
   const r = await startCloud(p.id, { onReplace: () => { if (!document.getElementById('farm')) return; if (introActive) intro(); else farm(); } });
-  if (r.legacy && p.role === 'child') {
+  if (r.legacy) {
     const ay = Object.keys(r.legacy.ay || {}).length, solved = Object.keys(r.legacy.solved || {}).length;
     const f = $(`<div class="frame"><h2 style="margin:0 0 6px">Pakai progres lama di perangkat ini?</h2>
       <p>Di perangkat ini ada kebun milik <b></b>: ${solved} surat selesai, ${ay} ayat. Mau dipindahkan ke akun <b class="nm"></b>?</p>
@@ -108,8 +117,8 @@ async function bootPlayer(p) {
       f.querySelector('#n').onclick = () => res();
     });
   }
-  // v4: a parent may change their look on the dashboard; their game follows the profile
-  if (p.role === 'parent' && S.name && typeof p.avatar === 'number' && (S.avatar | 0) !== p.avatar) { S.avatar = p.avatar; save(); }
+  // v4: the look chosen on the profile is the game's look
+  if (p.role !== 'child' && S.name && typeof p.avatar === 'number' && (S.avatar | 0) !== p.avatar) { S.avatar = p.avatar; save(); }
   // friends' waterings and salam since the last visit (Phase 4)
   try { const v = await import('./visit.js'); const { note } = await import('./progress.js'); await v.applyVisits(note); } catch (e) {}
   if (!S.name) {
@@ -118,17 +127,6 @@ async function bootPlayer(p) {
     await prepareScreen();
     migrate(); save(); intro();
   } else bootGame();
-}
-
-async function showParent() {
-  mode = 'parent';
-  addTabs('ortu');
-  const { parentDashboard } = await import('./ortu.js');
-  parentDashboard({
-    onLogout: () => { location.hash = ''; location.reload(); },
-    onPlayGuest: () => { location.hash = '#/tamu'; location.reload(); },
-    onPlaySelf: () => { location.hash = '#/main'; location.reload(); },
-  });
 }
 
 async function route() {
@@ -149,10 +147,8 @@ async function route() {
   const soc = h.match(/^#\/(beranda|profil|grup|kunjungi|lomba)(?:\/([^/]+))?/);
   if (soc && p) return socialRoute(soc[1], soc[2]);
   if (soc && !p) { mode = 'start'; return guestNudge(); }
-  if (p && p.role === 'parent') return h.startsWith('#/main') ? bootPlayer(p) : showParent();
-  if (p && p.role === 'child') return bootPlayer(p);
-  if (h.startsWith('#/ortu')) { mode = 'start'; return parentLogin(handlers); }
-  if (isRememberedGuest()) return bootGuest();
+  if (p) return bootPlayer(p);
+  if (isRememberedGuest() && hasLocalSave()) return bootLocal();
   mode = 'start';
   startScreen(handlers);
 }
@@ -168,7 +164,7 @@ async function socialRoute(kind, arg) {
   if (kind === 'lomba') { const r = await import('./pvp.js'); return r.racePage(arg); }
 }
 function guestNudge() {
-  root.replaceChildren($(`<div class="dash"><h2>Beranda</h2><div class="frame"><p>Beranda, kunjungan kebun dan grup hanya untuk pemain yang punya akun keluarga. Minta Ayah/Ibu membuat akun, lalu masuk dengan kode keluarga dan PIN.</p><a class="btn green" href="#">Ke halaman awal</a></div></div>`));
+  root.replaceChildren($(`<div class="dash"><h2>Beranda</h2><div class="frame"><p>Beranda, kunjungan kebun dan grup hanya untuk pemain yang sudah masuk. Buat akun atau masuk dulu, ya.</p><a class="btn green" href="#">Ke halaman awal</a></div></div>`));
 }
 function addTabs(active) {
   import('./social.js').then(m => { document.body.append(m.tabBar(active)); document.body.classList.add('has-tabs'); });
@@ -188,13 +184,13 @@ window.addEventListener('hashchange', () => {
   try {
     const c = await sb();
     c.auth.onAuthStateChange(ev => {
-      if (ev === 'PASSWORD_RECOVERY') newPasswordScreen(() => { toast('Kata sandi disimpan'); location.hash = '#/ortu'; location.reload(); });
+      if (ev === 'PASSWORD_RECOVERY') newPasswordScreen(() => { toast('Kata sandi disimpan'); location.hash = ''; location.reload(); });
     });
   } catch (e) { /* offline: Supabase library could not load */ }
   try { await route(); }
   catch (e) {
     console.error(e);
-    if (isRememberedGuest() || !navigator.onLine) bootGuest();
+    if (isRememberedGuest() && hasLocalSave()) bootLocal(); else if (!navigator.onLine) bootGuest();
     else { root.replaceChildren($(`<div class="frame"><p class="err">${esc(e.message || e)}</p></div>`)); const b = $(`<button class="btn">Main tanpa akun</button>`); b.onclick = () => bootGuest(); root.lastChild.append(b); }
   }
 })();

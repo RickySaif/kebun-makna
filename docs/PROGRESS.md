@@ -2,6 +2,14 @@
 
 Live: https://km.generasimerdeka.com/ · (old address https://rickysaif.github.io/kebun-makna/ redirects)
 
+## 2026-11-14 (evening) — One login for everyone; trial without an account (Ricky)
+- **No parent/child levels in the app (Ricky):** the start screen is now just email + password (or Google), with "Daftar" and "Lupa kata sandi?". Everyone who signs in plays the same way: straight into their own garden, tabs Kebun/Beranda/Grup/Profil. The parent dashboard (family list, child PINs, activity view) is no longer reachable (`js/ortu.js` is unused, not deleted). Backend unchanged: every new account is still `profiles.role='parent'` by the trigger, which is fine.
+- **Trial (Ricky):** "Coba dulu tanpa akun" starts a fresh game that is **never saved** (`setPersist(false)` in `js/state.js`; nothing in localStorage or the cloud). Text "Uji coba. Hasil tidak disimpan." on the start screen, a toast, a thin ribbon at the top of the game (tap = go to login) and in the settings.
+- **Nothing lost for existing players:** (1) an old save on this device shows "Lanjutkan kebun lama di perangkat ini" and keeps saving locally; after signing in the game offers to move it into the account (the import prompt now works for every account and also finds the old guest save). (2) Existing child accounts (e.g. Amtar) still sign in through a small link "Akun anak lama? Masuk dengan nama keluarga".
+- Support page: the family code (for Trakteer/Saweria messages) is shown to every signed-in user.
+- **Tests:** only checked by hand in the browser pane (start screen, trial, nothing written to storage). `tests/*` that logged in via `#ortu` no longer click it (the login form is on the start screen); phase1/phase1b (child/parent dashboard) are obsolete. Playwright isn't installed here, so none of the suite was run.
+- **Questions for Ricky:** (a) retire the old child accounts after Amtar moves to an email account? Progress can't be moved between accounts automatically. (b) Rename the family-code/support flow now that "family" is gone?
+
 ## 2026-11-14 (later) — Reading made simpler (Ricky tested it with Amtar)
 - **Pass at 50%:** a passing reading gets praise only (all words green, no red marks, no "Yang Ustaz dengar" box). Corrections show only below 50% (`PASS` in `js/recite.js`).
 - **Word pointer removed** ("tanda per kata bikin anak bingung, harus geser-geser"). Live word-by-word tracking while the child speaks isn't possible with this recogniser (it works on the finished recording, several seconds on an iPhone); noted as a later idea.

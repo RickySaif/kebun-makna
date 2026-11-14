@@ -62,9 +62,8 @@ export async function getSources(ids) {
 
 // ---------- shell with tabs ----------
 export function tabBar(active) {
-  const parent = session.profile && session.profile.role === 'parent';
   const nav = $(`<nav class="tabbar">
-    ${parent ? '<a href="#/ortu" data-t="ortu">🏠<span>Keluarga</span></a>' : '<a href="#/" data-t="kebun">🌱<span>Kebun</span></a>'}
+    <a href="#/" data-t="kebun">🌱<span>Kebun</span></a>
     <a href="#/beranda" data-t="beranda">📰<span>Beranda</span></a>
     <a href="#/grup" data-t="grup">👥<span>Grup</span></a>
     <a href="#/profil" data-t="profil">👤<span>Profil</span></a></nav>`);
@@ -83,7 +82,7 @@ function page(title, active) {
 
 // ---------- feed ----------
 export async function feedPage(which = 'ikuti') {
-  const body = page(session.profile.role === 'parent' ? 'Beranda Orang Tua' : 'Beranda', 'beranda');
+  const body = page('Beranda', 'beranda');
   await loadTiers();
   const top = $(`<div><div class="ptab"><button data-w="ikuti">Diikuti</button><button data-w="jelajah">Jelajah</button></div>
     <div class="row"><button class="btn green" id="new" style="flex:2">✏️ Tulis kiriman</button><a class="btn blue" href="#/lomba" style="flex:1">🏁 Lomba</a></div></div>`);

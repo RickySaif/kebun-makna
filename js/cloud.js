@@ -1,7 +1,7 @@
 // cloud.js — cloud save for signed-in children (game_saves + farm_public), activity diffing.
 // localStorage stays the offline cache. Saves are debounced (~3 s) and flushed on visibilitychange.
 // Conflict rule: each successful write increments `version`; the higher version wins.
-import { S, KEY, loadState, setSaveKey, setSaveHook, save } from './state.js';
+import { S, KEY, GUEST_KEY, loadState, setSaveKey, setSaveHook, save } from './state.js';
 import { BY, ORDER, HOUSE_TIERS } from './data.js';
 import { levelOf } from './progress.js';
 import { sb, session, logActivity } from './api.js';
@@ -157,7 +157,7 @@ export async function startCloud(uid, { onReplace } = {}) {
 
   let legacy = null;
   if (!hadCloud && !local.st) {
-    try { const r = JSON.parse(localStorage.getItem(KEY) || 'null'); if (r && r.name) legacy = r; } catch (e) {}
+    for (const k of [GUEST_KEY, KEY]) { try { const r = JSON.parse(localStorage.getItem(k) || 'null'); if (r && r.name) { legacy = r; break; } } catch (e) {} }
   }
   return { hadCloud, legacy, offline };
 }

@@ -11,7 +11,7 @@ export async function supportPage() {
   const [tiers] = await Promise.all([loadTiers(), loadProfile().catch(() => null)]);
   const p = session.profile;
   let code = null;
-  if (p && p.role === 'parent') {
+  if (p && p.role !== 'child') {
     try { const c = await sb(); const { data } = await c.rpc('my_family_name'); code = data || null; } catch (e) {}
   }
   const links = [
@@ -34,14 +34,14 @@ export async function supportPage() {
       </ol>
       <div id="code"></div>
       <div style="display:grid;gap:10px;margin-top:10px">${links || '<p class="small">Tautan dukungan belum tersedia.</p>'}</div></div>
-    <p class="start-note"><a class="linkbtn" style="color:#fff" href="${p && p.role === 'parent' ? '#/ortu' : '#'}">◂ Kembali</a></p></div>`);
+    <p class="start-note"><a class="linkbtn" style="color:#fff" href="#">◂ Kembali</a></p></div>`);
   const box = f.querySelector('#code');
   if (code) {
     const r = $(`<div class="row" style="align-items:center"><span class="code">#${esc(code)}</span><button class="btn mini">Salin</button></div>`);
     r.querySelector('button').onclick = () => { const t = '#' + code; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Disalin: ' + t), () => prompt('Salin kode ini:', t)); };
     box.append(r);
   } else {
-    box.append($(`<div class="banner">Nama keluarga ada di <a href="#/ortu">Halaman Orang Tua</a>. Masuk sebagai orang tua untuk menyalinnya.</div>`));
+    box.append($(`<div class="banner">Masuk dulu dengan akunmu untuk melihat kode dukungan.</div>`));
   }
   root.replaceChildren(f);
 }

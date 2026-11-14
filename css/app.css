@@ -69,3 +69,7 @@ body.has-tabs{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
 .road .flag{position:absolute;right:4px;top:6px;font-size:22px}
 .invite-banner{position:fixed;left:12px;right:12px;top:calc(10px + env(safe-area-inset-top,0px));z-index:40;background:#FFF6CC;border:3px solid var(--ink);border-radius:6px;padding:8px 10px;display:flex;gap:8px;align-items:center;box-shadow:0 4px 0 var(--ink)}
 .invite-banner span{flex:1}
+.trial{text-align:center}
+.trial .linkbtn{display:block;margin:8px auto 0}
+.trialnote{margin:8px 0 0;color:#8A5A00;font-size:15px}
+.trial-ribbon{position:fixed;top:0;left:0;right:0;z-index:50;background:#FFE08A;color:#5A3A00;text-align:center;font-size:11px;line-height:14px;padding:0 6px;text-decoration:none;border-bottom:1px solid var(--ink);opacity:.92}

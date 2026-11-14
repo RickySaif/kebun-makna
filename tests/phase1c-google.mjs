@@ -3,7 +3,7 @@
 import { BASE, newPage, close, assert } from './lib.mjs';
 try {
   const P = await newPage('gis');
-  await P.goto(BASE + '/'); await P.click('#ortu');
+  await P.goto(BASE + '/');
   await P.waitForSelector('#gbtn iframe', { timeout: 20000 });
   const box = await P.locator('#gbtn iframe').boundingBox();
   assert(box && box.width >= 180 && box.x >= 0 && box.x + box.width <= 390, `Google button rendered inside 390px (x=${box && Math.round(box.x)}, w=${box && Math.round(box.width)})`);
@@ -11,7 +11,7 @@ try {
   assert(await P.locator('#em').count() === 1 && await P.locator('#pw').count() === 1, 'email login still present');
   const Q = await newPage('nogis');
   await Q.route('https://accounts.google.com/**', r => r.abort());
-  await Q.goto(BASE + '/'); await Q.click('#ortu');
+  await Q.goto(BASE + '/'); 
   await Q.waitForTimeout(3000);
   assert(await Q.locator('#gbtn').count() === 0, 'without the GIS script the Google area is removed');
   assert(await Q.locator('#em').count() === 1, 'email login works without GIS');

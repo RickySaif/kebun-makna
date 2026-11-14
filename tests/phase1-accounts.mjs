@@ -40,7 +40,7 @@ try {
   // ---- parent dashboard: login + create 2 kids ----
   const P = await newPage('parent');
   await P.goto(BASE + '/');
-  await P.click('#ortu');
+ 
   await P.fill('#em', process.env.KM_EMAIL);
   await P.fill('#pw', process.env.KM_PASS);
   await P.click('#go');

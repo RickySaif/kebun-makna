@@ -26,7 +26,9 @@ export function loadState(raw){ S=Object.assign(fresh(),raw||{}); if(!Array.isAr
 let saveKey=GUEST_KEY, saveHook=null;
 export function setSaveKey(k){saveKey=k;}
 export function setSaveHook(f){saveHook=f;}
-export function save(){try{localStorage.setItem(saveKey,JSON.stringify(S))}catch(e){} if(saveHook){try{saveHook()}catch(e){}}}
+// trial mode (no account): nothing is written to the device
+let persist=true; export function setPersist(v){persist=v;}
+export function save(){if(persist){try{localStorage.setItem(saveKey,JSON.stringify(S))}catch(e){}} if(saveHook){try{saveHook()}catch(e){}}}
 export const fill=t=>t.replaceAll('{n}',S.name||'kamu');
 export const lv=k=>S.lv[k]||0;
 export const bump=(k,t)=>{if(lv(k)<t){S.lv[k]=t;save();}};

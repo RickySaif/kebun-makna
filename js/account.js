@@ -1,4 +1,4 @@
-// account.js — start screen: parent email/Google login, child family name → avatar → PIN, guest mode.
+// account.js — start screen: one login for everyone (email / Google), trial without an account; legacy child PIN login.
 import { $, esc, root } from './ui.js';
 import { avatarCanvas, eyesToggle } from './avatar.js';
 import { sb, session, friendly, childList, childSignIn, loadProfile, normFamily, isFamilyName, renderGoogleButton, warmGoogle } from './api.js';
@@ -15,28 +15,19 @@ export { avatarCanvas };
 const title = sub => $(`<div class="title"><h1>Kebun Makna</h1><p>${esc(sub)}</p></div>`);
 const busy = (btn, on, label) => { btn.disabled = on; if (label) btn.innerHTML = on ? '<span class="spinner"></span>' : esc(label); };
 
-/** Show the start screen. Calls handlers.{parent, child, guest} when done. */
-export function startScreen(h) {
-  warmGoogle(); // so the parent page has Google's button ready
-  root.replaceChildren(title('Ayo bangun kebunmu!'));
-  const f = $(`<div class="frame"><p style="margin:0 0 10px">Siapa yang main hari ini?</p>
-    <div class="start-choices">
-      <button class="btn green block" id="kid">🧒 Saya Anak</button>
-      <button class="btn blue block" id="ortu">👨‍👩‍👧 Saya Orang Tua</button>
-      <button class="btn ghost block" id="guest">Main tanpa akun</button>
-    </div></div>`);
-  f.querySelector('#kid').onclick = () => childStart(h);
-  f.querySelector('#ortu').onclick = () => parentLogin(h);
-  f.querySelector('#guest').onclick = () => { rememberGuest(true); h.guest(); };
-  const eo = $(`<div class="frame eyesframe"><div class="pv"></div></div>`); eo.querySelector('.pv').append(avatarCanvas(0, .5), avatarCanvas(1, .5)); eo.append(eyesToggle());
-  root.append(f, eo, $(`<p class="start-note">Akun dibuat oleh orang tua. Anak masuk dengan kode keluarga dan PIN, tanpa email.</p>`));
+/** Start screen: one login for everyone (email or Google), or a trial without an account. Calls handlers.{login, child, guest, local}. */
+export function startScreen(h) { loginScreen(h); }
+
+export function hasLocalSave() {
+  for (const k of ['kebun-makna-v3:beta-guest', 'kebun-makna-v3']) { try { const r = JSON.parse(localStorage.getItem(k) || 'null'); if (r && r.name) return r; } catch (e) {} }
+  return null;
 }
 
-// ---------- child ----------
+// ---------- child (older accounts made by a parent; still works, no longer offered for new players) ----------
 function childStart(h, msg) {
   const last = getLastCode();
   if (last && !msg) return childPick(h, last);
-  root.replaceChildren(title('Masuk sebagai anak'));
+  root.replaceChildren(title('Akun anak lama'));
   const f = $(`<div class="frame"><div class="field"><label for="fc"><b>Nama keluarga</b></label>
     <input id="fc" inputmode="text" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="contoh: saif" maxlength="20" value="${esc(last && /^[a-z]/.test(last) ? last : '')}"></div>
     <p class="small" style="margin:0 0 10px">Tanya Ayah atau Ibu nama keluargamu. Nama ini ada di halaman orang tua.</p>
@@ -107,19 +98,19 @@ function pinPad(h, code, kid) {
   root.replaceChildren(title('Halo!'), f);
 }
 
-// ---------- parent ----------
-export function parentLogin(h, mode = 'login', msg = '') {
+// ---------- login (everyone) ----------
+export function loginScreen(h, mode = 'login', msg = '') {
   warmGoogle();
-  root.replaceChildren(title(mode === 'signup' ? 'Daftar orang tua' : mode === 'reset' ? 'Lupa kata sandi' : 'Masuk orang tua'));
+  root.replaceChildren(title(mode === 'signup' ? 'Buat akun' : mode === 'reset' ? 'Lupa kata sandi' : 'Ayo bangun kebunmu!'));
   const f = $(`<div class="frame">
-    ${mode === 'signup' ? `<div class="field"><label for="dn"><b>Nama Anda</b></label><input id="dn" maxlength="40" autocomplete="name" placeholder="mis. Ayah Amtar"></div>` : ''}
+    ${mode === 'signup' ? `<div class="field"><label for="dn"><b>Nama panggilan</b></label><input id="dn" maxlength="40" autocomplete="nickname" placeholder="mis. Amtar"></div>` : ''}
     <div class="field"><label for="em"><b>Email</b></label><input id="em" type="email" autocomplete="email" inputmode="email" autocapitalize="off"></div>
     ${mode !== 'reset' ? `<div class="field"><label for="pw"><b>Kata sandi</b></label><input id="pw" type="password" minlength="8" autocomplete="${mode === 'signup' ? 'new-password' : 'current-password'}"></div>` : ''}
     <button class="btn green block" id="go">${mode === 'signup' ? 'Daftar' : mode === 'reset' ? 'Kirim tautan reset' : 'Masuk'}</button>
     <p class="err" id="err">${esc(msg)}</p>
     <div class="row" style="justify-content:space-between">
       ${mode === 'login' ? `<button class="linkbtn" id="su">Belum punya akun? Daftar</button><button class="linkbtn" id="rs">Lupa kata sandi?</button>` : `<button class="linkbtn" id="li">Sudah punya akun? Masuk</button>`}
-    </div><button class="linkbtn" id="back">◂ Kembali</button></div>`);
+    </div></div>`);
   const err = f.querySelector('#err'), go = f.querySelector('#go');
   const q = s => f.querySelector(s);
   go.onclick = async () => {
@@ -135,14 +126,13 @@ export function parentLogin(h, mode = 'login', msg = '') {
         if (error) throw error;
         const p = await loadProfile();
         if (!p) throw new Error('Profil tidak ditemukan.');
-        if (p.role !== 'parent') { await c.auth.signOut(); throw new Error('Akun ini bukan akun orang tua.'); }
-        rememberGuest(false); h.parent(p);
+        rememberGuest(false); h.login(p);
       } else if (mode === 'signup') {
         const dn = q('#dn').value.trim();
         const { error } = await c.auth.signUp({ email, password: pw, options: { emailRedirectTo: redirect, data: { display_name: dn } } });
         if (error) throw error;
         root.replaceChildren(title('Cek email Anda'), $(`<div class="frame"><p>Kami mengirim tautan konfirmasi ke <b>${esc(email)}</b>. Ketuk tautannya, lalu kembali ke sini dan masuk.</p></div>`));
-        const b = $(`<button class="btn block">Ke halaman masuk</button>`); b.onclick = () => parentLogin(h); root.lastChild.append(b);
+        const b = $(`<button class="btn block">Ke halaman masuk</button>`); b.onclick = () => loginScreen(h); root.lastChild.append(b);
       } else {
         const { error } = await c.auth.resetPasswordForEmail(email, { redirectTo: redirect });
         if (error) throw error;
@@ -151,22 +141,32 @@ export function parentLogin(h, mode = 'login', msg = '') {
     } catch (e) { err.className = 'err'; err.textContent = friendly(e); busy(go, false, label); }
   };
   f.querySelectorAll('input').forEach(i => i.onkeydown = e => { if (e.key === 'Enter') go.click(); });
-  if (q('#su')) q('#su').onclick = () => parentLogin(h, 'signup');
-  if (q('#rs')) q('#rs').onclick = () => parentLogin(h, 'reset');
-  if (q('#li')) q('#li').onclick = () => parentLogin(h, 'login');
-  q('#back').onclick = () => startScreen(h);
+  if (q('#su')) q('#su').onclick = () => loginScreen(h, 'signup');
+  if (q('#rs')) q('#rs').onclick = () => loginScreen(h, 'reset');
+  if (q('#li')) q('#li').onclick = () => loginScreen(h, 'login');
   root.append(f);
   if (mode !== 'reset') {
     const g = $(`<div><div class="small" style="text-align:center;margin:10px 0 8px">atau</div><div id="gbtn" style="display:flex;justify-content:center;min-height:44px"></div></div>`);
     go.after(g);
     renderGoogleButton(g.querySelector('#gbtn'), p => {
       if (!p) { err.className = 'err'; err.textContent = 'Profil tidak ditemukan.'; return; }
-      if (p.role !== 'parent') { err.className = 'err'; err.textContent = 'Akun ini bukan akun orang tua.'; return; }
-      rememberGuest(false); h.parent(p);
+      rememberGuest(false); h.login(p);
     }, e => { err.className = 'err'; err.textContent = friendly(e); })
       .then(ok => { if (!ok) g.remove(); }, () => g.remove()); // no GIS / provider off -> email login only
   }
+  if (mode === 'reset') { const b = $(`<div class="frame"><button class="linkbtn" id="bk">◂ Kembali</button></div>`); b.querySelector('#bk').onclick = () => loginScreen(h); root.append(b); return; }
+  // trial without an account: nothing is saved
+  const t = $(`<div class="frame trial"><button class="btn ghost block" id="guest">Coba dulu tanpa akun</button>
+    <p class="trialnote"><b>Uji coba. Hasil tidak disimpan.</b></p>
+    ${hasLocalSave() ? `<button class="linkbtn" id="old">Lanjutkan kebun lama di perangkat ini</button>` : ''}
+    <button class="linkbtn" id="kid">Akun anak lama? Masuk dengan nama keluarga</button></div>`);
+  t.querySelector('#guest').onclick = () => { rememberGuest(false); h.guest(); };
+  if (t.querySelector('#old')) t.querySelector('#old').onclick = () => h.local();
+  t.querySelector('#kid').onclick = () => childStart(h);
+  const eo = $(`<div class="frame eyesframe"><div class="pv"></div></div>`); eo.querySelector('.pv').append(avatarCanvas(0, .5), avatarCanvas(1, .5)); eo.append(eyesToggle());
+  root.append(t, eo);
 }
+export const parentLogin = loginScreen;
 
 /** After a password-recovery link: let the parent choose a new password. */
 export function newPasswordScreen(done) {

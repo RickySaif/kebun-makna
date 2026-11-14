@@ -5,7 +5,7 @@ const parent = await parentClient();
 const { data: fname } = await parent.rpc('my_family_name');
 try {
   const P = await newPage('parent');
-  await P.goto(BASE + '/'); await P.click('#ortu');
+  await P.goto(BASE + '/');
   await P.fill('#em', process.env.KM_EMAIL); await P.fill('#pw', process.env.KM_PASS); await P.click('#go');
   await P.waitForSelector('#code', { timeout: 20000 });
   await P.click('a[href="#/dukung"]');

@@ -6,7 +6,7 @@ const uid = (await parent.auth.getUser()).data.user.id;
 try {
   const P = await newPage('parent');
   await P.goto(BASE + '/');
-  await P.click('#ortu');
+ 
   await P.waitForTimeout(1500);
   assert(await P.locator('#gg').count() === 0, 'Google button hidden while provider is disabled');
   await P.fill('#em', process.env.KM_EMAIL); await P.fill('#pw', process.env.KM_PASS); await P.click('#go');

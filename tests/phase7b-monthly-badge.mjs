@@ -6,7 +6,7 @@ import { BASE, newPage, close, assert } from './lib.mjs';
 const state = process.env.BADGE_STATE || 'active';
 try {
   const P = await newPage('parent');
-  await P.goto(BASE + '/'); await P.click('#ortu');
+  await P.goto(BASE + '/');
   await P.fill('#em', process.env.KM_EMAIL); await P.fill('#pw', process.env.KM_PASS); await P.click('#go');
   await P.waitForSelector('#code', { timeout: 20000 });
   const dash = await P.locator('.dash').innerText();
