@@ -19,7 +19,7 @@ await page.click('.practice #mic');
 await page.waitForTimeout(300);
 const listen = await page.evaluate(() => ({ hear: document.querySelector('#hear').disabled, next: document.querySelector('#next').disabled, back: document.querySelector('.ptop button').disabled, mic: document.querySelector('#mic').disabled }));
 assert(listen.hear && listen.next && listen.back && !listen.mic, 'listening: only "Selesai" works ' + JSON.stringify(listen));
-assert(await page.locator('.ustaz-think:not([hidden])').count() === 1 && /mendengarkan/.test(await page.locator('.ustaz-think .say').innerText()), 'listening: Pak Ustaz is there ("Silakan baca, Ustaz mendengarkan")');
+assert(await page.locator('.ustaz-think:not([hidden])').count() === 1 && /Silakan baca/.test(await page.locator('.ustaz-think .say').innerText()), 'listening: Pak Ustaz is there ("Silakan baca, Ustaz mendengarkan")');
 const cdp = await ctx.newCDPSession(page); await cdp.send('Emulation.setCPUThrottlingRate', { rate: 6 });
 await page.waitForSelector('.practice.thinking', { timeout: 90000 });
 const think = await page.evaluate(() => window.__think);

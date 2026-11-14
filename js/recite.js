@@ -326,7 +326,7 @@ function practice({ body, s, a, items, kind, next, ayat }) {
     const title = kind === 'kata' ? 'Ayo baca kata ini' : kind === 'bagian' ? 'Ayo baca bagian ini' : kind === 'surat' ? `Baca Surat ${s.name}` : 'Sekarang baca satu ayat';
     const count = items.length > 1 ? `<p class="small" style="margin:0 0 6px">${kind === 'kata' ? 'Kata' : kind === 'surat' ? 'Ayat' : 'Bagian'} ${idx + 1} dari ${items.length}</p>` : '';
     const v = $(`<div class="frame practice"><h2>${title}</h2>${count}
-      <p class="lead">Dengarkan, lalu ketuk mikrofon dan baca dengan suaramu. Ini latihan: kamu boleh lanjut kapan saja.</p>
+      <p class="lead">Ketuk 🎙️ lalu baca sendiri. Butuh bantuan? Tekan ▶ Dengar dulu. Ini latihan: kamu boleh lanjut kapan saja.</p>
       <div class="ayahbig ar" lang="ar"></div>
       ${kind === 'kata' ? `<p class="small" style="text-align:center;margin:4px 0 0">${esc(words[0].emo || '')} ${esc(words[0].id)}</p>` : ''}
       <div class="acc" style="text-align:center;font-weight:700;font-size:20px;min-height:28px;margin-top:6px"></div>
@@ -341,12 +341,15 @@ function practice({ body, s, a, items, kind, next, ayat }) {
       const off = !!mode, panelEl = v.closest('.panel');
       v.querySelectorAll('#hear, #next, #retry').forEach(b => b.disabled = off);
       if (panelEl) panelEl.querySelector('.ptop button').disabled = off;
-      v.querySelector('.ayahbig').classList.toggle('locked', off);
+      // while the child reads, the ayah is NOT locked: a tap moves the word pointer (see below)
+      v.querySelector('.ayahbig').classList.toggle('locked', mode === 'think');
+      v.querySelector('.ayahbig').classList.toggle('reading', mode === 'listen');
+      if (mode === 'listen') point(0); else if (mode !== 'think') point(-1);
       v.classList.toggle('thinking', mode === 'think');
       // Pak Ustaz is there while the child reads (listening) and while the reading is checked (thinking)
       think.hidden = !mode;
       think.classList.toggle('listening', mode === 'listen');
-      think.querySelector('.say').textContent = mode === 'listen' ? 'Silakan baca, Ustaz mendengarkan' : 'Sebentar, Ustaz sedang memeriksa bacaanmu';
+      think.querySelector('.say').textContent = mode === 'listen' ? (words.length > 1 ? 'Silakan baca. Ketuk ayatnya untuk pindah ke kata berikutnya' : 'Silakan baca, Ustaz mendengarkan') : 'Sebentar, Ustaz sedang memeriksa bacaanmu';
       if (mode) think.querySelector('img').src = portrait(USTAZ.look); // follows "tanpa mata"
     }
     const box = v.querySelector('.ayahbig'), fb = v.querySelector('.fb'), mic = v.querySelector('#mic'), lvl = v.querySelector('#lvl'), accEl = v.querySelector('.acc');
@@ -356,12 +359,27 @@ function practice({ body, s, a, items, kind, next, ayat }) {
     const paint = res => box.replaceChildren(...words.flatMap((w, i) => {
       const sp = $(`<span role="button" tabindex="0">${esc(w.ar)}</span>`);
       sp.style.cursor = 'pointer';
-      sp.onclick = () => { stopAudio(); play(AW(w.a)); };
+      sp.onclick = () => { if (busy) { point(ptr + 1); return; } stopAudio(); play(AW(w.a)); };
       if (res) { const st = res[i].st; sp.style.borderRadius = '4px'; sp.style.padding = '0 3px'; sp.style.background = COL[st]; if (st !== 'ok') sp.style.textDecoration = 'underline wavy #C0392B'; }
       return i ? [document.createTextNode(' '), sp] : [sp];
     }));
     paint(null);
-    const hear = async () => { stopAudio(); if (whole) return play(AA(cur.a)); for (const w of words) { if (!v.isConnected) return; await play(AW(w.a)); } };
+    // v4 (Ricky): a word pointer, like a teacher's finger on the mushaf. While the child reads, a tap anywhere on the
+    // ayah moves it to the next word; while Dengar plays, it follows the reciter word by word.
+    let ptr = -1;
+    function point(i) {
+      const spans = [...box.querySelectorAll('span')];
+      ptr = Math.max(-1, Math.min(i, spans.length - 1));
+      spans.forEach((sp, k) => sp.classList.toggle('now', k === ptr));
+    }
+    box.addEventListener('click', e => { if (busy && !e.target.closest('span')) point(ptr + 1); });
+    const hear = async () => {
+      stopAudio();
+      if (whole && cur.t) { await play(AA(cur.a), ms => { const i = cur.t.findIndex((x, k) => ms >= x && ms < cur.t[k + 1]); if (i >= 0) point(i); }); if (!busy) point(-1); return; }
+      if (whole) return play(AA(cur.a));
+      for (let i = 0; i < words.length; i++) { if (!v.isConnected) return; point(i); await play(AW(words[i].a)); }
+      if (!busy) point(-1);
+    };
     v.querySelector('#hear').onclick = hear;
     v.querySelector('#next').onclick = () => { if (stopFn) stopFn(); idx++; if (idx < items.length) show(); else done(); };
     unsub = onModel(m => {

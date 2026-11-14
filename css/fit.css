@@ -90,3 +90,10 @@ body{margin:0}
 .mylook{display:flex;gap:12px;align-items:center;margin-top:12px;padding-top:10px;border-top:2px dashed #E3D6B4}
 .mylook .pv{flex:none;width:52px;height:72px;border:3px solid var(--ink);border-radius:10px;background:#BFE7FA;display:grid;place-items:center;overflow:hidden}
 .mylook .pv canvas{image-rendering:pixelated}
+
+/* word pointer on the reading page (like a teacher's finger on the mushaf) */
+.practice .ayahbig span.now{background:#FFE07A;box-shadow:0 0 0 3px var(--gold);border-radius:6px}
+.practice .ayahbig.reading{cursor:pointer;border:2px dashed #E3C766;border-radius:12px}
+.practice .ayahbig.reading span.now{animation:km-point 1.2s ease-in-out infinite}
+@keyframes km-point{50%{box-shadow:0 0 0 5px var(--gold)}}
+@media (prefers-reduced-motion:reduce){.practice .ayahbig.reading span.now{animation:none}}
