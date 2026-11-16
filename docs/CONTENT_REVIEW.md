@@ -23,3 +23,23 @@ Bab ini terbuka setelah pemain menyelesaikan 10 surat dan game boss ke-4 (Serang
 ## Bagian lain yang memakai sumber
 - **Beranda (kiriman anak/orang tua):** setiap kiriman wajib mengutip satu baris dari `sources` (dipilih dari pustaka, tidak diketik). Untuk hadis, kartu menampilkan *matan* (teks dalam kutipan setelah rantai perawi) jika bisa dipisahkan dengan pasti, dan teks lengkap beserta sanad di balik "Lihat lengkap". Mohon ustaz mengecek beberapa contoh kartu hadis.
 - **Lomba arti kata:** hanya memakai arti per kata dari blok `DATA` yang sudah ditinjau di game lama.
+
+## Bab "Perjalanan Dagang" (2026-11-16, usulan Ricky)
+Bab ini terbuka bersamaan dengan Akhlak (setelah 10 surat dan boss ke-4). Amtar berdagang sayur di sepanjang jalan, menjawab pertanyaan pembeli tentang surat-surat sebelumnya, dan belajar surat baru untuk melewati orang yang menghalangi jalan. Surat panjang dipelajari per **bagian** (3–5 ayat). Semua teks cerita ada di `content/dagang/story.json`; teks dan terjemah ayat berasal dari `content/dagang/surah-<no>.json` (terjemah Kemenag, sama persis dengan tabel `sources`), dan kutipan di cerita diambil otomatis dari file itu (`{tr:SSS:a-b}`), bukan diketik ulang.
+
+**Yang mohon ditinjau ustaz:**
+- **Pembagian bagian tiap surat** (usulan Claude, belum ada rujukan tertulis): Al-Humazah 1–4 | 5–9, At-Takatsur 1–4 | 5–8, Al-Qari'ah 1–5 | 6–11, Al-'Adiyat 1–5 | 6–11, Al-Fatihah 1–4 | 5–7, Al-'Asr 1–3 (satu bagian). Al-Fatihah mengikuti pembagian pujian dan permohonan seperti dalam hadis di bawah (Bismillah dihitung ayat 1, sesuai penomoran Kemenag).
+- **Jalan cerita** (suami istri pada Al-Humazah, gerombolan pada Al-'Asr, dua saudagar pada At-Takatsur, dst.) adalah karangan untuk anak, mengikuti ide Ricky. Cerita tidak mengaitkan ayat dengan sebab turun tertentu dan tidak menyatakan nasib seseorang; tokoh hanya membaca terjemah ayat lalu berubah.
+- Kalimat tokoh yang **menafsirkan** ayat (bukan sekadar mengutip): Al-'Adiyat, Pak Haris: "Kudaku berlari kencang sampai terengah-engah untukku. Tapi aku, yang diberi Allah kuda, harta, dan kesehatan, hampir tidak pernah berterima kasih." (renungan tokoh, mohon dicek apakah pantas); Al-Qari'ah, Bu Marni mengaitkan "timbangan" dengan amal kecil.
+- Hadis yang dikutip: kartu hadis menampilkan teks persis dari `sources` (`story.json` → `source_rows`, diambil dengan `content/tools/snapshot-dagang.mjs`).
+
+| tempat / tokoh | surat (bagian) | sumber yang dikutip | kalimat di cerita yang merangkum sumber |
+|---|---|---|---|
+| Kota Ramai: Pak RT, Pak Burhan, Bu Lastri | Al-Humazah (1–4, 5–9) | `quran:104:1`–`104:9`; hadis `muslim:4690` | Pak Burhan: "Aku hanya membicarakan hal yang benar… kenapa disebut mengumpat?" lalu kartu hadis tentang ghibah dibuka; ia menyimpulkan "menyebut yang benar pun, kalau saudara kita tidak suka dibicarakan, itu ghibah. Dan kalau tidak benar, itu dusta" |
+| Warung Bu Warti, gerombolan Ujang | Al-'Asr (1–3) | `quran:103:1`–`103:3`; hadis `bukhari:5933` | Ujang: "Kesehatan dan waktu luang… Kami punya dua-duanya" (dua nikmat yang sering dilupakan) |
+| Desa: Kakek Umar, Juragan Karto dan Basri | At-Takatsur (1–4, 5–8) | `quran:102:1`–`102:8`; hadis `muslim:5258` | Juragan Karto: "Yang benar-benar menjadi hartaku hanyalah yang kumakan, kukenakan, dan kusedekahkan" |
+| Lembah Timbangan: Pak Timbang, Bu Marni | Al-Qari'ah (1–5, 6–11) | `quran:101:1`–`101:11`; hadis `bukhari:6188` | Bu Marni: "Ringan di lisan, berat di timbangan" (dua kalimat tasbih) |
+| Padang Kuda: Bu Ratna, Pak Haris | Al-'Adiyat (1–5, 6–11) | `quran:100:1`–`100:11`; `quran:14:7` | Pak Haris mulai bersyukur setelah kartu ayat tentang syukur dibuka |
+| Persimpangan Tiga Jalan: Pak Ustaz, Pak Soleh | Al-Fatihah (1–4, 5–7) | `quran:1:1`–`1:7`; hadis `muslim:598` | Pak Ustaz: Rasulullah ﷺ menyampaikan firman Allah tentang pembagian salat antara Allah dan hamba-Nya (kartu hadis dibuka) |
+
+Pembeli di jalan (Bu Sinta, Pak Jajang, Pak Anto, Bu Ratna) hanya menguji arti kata dan ayat dari surat yang sudah dipelajari pemain (soal yang sama dengan penyiraman dan boss), tanpa sumber baru.

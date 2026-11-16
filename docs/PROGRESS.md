@@ -26,6 +26,27 @@ Live: https://km.generasimerdeka.com/ · (old address https://rickysaif.github.i
 ## 2026-11-16 — Easy logout
 - "🚪 Keluar dari akun" button at the bottom of your own **Profil** tab (always in the bottom bar, in the game and in the social pages), with a confirm. Before, logout was only at ⚙ → Pengaturan → Akun. It saves the game first, then signs out. Only checked with `node --check` (no browser run here).
 
+## 2026-11-16 — Perjalanan Dagang: 5 surat setelah Al-Fil + Al-Fatihah, learned in parts (Ricky's idea)
+**What shipped** (new chapter, same unlock as Akhlak: all 10 surahs + boss4; the original game is unchanged):
+- **🧭 button on the farm HUD** → "Perjalanan Dagang", a Pokémon-style route (`js/dagang.js`, no build step). Amtar's cart is loaded from the harvest basket (Kakek tops it up from the village store if the basket is short). Along the road: **customers** ask 2 questions about surahs already learned (right answers = wares sell, 8 coins each); **people who block the road** (rope across the path) ask for help, so Amtar learns a new surah and tells them. After the first town his cart is empty, Kakek phones him to come home, and the journey goes on.
+- **Surahs and parts** (long surahs are split, each part uses the usual flow Dengar → Kenali → Cocokkan → Susun → read aloud, then a "Jelaskan" check, then the story scene; the last part ends with Surat Utuh):
+  Al-Humazah (104) 1–4 | 5–9 (Pak Burhan and Bu Lastri, Kota Ramai) · Al-'Asr (103) 1–3 (Ujang's gang) · At-Takatsur (102) 1–4 | 5–8 (Kakek, Juragan Karto and Basri; Amtar goes back to Kakek for part 2 when asked "what is the punishment?") · Al-Qari'ah (101) 1–5 | 6–11 (Lembah Timbangan) · Al-'Adiyat (100) 1–5 | 6–11 (Padang Kuda) · Al-Fatihah (1) 1–4 | 5–7 (lost travellers at a crossroads; split follows the hadith qudsi).
+- **Story** in `content/dagang/story.json`: 6 legs (maps), 30 stops, cast, hadith cards. Quoted ayah translations come from the surah files (`{tr:104:1-4}`), hadith cards from a verbatim snapshot of `sources` (`muslim:4690`, `bukhari:5933`, `muslim:5258`, `bukhari:6188`, `quran:14:7`, `muslim:598`; `node content/tools/snapshot-dagang.mjs`). What to check is listed in `docs/CONTENT_REVIEW.md`.
+- **Data/audio** (`content/dagang/surah-*.json`, 49 ayah files in `audio/a`, 180 word clips in `audio/w`): built by `tools/build-dagang-surahs.mjs` from Quran.com (Alafasy, same recording as the existing audio) + Kemenag from `sources`. Details, flagged glosses and boundaries: `docs/DAGANG_DATA.md`.
+- Small engine changes: `lesson()` and `suratUtuh()` take an optional `ctx` (used only by dagang.js; the farm quests don't pass it). Susun now accepts the same word in either place when a word repeats in an ayah (103:3 has وَتَوَاصَوۡا twice).
+- Tests: `node tests/dagang-content.mjs` (content integrity, 400+ checks, passes). The chapter was played through in the browser pane at 375×812 in trial mode. Playwright isn't installed here.
+
+**Please check (Ricky / ustaz):**
+1. **Word boundaries of the 180 new clips were found by signal analysis only, not by ear**; 121 of 131 boundaries are weaker (tiers A/B in `docs/DAGANG_DATA.md`). Listen with `cek-audio.html` before players rely on word cards. Densest: 103:3 and 102:8.
+2. **Glosses to decide** (all listed in `docs/DAGANG_DATA.md`): 100:10 `ḥuṣṣila` ("dan dilahirkan" in Quran.com, Kemenag says "dikeluarkan"), 100:9 `buʿthira`, 101:4 (anai-anai vs laron), 1:7 `ʿalayhim`, and others.
+3. **Al-'Adiyat emoji:** horses get none; the three participles in 100:1–3 got action emoji only (💨 ✨ ⚔️). Empty them in `tools/dagang-word-emoji.json` if that is too loose.
+4. Part boundaries and the story (suami istri, gerombolan, two merchants…) are our proposals; ustaz to confirm (see CONTENT_REVIEW).
+
+**Not done / next:**
+- Sumur Murajaah (`well()`) and the Buku Kata list only know the original 10 surahs; the new surahs can be replayed from the 🧭 summary page after the chapter ends. Next: include them in the well and in Level Pemahaman.
+- Cloud save carries `S.dagang` (journey position, cart, flags) with the rest of the state; not tested against the real backend.
+- The journey doesn't have a replay of single legs; once finished, 🧭 opens the summary with "Ulangi Surat Utuh" per surah.
+
 ## 2026-11-14 (evening) — One login for everyone; trial without an account (Ricky)
 - **No parent/child levels in the app (Ricky):** the start screen is now just email + password (or Google), with "Daftar" and "Lupa kata sandi?". Everyone who signs in plays the same way: straight into their own garden, tabs Kebun/Beranda/Grup/Profil. The parent dashboard (family list, child PINs, activity view) is no longer reachable (`js/ortu.js` is unused, not deleted). Backend unchanged: every new account is still `profiles.role='parent'` by the trigger, which is fine.
 - **Trial (Ricky):** "Coba dulu tanpa akun" starts a fresh game that is **never saved** (`setPersist(false)` in `js/state.js`; nothing in localStorage or the cloud). Text "Uji coba. Hasil tidak disimpan." on the start screen, a toast, a thin ribbon at the top of the game (tap = go to login) and in the settings.

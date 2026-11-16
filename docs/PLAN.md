@@ -103,5 +103,8 @@ Each phase ships on its own to `/beta/` and should leave the game playable. Work
 - Write the stories in `content/akhlak/*.json` with the same shape as QUEST, plus `sources:[...]` (the `sources.id` values each story relies on). List what each story cites in `docs/CONTENT_REVIEW.md`.
 - Build the stories straight into the `/beta/` game like any other feature: no status flags, no parent-only preview. Ricky's ustaz reviews the whole beta before cutover.
 
+## Phase 9 — Perjalanan Dagang (shipped 2026-11-16, content for ustaz review)
+Chapter after the original game (same unlock as Phase 8): a Pokémon-style trade route; customers ask about earlier surahs, road-blockers need a new surah learned in parts. Surahs: Al-Humazah, Al-'Asr, At-Takatsur, Al-Qari'ah, Al-'Adiyat, Al-Fatihah. Code `js/dagang.js`, content `content/dagang/`, notes in `docs/PROGRESS.md` (2026-11-16), `docs/DAGANG_DATA.md`, `docs/CONTENT_REVIEW.md`. Next surahs follow the same pattern (add `surah-N.json` + legs in `story.json`).
+
 ## Cutover (done 2026-11-13)
 Ricky approved. `beta/` moved to the root, the old root is kept at `/classic/`, and the game is served at https://km.generasimerdeka.com/.

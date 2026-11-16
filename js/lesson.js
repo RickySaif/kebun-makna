@@ -10,9 +10,11 @@ import { $, closePanel, esc, panel, pick, praiseLine, shuffle } from './ui.js';
 
 /* ---------- lesson ---------- */
 export function lessonStart(no){ const j=BY[no].ayat.findIndex(a=>!S.ay[a.a]); lesson(no,j<0?0:j,false); }
-export function lesson(no,j,review){
+// ctx (optional, used by the trade-route chapter in dagang.js): {sub, back, after(j)} — the lesson then reports back to
+// the caller instead of walking the farm story; the farm's own quests never pass it.
+export function lesson(no,j,review,ctx){
   const s=BY[no],a=s.ayat[j]; const steps=['Dengar','Kenali','Cocokkan','Susun'];
-  const p=panel(`${s.name} · Ayat ${a.n} dari ${s.ayat.length}`,review?'Murajaah':`Membantu ${QUEST[no].npc}`,()=>{});
+  const p=panel(`${s.name} · Ayat ${a.n} dari ${s.ayat.length}`,review?'Murajaah':ctx?ctx.sub:`Membantu ${QUEST[no].npc}`,()=>{},ctx&&ctx.back);
   const body=p.querySelector('.pbody');
   const bar=$(`<div class="steps">${steps.map(()=>'<i></i>').join('')}</div>`); body.before(bar);
   const mist={match:0,arrange:0};
@@ -26,6 +28,7 @@ export function lesson(no,j,review){
     addXP(first?20+5*stars:repXP('ay'+a.a,10));
     const lastAyah=j===s.ayat.length-1;
     celebrate(praiseLine(),`Ayat ${a.n} ${s.name} selesai. +${coins} Koin Makna!`,null,()=>{
+      if(ctx){ctx.after(j,review);return;}
       if(review){closePanel();well();return;}
       if(!lastAyah){lesson(no,j+1,false);return;}
       if(surahDone(no)&&!S.solved[no]&&!S.whole[no]){ closePanel(); suratUtuh(no,false); return; }
@@ -87,7 +90,7 @@ export function susun(s,a,next,mist){
   shuffle(a.w.map((w,k)=>({w,k}))).forEach(t=>{const el=$(`<button class="tile"><span class="ar w" lang="ar">${esc(t.w.ar)}</span></button>`);el.onclick=()=>{if(solved)return;const i=placed.indexOf(null);if(i<0)return;placed[i]=t;el.classList.add('used');play(AW(t.w.a));render();};els.set(t,el);pool.append(el);});
   function render(){slots.replaceChildren(...placed.map((t,i)=>{const sl=$(`<button class="slot${t?' filled':''}" aria-label="Posisi ${i+1}">${t?`<span class="ar" lang="ar" style="font-size:28px">${esc(t.w.ar)}</span>`:''}</button>`);sl.onclick=()=>{if(solved||!t)return;placed[i]=null;els.get(t).classList.remove('used');fb.textContent='';render();};return sl;}));nx.disabled=placed.includes(null)&&!solved;}
   render(); v.querySelector('#pl').onclick=()=>play(AA(a.a));
-  nx.onclick=()=>{ if(solved){next();return;} const wrong=placed.map((t,i)=>t.k!==i);
+  nx.onclick=()=>{ if(solved){next();return;} const wrong=placed.map((t,i)=>t.w.ar!==a.w[i].ar); // same text in two places (e.g. a repeated word) counts as right
     if(wrong.some(Boolean)){mist.arrange++;sfx.bad();fb.className='fb bad';fb.textContent='Hampir! Kotak merah belum di tempatnya. Dengar ayatnya lagi kalau perlu.';[...slots.children].forEach((sl,i)=>sl.classList.toggle('bad',wrong[i]));}
     else{solved=true;sfx.good();fb.className='fb good';fb.textContent='Susunannya benar!';v.insertBefore($(`<div class="trans pop"><b>Artinya:</b> ${esc(a.tr)}</div>`),v.querySelector('.row'));nx.textContent='Selesai ▸';play(AA(a.a));} };
   return v;
@@ -126,9 +129,10 @@ export function renderQ(host,q,onAnswer){
 }
 
 /* ---------- Surat Utuh ---------- */
-export function suratUtuh(no,review){
-  const s=BY[no], Q=QUEST[no];
-  const pn=panel(`Surat Utuh · ${s.name}`,review?'Murajaah surat utuh':`Langkah terakhir membantu ${Q.npc}`,()=>{});
+// ctx (optional, trade-route chapter): {Q:{npc,look}, E:{ayah,q,yes}, back, after()}
+export function suratUtuh(no,review,ctx){
+  const s=BY[no], Q=ctx?ctx.Q:QUEST[no];
+  const pn=panel(`Surat Utuh · ${s.name}`,review?'Murajaah surat utuh':`Langkah terakhir membantu ${Q.npc}`,()=>{},ctx&&ctx.back);
   const body=pn.querySelector('.pbody');
   const bar=$(`<div class="steps"><i></i><i></i><i></i></div>`); body.before(bar);
   let mist=0;
@@ -174,7 +178,7 @@ export function suratUtuh(no,review){
     return v;
   }
   function jelaskan(next){
-    const E=EXPLAIN[no]; const a=s.ayat[E.ayah-1]; const opts=shuffle([a,...shuffle(s.ayat.filter(x=>x!==a)).slice(0,2)]);
+    const E=ctx?ctx.E:EXPLAIN[no]; const a=s.ayat[E.ayah-1]; const opts=shuffle([a,...shuffle(s.ayat.filter(x=>x!==a)).slice(0,2)]);
     const v=$(`<div class="frame"><h2>Jelaskan ke ${esc(Q.npc)}</h2><div style="display:flex;gap:10px;align-items:flex-start;margin:6px 0 4px"><img alt="" src="${portrait(Q.look)}" style="width:56px;height:56px;border:3px solid var(--ink);border-radius:4px;image-rendering:pixelated;flex:none"><div><div style="font-weight:700;color:var(--red)">${esc(Q.npc)}</div><p style="margin:2px 0 0">${esc(fill(E.q))}</p></div></div>
       <div class="opts">${opts.map((o,n)=>`<button class="opt" data-n="${n}"><span class="ar" lang="ar" style="display:block;font-size:24px;text-align:right;line-height:1.9">${esc(o.ar)}</span><span style="font-weight:500">${esc(o.tr)}</span></button>`).join('')}</div><div class="fb"></div><button class="btn green block" id="nx" style="margin-top:12px" hidden>Lanjut ▸</button></div>`);
     let fin=false;
@@ -191,6 +195,7 @@ export function suratUtuh(no,review){
     celebrate(`Surat ${s.name} utuh!`,`Kamu memahami surat ini dari awal sampai akhir. +${coins} koin.`,null,()=>{
       if(!first) addReview(no);
       addXP(xp); checkSurahLevels();
+      if(ctx){ ctx.after(first); return; }
       if(review||S.solved[no]){ closePanel(); farm(); return; }
       S.solved[no]=true; S.leaving={no,from:SPOT[no]}; save(); closePanel(); farm();
       setTimeout(()=>dialog(QUEST[no],QUEST[no].done,[['Ke Toko Benih',shop,'green'],['Nanti',idleDialog,'ghost']]),50);

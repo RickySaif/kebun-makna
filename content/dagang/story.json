@@ -1,0 +1,1944 @@
+{
+  "chapter": "Perjalanan Dagang",
+  "unlock": "all 10 surahs solved + boss4 (same as the akhlak chapter)",
+  "surahs": [
+    104,
+    103,
+    102,
+    101,
+    100,
+    1
+  ],
+  "sources": [
+    "muslim:4690",
+    "bukhari:5933",
+    "muslim:5258",
+    "bukhari:6188",
+    "quran:14:7",
+    "muslim:598"
+  ],
+  "cast": {
+    "ustaz": {
+      "npc": "Pak Ustaz",
+      "look": {
+        "hair": "#2B1D12",
+        "shirt": "#F2F2F2",
+        "pants": "#3A3A4A",
+        "hat": "#F2F2F2"
+      }
+    },
+    "kakek": {
+      "npc": "Kakek Umar",
+      "look": {
+        "hair": "#F2F2F2",
+        "shirt": "#7A9A3A",
+        "pants": "#5A3820",
+        "hat": "#E8C15A"
+      }
+    },
+    "sinta": {
+      "npc": "Bu Sinta",
+      "look": {
+        "girl": true,
+        "hijab": "#3AA6A0",
+        "shirt": "#E56B8A",
+        "hair": "#2B1D12",
+        "pants": "#2F4F6F"
+      }
+    },
+    "jajang": {
+      "npc": "Pak Jajang",
+      "look": {
+        "hair": "#2B1D12",
+        "shirt": "#B8862B",
+        "pants": "#5A3820",
+        "hat": "#6A4E36"
+      }
+    },
+    "rt": {
+      "npc": "Pak RT Sodik",
+      "look": {
+        "hair": "#4A3B32",
+        "shirt": "#3A78C9",
+        "pants": "#2B2B3B",
+        "hat": "#1A1A1A"
+      }
+    },
+    "burhan": {
+      "npc": "Pak Burhan",
+      "look": {
+        "hair": "#1A1A1A",
+        "shirt": "#8B1E1E",
+        "pants": "#2B1D12",
+        "hat": "#1A1A1A"
+      }
+    },
+    "lastri": {
+      "npc": "Bu Lastri",
+      "look": {
+        "girl": true,
+        "hijab": "#C8463A",
+        "shirt": "#F4C430",
+        "hair": "#2B1D12",
+        "pants": "#6B4A8A"
+      }
+    },
+    "warga": {
+      "npc": "Warga Kota Ramai",
+      "look": {
+        "hair": "#3B2A1A",
+        "shirt": "#5FA85B",
+        "pants": "#2F3B52"
+      }
+    },
+    "warti": {
+      "npc": "Bu Warti",
+      "look": {
+        "girl": true,
+        "hijab": "#7B3FA0",
+        "shirt": "#F2F2F2",
+        "hair": "#5A3820",
+        "pants": "#2F5E5B"
+      }
+    },
+    "ujang": {
+      "npc": "Ujang",
+      "look": {
+        "hair": "#2B1D12",
+        "shirt": "#3B3B4A",
+        "pants": "#2A2A33"
+      }
+    },
+    "kades": {
+      "npc": "Pak Kades",
+      "look": {
+        "hair": "#6E6E6E",
+        "shirt": "#F2F2F2",
+        "pants": "#2B2B3B",
+        "hat": "#1A1A1A"
+      }
+    },
+    "karto": {
+      "npc": "Juragan Karto",
+      "look": {
+        "hair": "#6E6E6E",
+        "shirt": "#C9A227",
+        "pants": "#5A3820",
+        "hat": "#F2F2F2"
+      }
+    },
+    "basri": {
+      "npc": "Juragan Basri",
+      "look": {
+        "hair": "#2B1D12",
+        "shirt": "#3A9D6A",
+        "pants": "#2F3B52",
+        "hat": "#E8C15A"
+      }
+    },
+    "anto": {
+      "npc": "Pak Anto",
+      "look": {
+        "hair": "#5A3820",
+        "shirt": "#E0702F",
+        "pants": "#3E5C8A"
+      }
+    },
+    "timbang": {
+      "npc": "Pak Timbang",
+      "look": {
+        "hair": "#2B1D12",
+        "shirt": "#5B7FD9",
+        "pants": "#3E5C8A",
+        "hat": "#F2F2F2"
+      }
+    },
+    "marni": {
+      "npc": "Bu Marni",
+      "look": {
+        "girl": true,
+        "hijab": "#F2A23A",
+        "shirt": "#8D5BB5",
+        "hair": "#2B1D12",
+        "pants": "#8A3B5A"
+      }
+    },
+    "ratna": {
+      "npc": "Bu Ratna",
+      "look": {
+        "girl": true,
+        "hijab": "#5FA85B",
+        "shirt": "#F4C430",
+        "hair": "#2B1D12",
+        "pants": "#2B4C7E"
+      }
+    },
+    "haris": {
+      "npc": "Pak Haris",
+      "look": {
+        "hair": "#2B1D12",
+        "shirt": "#8B1E1E",
+        "pants": "#2B1D12",
+        "hat": "#C9A227"
+      }
+    },
+    "soleh": {
+      "npc": "Pak Soleh",
+      "look": {
+        "hair": "#3B2A1A",
+        "shirt": "#4A90D9",
+        "pants": "#2F3B52",
+        "hat": "#F2F2F2"
+      }
+    }
+  },
+  "legs": [
+    {
+      "id": "jalan",
+      "title": "Jalan Dagang",
+      "sub": "Ke Kota Ramai",
+      "map": {
+        "rows": 44,
+        "start": [
+          3,
+          41
+        ],
+        "path": [
+          [
+            3,
+            41
+          ],
+          [
+            3,
+            34
+          ],
+          [
+            8,
+            34
+          ],
+          [
+            8,
+            27
+          ],
+          [
+            4,
+            27
+          ],
+          [
+            4,
+            20
+          ],
+          [
+            8,
+            20
+          ],
+          [
+            8,
+            12
+          ],
+          [
+            5,
+            12
+          ],
+          [
+            5,
+            4
+          ]
+        ],
+        "huts": [
+          [
+            9,
+            23,
+            0
+          ],
+          [
+            1,
+            23,
+            3
+          ],
+          [
+            6,
+            23,
+            6
+          ],
+          [
+            9,
+            16,
+            2
+          ],
+          [
+            2,
+            15,
+            5
+          ],
+          [
+            6,
+            16,
+            8
+          ]
+        ]
+      },
+      "stops": [
+        {
+          "id": "gerbang1",
+          "type": "scene",
+          "name": "Gerbang Desa",
+          "at": [
+            3,
+            41
+          ],
+          "icon": "gate",
+          "npc": "kakek",
+          "lines": [
+            [
+              "kakek",
+              "{n}, lihat keranjang panenmu. Sayur-sayurmu sudah banyak sekali. Alhamdulillah!"
+            ],
+            [
+              "kakek",
+              "Sekarang waktunya berdagang. Jual sayurmu, kumpulkan uang untuk membantu orang tuamu dan desa kita."
+            ],
+            [
+              "kakek",
+              "Sebarkan kebaikan di banyak tempat, dan belajarlah dari setiap orang yang kamu temui."
+            ],
+            [
+              "kakek",
+              "Kalau ada yang bertanya tentang surat yang sudah kamu pelajari, jawablah. Kalau jawabanmu benar, dagangan akan laku."
+            ],
+            {
+              "load": 6
+            },
+            [
+              "kakek",
+              "Gerobakmu sudah Kakek isi. Gerbang desa terbuka, dan jalan ke wilayah baru menunggumu. Bismillah, berangkatlah!"
+            ]
+          ]
+        },
+        {
+          "id": "sinta",
+          "type": "customer",
+          "name": "Bu Sinta",
+          "at": [
+            3,
+            36
+          ],
+          "npc": "sinta",
+          "qn": 2,
+          "sell": 2,
+          "ask": [
+            [
+              "sinta",
+              "Assalamu'alaikum! Wah, sayurmu segar-segar sekali."
+            ],
+            [
+              "sinta",
+              "Aku mau beli. Tapi anakku sedang belajar surat-surat pendek, jadi aku suka bertanya kepada anak-anak yang lewat. Boleh aku bertanya dua hal?"
+            ]
+          ],
+          "yes": [
+            [
+              "sinta",
+              "Benar semua! Barakallah, {n}. Anakku pasti senang bertemu denganmu."
+            ],
+            [
+              "sinta",
+              "Aku beli sayurmu, ya. Semoga berkah!"
+            ]
+          ]
+        },
+        {
+          "id": "jajang",
+          "type": "customer",
+          "name": "Pak Jajang",
+          "at": [
+            8,
+            30
+          ],
+          "npc": "jajang",
+          "qn": 2,
+          "sell": 2,
+          "ask": [
+            [
+              "jajang",
+              "Hei, ada pedagang sayur kecil! Kelihatannya segar."
+            ],
+            [
+              "jajang",
+              "Tukang kayu seperti aku biasa menguji ukuran dulu sebelum membeli. Aku juga mau menguji ilmumu: dua pertanyaan saja."
+            ]
+          ],
+          "yes": [
+            [
+              "jajang",
+              "Pas, seperti sambungan kayu yang rapi! Aku beli sayurmu, ya."
+            ]
+          ]
+        },
+        {
+          "id": "humazah_1",
+          "type": "learn",
+          "name": "Balai Kota Ramai",
+          "at": [
+            6,
+            27
+          ],
+          "npc": "rt",
+          "surah": 104,
+          "part": [
+            1,
+            4
+          ],
+          "teacher": "ustaz",
+          "ask": [
+            [
+              "rt",
+              "Selamat datang di Kota Ramai, anak dagang. Tapi sekarang kota kami ramai oleh rasa takut, bukan oleh tawa."
+            ],
+            [
+              "rt",
+              "Ada Pak Burhan, pemilik toko kain. Dia suka mengumpat dan mencela. Siapa pun yang lewat dibicarakan buruk-buruk di belakangnya. Orang-orang jadi takut lewat depan tokonya."
+            ],
+            [
+              "rt",
+              "Istrinya, Bu Lastri, sibuk mengumpulkan uang dan menghitung-hitungnya. Dia merasa uangnya akan menjaga mereka selamanya."
+            ],
+            [
+              "rt",
+              "Kami takut menasihati mereka. Pak Ustaz bilang jawabannya ada di Surat Al-Humazah. Maukah kamu mempelajarinya, {n}, lalu menasihati Pak Burhan?"
+            ],
+            [
+              "ustaz",
+              "Surat ini kita pelajari dua bagian. Bagian pertama dulu: untuk Pak Burhan."
+            ]
+          ],
+          "explain": {
+            "q": "Ayat mana yang menyebut orang yang suka mengumpat dan mencela?",
+            "ayah": 1,
+            "yes": "Betul! Itulah yang akan kamu sampaikan kepada Pak Burhan."
+          },
+          "done": [
+            [
+              "ustaz",
+              "Bagus, {n}. Kamu sudah paham bagian pertama. Sampaikan dengan lembut ya, jangan menggurui. Toko Pak Burhan ada di jalan sebelah sana."
+            ]
+          ]
+        },
+        {
+          "id": "humazah_t1",
+          "type": "tell",
+          "name": "Toko Kain Pak Burhan",
+          "at": [
+            4,
+            23
+          ],
+          "npc": "burhan",
+          "block": true,
+          "lines": [
+            [
+              "burhan",
+              "Hei, anak dagang! Mau apa kamu? Jangan-jangan disuruh Pak RT menasihatiku? Hah!"
+            ],
+            [
+              "me",
+              "Assalamu'alaikum, Pak. Aku tidak bermaksud menggurui. Aku baru mempelajari satu surat dan ingin menyampaikan artinya. Boleh, Pak?"
+            ],
+            [
+              "burhan",
+              "…Cepat, aku sedang sibuk."
+            ],
+            [
+              "me",
+              "Surat Al-Humazah. Artinya: {tr:104:1-4}"
+            ],
+            [
+              "burhan",
+              "Hmm. Tapi aku hanya membicarakan hal yang benar tentang orang-orang itu. Kalau memang benar, kenapa disebut mengumpat?"
+            ],
+            [
+              "me",
+              "Aku juga bertanya begitu kepada Pak Ustaz. Beliau membacakan sabda Nabi ﷺ yang menjawabnya:"
+            ],
+            {
+              "card": "muslim:4690"
+            },
+            [
+              "burhan",
+              "Jadi menyebut yang benar pun, kalau saudara kita tidak suka dibicarakan, itu ghibah. Dan kalau tidak benar, itu dusta…"
+            ],
+            [
+              "burhan",
+              "Selama ini aku membicarakan tetangga, mencela pembeli, menertawakan orang. Aku… malu. Aku akan minta maaf kepada mereka satu per satu."
+            ],
+            [
+              "lastri",
+              "Tunggu! Jangan mau dinasihati anak kecil, Pak! Harta kita yang membuat kita aman dan dihormati. Neraka apa? Memangnya Huthamah itu apa?"
+            ],
+            [
+              "me",
+              "Aku belum tahu, Bu. Bagian berikutnya dari surat itu yang menjelaskan. Aku pelajari dulu ya, Bu."
+            ]
+          ]
+        },
+        {
+          "id": "humazah_2",
+          "type": "learn",
+          "name": "Masjid Kecil",
+          "at": [
+            6,
+            20
+          ],
+          "npc": "ustaz",
+          "surah": 104,
+          "part": [
+            5,
+            9
+          ],
+          "teacher": "ustaz",
+          "whole": true,
+          "wholeE": {
+            "ayah": 3,
+            "q": "Ayat mana yang menunjukkan bahwa harta tidak bisa mengekalkan manusia?",
+            "yes": "Benar. Dia mengira hartanya dapat mengekalkannya, tetapi Allah berfirman: sekali-kali tidak!"
+          },
+          "ask": [
+            [
+              "ustaz",
+              "Bu Lastri bertanya apa itu Huthamah. Pertanyaan yang bagus. Bagian kedua surat Al-Humazah yang menjawabnya."
+            ],
+            [
+              "ustaz",
+              "Ayo kita pelajari bagian kedua, {n}."
+            ]
+          ],
+          "explain": {
+            "q": "Bu Lastri bertanya: apakah Huthamah itu? Ayat mana yang menjawabnya?",
+            "ayah": 6,
+            "yes": "Betul. Ayat sebelumnya bertanya, ayat ini yang menjawab."
+          },
+          "done": [
+            [
+              "ustaz",
+              "Alhamdulillah, kamu sudah mengulang seluruh suratnya. Sekarang temui Bu Lastri di rumahnya."
+            ]
+          ]
+        },
+        {
+          "id": "humazah_t2",
+          "type": "tell",
+          "name": "Rumah Bu Lastri",
+          "at": [
+            8,
+            15
+          ],
+          "npc": "lastri",
+          "block": true,
+          "lines": [
+            [
+              "lastri",
+              "Kamu datang lagi? Katakan, apa itu Huthamah?"
+            ],
+            [
+              "me",
+              "Bu, aku sudah belajar bagian berikutnya. Artinya: {tr:104:5-9}"
+            ],
+            [
+              "lastri",
+              "…Api yang membakar sampai ke hati. Ditutup rapat, diikat pada tiang-tiang panjang. Ya Allah…"
+            ],
+            [
+              "lastri",
+              "Setiap malam aku menghitung uangku. Tapi aku tidak pernah menghitung sedekahku. Pak Burhan, benar kata anak ini."
+            ],
+            [
+              "lastri",
+              "Mulai besok sebagian harta kami kami bagikan kepada orang yang membutuhkan. Dan kami akan meminta maaf bersama."
+            ],
+            [
+              "warga",
+              "MasyaAllah! Terima kasih, {n}! Pak Burhan dan Bu Lastri sudah minta maaf ke seluruh kota. Sekarang tidak ada yang takut lagi."
+            ],
+            [
+              "warga",
+              "Kami ingin membeli dagangan sayurmu. Berikan kepada kami semuanya!"
+            ],
+            {
+              "sell": "all"
+            },
+            [
+              "warga",
+              "Hati-hati di jalan pulang, ya. Kota Ramai berterima kasih kepadamu!"
+            ]
+          ]
+        },
+        {
+          "id": "telepon1",
+          "type": "call",
+          "name": "Telepon Kakek",
+          "auto": true,
+          "npc": "kakek",
+          "lines": [
+            [
+              "kakek",
+              "Assalamu'alaikum, {n}? Ini Kakek. Bagaimana dagangannya?"
+            ],
+            [
+              "kakek",
+              "Habis semua? Alhamdulillah! Kakek bangga padamu. Sekarang pulanglah, ya. Hari sudah sore, dan jalan pulang lebih baik dilewati selagi terang."
+            ],
+            [
+              "kakek",
+              "Kalau ada yang butuh bantuan di jalan, bantulah. Tapi jangan kemalaman."
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pulang",
+      "title": "Jalan Pulang",
+      "sub": "Menuju desa",
+      "map": {
+        "rows": 28,
+        "start": [
+          6,
+          25
+        ],
+        "path": [
+          [
+            6,
+            25
+          ],
+          [
+            6,
+            18
+          ],
+          [
+            3,
+            18
+          ],
+          [
+            3,
+            10
+          ],
+          [
+            7,
+            10
+          ],
+          [
+            7,
+            3
+          ]
+        ],
+        "huts": [
+          [
+            8,
+            20,
+            4
+          ],
+          [
+            1,
+            21,
+            1
+          ],
+          [
+            9,
+            6,
+            7
+          ]
+        ]
+      },
+      "stops": [
+        {
+          "id": "asr_1",
+          "type": "learn",
+          "name": "Warung Bu Warti",
+          "at": [
+            6,
+            21
+          ],
+          "npc": "warti",
+          "surah": 103,
+          "part": [
+            1,
+            3
+          ],
+          "teacher": "warti",
+          "whole": true,
+          "wholeE": {
+            "ayah": 3,
+            "q": "Ayat mana yang menyebut siapa yang tidak rugi?",
+            "yes": "Betul. Orang yang beriman, mengerjakan kebajikan, dan saling menasihati."
+          },
+          "ask": [
+            [
+              "warti",
+              "Nak, tolong berhenti sebentar. Aku Bu Warti, pemilik warung ini."
+            ],
+            [
+              "warti",
+              "Tiap sore ada gerombolan anak muda di tikungan sana. Mereka menghabiskan waktu dengan mengejek orang lewat dan mengganggu orang. Orang-orang jadi tidak nyaman lewat sini."
+            ],
+            [
+              "warti",
+              "Aku sudah tidak sanggup menegur sendirian. Kata Pak Ustaz, Surat Al-'Asr cocok untuk mereka. Pelajarilah, lalu sampaikan kepada mereka betapa ruginya mereka."
+            ]
+          ],
+          "explain": {
+            "q": "Ayat mana yang menunjukkan bahwa manusia benar-benar berada dalam kerugian?",
+            "ayah": 2,
+            "yes": "Betul. Itu yang harus mereka dengar."
+          },
+          "done": [
+            [
+              "warti",
+              "Alhamdulillah. Surat ini pendek, tapi pesannya besar. Mereka ada di tikungan sebelah sana. Hati-hati, ya."
+            ]
+          ]
+        },
+        {
+          "id": "asr_t1",
+          "type": "tell",
+          "name": "Gerombolan Ujang",
+          "at": [
+            3,
+            13
+          ],
+          "npc": "ujang",
+          "block": true,
+          "lines": [
+            [
+              "ujang",
+              "Heh, anak sayur! Mau lewat? Bayar dulu! Hahaha!"
+            ],
+            [
+              "ujang",
+              "Kami cuma bersenang-senang. Waktu kan masih banyak."
+            ],
+            [
+              "me",
+              "Teman-teman, aku tidak mau mengganggu. Aku hanya ingin membacakan satu surat pendek yang baru kupelajari. Tiga ayat saja."
+            ],
+            [
+              "me",
+              "Surat Al-'Asr. Artinya: {tr:103:1-3}"
+            ],
+            [
+              "ujang",
+              "Hah? Rugi? Aku? Memangnya hari-hariku sia-sia?"
+            ],
+            [
+              "me",
+              "Aku juga sering menunda-nunda, Bang. Kata Pak Ustaz, Nabi ﷺ pernah bersabda tentang waktu:"
+            ],
+            {
+              "card": "bukhari:5933"
+            },
+            [
+              "ujang",
+              "Kesehatan dan waktu luang… Kami punya dua-duanya, dan kami pakai untuk mengganggu orang."
+            ],
+            [
+              "ujang",
+              "Baiklah. Kami berhenti mengganggu orang lewat. Mulai besok kami bantu Bu Warti mengangkat barang."
+            ],
+            [
+              "warti",
+              "Alhamdulillah! Terima kasih, Nak. Ini sedikit bekal untukmu."
+            ],
+            {
+              "coins": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "desa",
+      "title": "Desa Kita",
+      "sub": "Alun-alun desa",
+      "map": {
+        "rows": 26,
+        "start": [
+          2,
+          22
+        ],
+        "path": [
+          [
+            2,
+            22
+          ],
+          [
+            2,
+            15
+          ],
+          [
+            9,
+            15
+          ],
+          [
+            9,
+            8
+          ],
+          [
+            4,
+            8
+          ]
+        ],
+        "huts": [
+          [
+            5,
+            18,
+            3
+          ],
+          [
+            10,
+            19,
+            1
+          ],
+          [
+            6,
+            11,
+            5
+          ],
+          [
+            1,
+            10,
+            8
+          ]
+        ]
+      },
+      "stops": [
+        {
+          "id": "pulang",
+          "type": "scene",
+          "name": "Gerbang Desa",
+          "at": [
+            2,
+            22
+          ],
+          "icon": "gate",
+          "npc": "kakek",
+          "lines": [
+            [
+              "kakek",
+              "Assalamu'alaikum, {n}! Alhamdulillah, kamu pulang dengan selamat."
+            ],
+            [
+              "kakek",
+              "Uang hasil dagangmu akan membantu orang tuamu dan desa kita. Terima kasih, cucu Kakek."
+            ],
+            [
+              "kades",
+              "Maaf mengganggu, Pak Umar. Dua rombongan saudagar kaya baru tiba. Mereka berkeliling desa sambil saling menyombongkan kekayaan, dan warga jadi tidak enak hati."
+            ],
+            [
+              "kakek",
+              "Hmm. Kakek ingat satu surat yang cocok untuk ini: At-Takatsur. Ayo, {n}, duduk sini. Kakek ceritakan."
+            ]
+          ]
+        },
+        {
+          "id": "takatsur_1",
+          "type": "learn",
+          "name": "Beranda Rumah Kakek",
+          "at": [
+            2,
+            17
+          ],
+          "npc": "kakek",
+          "surah": 102,
+          "part": [
+            1,
+            4
+          ],
+          "teacher": "kakek",
+          "ask": [
+            [
+              "kakek",
+              "Surat At-Takatsur mengingatkan kita saat kita sibuk bermegah-megahan: siapa yang hartanya paling banyak, siapa yang pengikutnya paling banyak."
+            ],
+            [
+              "kakek",
+              "Surat ini ada dua bagian. Bagian pertama dulu. Dengarkan baik-baik, {n}."
+            ]
+          ],
+          "explain": {
+            "q": "Ayat mana yang menyebut bahwa bermegah-megahan telah melalaikan?",
+            "ayah": 1,
+            "yes": "Betul, {n}. Itu pembukanya."
+          },
+          "done": [
+            [
+              "kakek",
+              "Bagus. Sekarang coba sampaikan kepada para saudagar itu. Bicaralah dengan sopan. Mereka ada di alun-alun."
+            ]
+          ]
+        },
+        {
+          "id": "takatsur_t1",
+          "type": "tell",
+          "name": "Rombongan Saudagar",
+          "at": [
+            6,
+            15
+          ],
+          "npc": "karto",
+          "block": true,
+          "lines": [
+            [
+              "karto",
+              "Hahaha, lihat gerobak kudaku! Seratus karung beras kuangkut sendiri!"
+            ],
+            [
+              "basri",
+              "Seratus? Aku punya dua ratus karung, dan sepuluh anak buah!"
+            ],
+            [
+              "kades",
+              "{n}, tolong ingatkan mereka dengan baik-baik, ya."
+            ],
+            [
+              "me",
+              "Maaf, Juragan. Aku baru mempelajari satu surat dari Kakek. Artinya: {tr:102:1-4}"
+            ],
+            [
+              "karto",
+              "Hahaha! Memang kenyataannya begitu, Nak. Orang kaya ya begini, itu bukan dosa!"
+            ],
+            [
+              "basri",
+              "Betul. Memangnya apa hukumannya untuk orang yang pamer? Coba jawab!"
+            ],
+            [
+              "me",
+              "Aku… belum tahu, Juragan. Surat itu belum selesai kupelajari. Aku tanya Kakek dulu, ya."
+            ]
+          ]
+        },
+        {
+          "id": "takatsur_2",
+          "type": "learn",
+          "name": "Balai Desa",
+          "at": [
+            9,
+            11
+          ],
+          "npc": "kakek",
+          "surah": 102,
+          "part": [
+            5,
+            8
+          ],
+          "teacher": "kakek",
+          "whole": true,
+          "wholeE": {
+            "ayah": 5,
+            "q": "Ayat mana yang berbunyi: sekiranya kamu mengetahui dengan pasti?",
+            "yes": "Benar. Kalau kita tahu dengan pasti, kita tidak akan lalai."
+          },
+          "ask": [
+            [
+              "kakek",
+              "Mereka bertanya apa hukumannya? Itu pertanyaan bagus, {n}. Bagian kedua surat At-Takatsur yang menjawabnya."
+            ],
+            [
+              "kakek",
+              "Ayo kita pelajari."
+            ]
+          ],
+          "explain": {
+            "q": "Ayat mana yang menyebut bahwa pada hari itu kita akan ditanya tentang kenikmatan?",
+            "ayah": 8,
+            "yes": "Betul. Ini yang paling penting untuk diingat."
+          },
+          "done": [
+            [
+              "kakek",
+              "Alhamdulillah, kamu sudah mengulang seluruh surat. Sekarang kembali ke para saudagar."
+            ]
+          ]
+        },
+        {
+          "id": "takatsur_t2",
+          "type": "tell",
+          "name": "Rombongan Saudagar",
+          "at": [
+            6,
+            8
+          ],
+          "npc": "basri",
+          "block": true,
+          "lines": [
+            [
+              "basri",
+              "Sudah kembali, Nak? Jadi apa hukumannya?"
+            ],
+            [
+              "me",
+              "Aku sudah belajar bagian berikutnya, Juragan. Artinya: {tr:102:5-8}"
+            ],
+            [
+              "karto",
+              "…Ditanya tentang kenikmatan. Kami tidak pernah berpikir sejauh itu."
+            ],
+            [
+              "me",
+              "Kakek bilang, Nabi ﷺ pernah membaca surat ini lalu bersabda:"
+            ],
+            {
+              "card": "muslim:5258"
+            },
+            [
+              "karto",
+              "Yang benar-benar menjadi hartaku hanyalah yang kumakan, kukenakan, dan kusedekahkan. Selebihnya kutinggalkan. Lalu buat apa kami saling pamer?"
+            ],
+            [
+              "basri",
+              "Aku malu. Lumbungku akan kubuka untuk warga yang kekurangan."
+            ],
+            [
+              "karto",
+              "Aku juga. Terima kasih sudah mengingatkan kami, Nak."
+            ],
+            [
+              "kades",
+              "MasyaAllah! Terima kasih, {n}. Desa kita jadi lebih tenang. Ini hadiah dari desa."
+            ],
+            {
+              "coins": 20
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lembah",
+      "title": "Lembah Timbangan",
+      "sub": "Pasar di seberang bukit",
+      "map": {
+        "rows": 40,
+        "start": [
+          3,
+          37
+        ],
+        "path": [
+          [
+            3,
+            37
+          ],
+          [
+            3,
+            30
+          ],
+          [
+            8,
+            30
+          ],
+          [
+            8,
+            23
+          ],
+          [
+            4,
+            23
+          ],
+          [
+            4,
+            15
+          ],
+          [
+            7,
+            15
+          ],
+          [
+            7,
+            6
+          ]
+        ],
+        "huts": [
+          [
+            9,
+            26,
+            2
+          ],
+          [
+            1,
+            26,
+            4
+          ],
+          [
+            5,
+            26,
+            7
+          ],
+          [
+            9,
+            18,
+            5
+          ],
+          [
+            1,
+            18,
+            0
+          ],
+          [
+            5,
+            18,
+            8
+          ]
+        ]
+      },
+      "stops": [
+        {
+          "id": "gerbang3",
+          "type": "scene",
+          "name": "Gerbang Desa",
+          "at": [
+            3,
+            37
+          ],
+          "icon": "gate",
+          "npc": "kakek",
+          "lines": [
+            [
+              "kakek",
+              "Kebunmu sudah menghasilkan lagi, {n}. Kabar baik: warga Kota Ramai dan para saudagar sudah berubah."
+            ],
+            [
+              "kakek",
+              "Ada pasar besar di seberang bukit, namanya Lembah Timbangan. Berangkatlah lagi. Jual sayurmu, dan bantu orang yang butuh bantuan."
+            ],
+            {
+              "load": 6
+            },
+            [
+              "kakek",
+              "Hati-hati di jalan. Bismillah!"
+            ]
+          ]
+        },
+        {
+          "id": "anto",
+          "type": "customer",
+          "name": "Pak Anto",
+          "at": [
+            3,
+            32
+          ],
+          "npc": "anto",
+          "qn": 2,
+          "sell": 2,
+          "ask": [
+            [
+              "anto",
+              "Assalamu'alaikum! Pedagang sayur dari desa Kakek Umar, ya? Aku sering mendengar tentangmu."
+            ],
+            [
+              "anto",
+              "Katanya anak-anak desamu pandai surat-surat Al-Qur'an. Boleh aku menguji dua pertanyaan?"
+            ]
+          ],
+          "yes": [
+            [
+              "anto",
+              "Hebat! Aku beli sayurmu, ya. Teruskan belajarnya, {n}."
+            ]
+          ]
+        },
+        {
+          "id": "qariah_1",
+          "type": "learn",
+          "name": "Timbangan Pasar",
+          "at": [
+            6,
+            30
+          ],
+          "npc": "timbang",
+          "surah": 101,
+          "part": [
+            1,
+            5
+          ],
+          "teacher": "timbang",
+          "ask": [
+            [
+              "timbang",
+              "Selamat datang di Pasar Lembah Timbangan! Aku Pak Timbang, penjaga timbangan pasar. Timbanganku selalu jujur."
+            ],
+            [
+              "timbang",
+              "Tapi hati warga pasar ini ringan sekali soal akhirat. Bu Marni, penjual kain, selalu bilang: 'Ah, kebaikan kecil tak ada artinya, dosa kecil juga tak apa-apa. Hidup santai saja!'"
+            ],
+            [
+              "timbang",
+              "Banyak warga ikut-ikutan. Surat Al-Qari'ah mengingatkan tentang satu hari yang sangat besar. Maukah kamu mempelajarinya lalu mengingatkan mereka?"
+            ],
+            [
+              "timbang",
+              "Surat ini kita pelajari dua bagian. Mulai dari bagian pertama."
+            ]
+          ],
+          "explain": {
+            "q": "Ayat mana yang menggambarkan keadaan manusia pada hari Kiamat?",
+            "ayah": 4,
+            "yes": "Betul. Seperti laron yang beterbangan."
+          },
+          "done": [
+            [
+              "timbang",
+              "Bagus, {n}. Lapak Bu Marni ada di jalan sana. Sampaikan dengan sopan, ya."
+            ]
+          ]
+        },
+        {
+          "id": "qariah_t1",
+          "type": "tell",
+          "name": "Lapak Kain Bu Marni",
+          "at": [
+            8,
+            26
+          ],
+          "npc": "marni",
+          "block": true,
+          "lines": [
+            [
+              "marni",
+              "Mau beli kain, Nak? Atau mau berceramah juga seperti Pak Timbang? Hidup ini dibawa santai saja."
+            ],
+            [
+              "me",
+              "Bu, aku baru belajar Surat Al-Qari'ah. Aku ingin membacakan artinya. Boleh?"
+            ],
+            [
+              "me",
+              "Artinya: {tr:101:1-5}"
+            ],
+            [
+              "marni",
+              "…Gunung-gunung seperti bulu yang dihambur-hamburkan. Menakutkan sekali."
+            ],
+            [
+              "marni",
+              "Tapi kalau hari itu sebesar itu, apa gunanya amal kecilku? Memangnya apa yang diperhitungkan pada hari itu?"
+            ],
+            [
+              "me",
+              "Aku belum tahu, Bu. Bagian berikutnya yang menjawabnya. Aku pelajari dulu."
+            ]
+          ]
+        },
+        {
+          "id": "qariah_2",
+          "type": "learn",
+          "name": "Timbangan Pasar",
+          "at": [
+            6,
+            23
+          ],
+          "npc": "timbang",
+          "surah": 101,
+          "part": [
+            6,
+            11
+          ],
+          "teacher": "timbang",
+          "whole": true,
+          "wholeE": {
+            "ayah": 8,
+            "q": "Ayat mana yang menyebut orang yang ringan timbangan (kebaikan)nya?",
+            "yes": "Betul. Itu yang kita takutkan, dan kita berusaha menghindarinya."
+          },
+          "ask": [
+            [
+              "timbang",
+              "Bu Marni bertanya apa yang diperhitungkan? Bagian kedua surat ini membahas timbangan, {n}. Cocok untuk penjaga timbangan sepertiku."
+            ],
+            [
+              "timbang",
+              "Ayo kita pelajari bersama."
+            ]
+          ],
+          "explain": {
+            "q": "Ayat mana yang menyebut kehidupan yang memuaskan bagi orang yang berat timbangannya?",
+            "ayah": 7,
+            "yes": "Betul. Berat timbangan kebaikannya, hidupnya memuaskan."
+          },
+          "done": [
+            [
+              "timbang",
+              "Alhamdulillah, kamu sudah mengulang seluruh suratnya. Sekarang temui Bu Marni lagi."
+            ]
+          ]
+        },
+        {
+          "id": "qariah_t2",
+          "type": "tell",
+          "name": "Lapak Kain Bu Marni",
+          "at": [
+            4,
+            18
+          ],
+          "npc": "marni",
+          "block": true,
+          "lines": [
+            [
+              "marni",
+              "Sudah belajar? Jadi apa yang ditimbang pada hari itu?"
+            ],
+            [
+              "me",
+              "Artinya: {tr:101:6-11}"
+            ],
+            [
+              "marni",
+              "Timbangan kebaikan… Aku selalu bilang kebaikan kecil tak ada artinya. Padahal itu yang ditimbang?"
+            ],
+            [
+              "me",
+              "Kata Pak Timbang, Nabi ﷺ pernah menyebut dua kalimat yang ringan diucapkan, tetapi berat di timbangan:"
+            ],
+            {
+              "card": "bukhari:6188"
+            },
+            [
+              "marni",
+              "Ringan di lisan, berat di timbangan. Aku bisa mengucapkannya sambil melayani pembeli! Mulai hari ini aku tidak meremehkan kebaikan kecil lagi."
+            ],
+            [
+              "timbang",
+              "Alhamdulillah. Terima kasih, {n}. Warga pasar ini ingin membeli sayurmu semua."
+            ],
+            {
+              "sell": "all"
+            },
+            [
+              "timbang",
+              "Semoga Allah memberkahi perjalananmu."
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "padang",
+      "title": "Padang Kuda",
+      "sub": "Padang luas di barat desa",
+      "map": {
+        "rows": 40,
+        "start": [
+          8,
+          37
+        ],
+        "path": [
+          [
+            8,
+            37
+          ],
+          [
+            8,
+            30
+          ],
+          [
+            3,
+            30
+          ],
+          [
+            3,
+            22
+          ],
+          [
+            8,
+            22
+          ],
+          [
+            8,
+            12
+          ],
+          [
+            5,
+            12
+          ],
+          [
+            5,
+            4
+          ]
+        ],
+        "huts": [
+          [
+            9,
+            25,
+            6
+          ],
+          [
+            1,
+            26,
+            3
+          ],
+          [
+            5,
+            25,
+            1
+          ],
+          [
+            9,
+            16,
+            8
+          ],
+          [
+            1,
+            15,
+            2
+          ],
+          [
+            6,
+            16,
+            5
+          ]
+        ]
+      },
+      "stops": [
+        {
+          "id": "gerbang4",
+          "type": "scene",
+          "name": "Gerbang Desa",
+          "at": [
+            8,
+            37
+          ],
+          "icon": "gate",
+          "npc": "kakek",
+          "lines": [
+            [
+              "kakek",
+              "Kabar baik dari Lembah Timbangan sampai ke desa, {n}. Bu Marni sekarang suka bertasbih sambil menimbang kain."
+            ],
+            [
+              "kakek",
+              "Masih ada tempat lain yang menunggumu: Padang Kuda di sebelah barat. Muatlah gerobak dan berangkatlah."
+            ],
+            {
+              "load": 6
+            },
+            [
+              "kakek",
+              "Bismillah, hati-hati!"
+            ]
+          ]
+        },
+        {
+          "id": "ratna",
+          "type": "customer",
+          "name": "Bu Ratna",
+          "at": [
+            8,
+            32
+          ],
+          "npc": "ratna",
+          "qn": 2,
+          "sell": 2,
+          "ask": [
+            [
+              "ratna",
+              "Assalamu'alaikum, Nak! Sayurmu bagus. Aku peternak kuda di padang ini."
+            ],
+            [
+              "ratna",
+              "Di sini kami biasa menguji ketangkasan kuda dulu sebelum jual-beli. Aku mau menguji ketangkasan ilmumu, dua pertanyaan."
+            ]
+          ],
+          "yes": [
+            [
+              "ratna",
+              "Cekatan! Aku beli sayurmu. Pak Haris pasti perlu bertemu denganmu."
+            ]
+          ]
+        },
+        {
+          "id": "adiyat_1",
+          "type": "learn",
+          "name": "Pacuan Pak Haris",
+          "at": [
+            5,
+            30
+          ],
+          "npc": "haris",
+          "surah": 100,
+          "part": [
+            1,
+            5
+          ],
+          "teacher": "ustaz",
+          "ask": [
+            [
+              "haris",
+              "Hei, anak dagang! Lihat kuda-kudaku! Kuda terbaik di seluruh padang. Setiap lomba, akulah pemenangnya."
+            ],
+            [
+              "ratna",
+              "Maaf, Nak. Pak Haris memang punya kuda terbaik, tapi dia hampir tidak pernah bersedekah. Setiap menang dia bilang: 'Ini karena aku hebat dan hartaku banyak.'"
+            ],
+            [
+              "ratna",
+              "Kami sudah mencoba menasihatinya. Pak Ustaz yang kebetulan lewat bilang, Surat Al-'Adiyat cocok untuknya."
+            ],
+            [
+              "ustaz",
+              "Surat ini juga dua bagian. Bagian pertama tentang kuda perang. Ayo kita pelajari, {n}."
+            ]
+          ],
+          "explain": {
+            "q": "Ayat mana yang menyebut kuda yang menerbangkan debu?",
+            "ayah": 4,
+            "yes": "Betul. Itu salah satu keadaan kuda dalam surat ini."
+          },
+          "done": [
+            [
+              "ustaz",
+              "Bagus, {n}. Sampaikan kepada Pak Haris. Kuda-kudanya ada di tikungan sana."
+            ]
+          ]
+        },
+        {
+          "id": "adiyat_t1",
+          "type": "tell",
+          "name": "Kandang Kuda",
+          "at": [
+            3,
+            26
+          ],
+          "npc": "haris",
+          "block": true,
+          "lines": [
+            [
+              "haris",
+              "Kudaku! Dengar, Nak: tidak ada yang sehebat kudaku."
+            ],
+            [
+              "me",
+              "Pak Haris, aku baru belajar Surat Al-'Adiyat. Artinya: {tr:100:1-5}"
+            ],
+            [
+              "haris",
+              "Kuda yang berlari kencang terengah-engah, memercikkan api, menyerang waktu pagi… Itu seperti kudaku! Tapi kenapa surat itu membahas kuda?"
+            ],
+            [
+              "me",
+              "Aku belum tahu, Pak. Bagian berikutnya yang menjelaskan. Aku pelajari dulu."
+            ]
+          ]
+        },
+        {
+          "id": "adiyat_2",
+          "type": "learn",
+          "name": "Pacuan Pak Haris",
+          "at": [
+            5,
+            22
+          ],
+          "npc": "ustaz",
+          "surah": 100,
+          "part": [
+            6,
+            11
+          ],
+          "teacher": "ustaz",
+          "whole": true,
+          "wholeE": {
+            "ayah": 8,
+            "q": "Ayat mana yang menyebut cinta kepada harta yang berlebihan?",
+            "yes": "Betul. Itu yang perlu kita jaga."
+          },
+          "ask": [
+            [
+              "ustaz",
+              "Pak Haris bertanya mengapa surat itu membahas kuda. Bagian kedua surat Al-'Adiyat melanjutkan pesannya."
+            ],
+            [
+              "ustaz",
+              "Ayo kita pelajari, {n}."
+            ]
+          ],
+          "explain": {
+            "q": "Ayat mana yang menyebut bahwa manusia sangat ingkar kepada Tuhannya?",
+            "ayah": 6,
+            "yes": "Betul. Itu pesan utama bagian kedua."
+          },
+          "done": [
+            [
+              "ustaz",
+              "Alhamdulillah, kamu sudah mengulang seluruh suratnya. Sampaikan kepada Pak Haris dengan lembut."
+            ]
+          ]
+        },
+        {
+          "id": "adiyat_t2",
+          "type": "tell",
+          "name": "Kandang Kuda",
+          "at": [
+            8,
+            16
+          ],
+          "npc": "haris",
+          "block": true,
+          "lines": [
+            [
+              "haris",
+              "Sudah belajar? Jadi apa kelanjutannya?"
+            ],
+            [
+              "me",
+              "Artinya: {tr:100:6-11}"
+            ],
+            [
+              "haris",
+              "…Sangat ingkar kepada Tuhannya. Cintanya kepada harta berlebihan. Apa yang tersimpan di dalam dada dikeluarkan…"
+            ],
+            [
+              "haris",
+              "Kudaku berlari kencang sampai terengah-engah untukku. Tapi aku, yang diberi Allah kuda, harta, dan kesehatan, hampir tidak pernah berterima kasih."
+            ],
+            [
+              "me",
+              "Allah berfirman tentang bersyukur dalam ayat ini, Pak:"
+            ],
+            {
+              "card": "quran:14:7"
+            },
+            [
+              "haris",
+              "Aku mau mulai bersyukur. Sepuluh kudaku akan kupinjamkan gratis untuk membantu petani membajak sawah."
+            ],
+            [
+              "ratna",
+              "MasyaAllah! Terima kasih, {n}. Warga padang ingin membeli sayurmu semua."
+            ],
+            {
+              "sell": "all"
+            },
+            [
+              "ratna",
+              "Semoga Allah memberkahi perjalananmu."
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "simpang",
+      "title": "Persimpangan Tiga Jalan",
+      "sub": "Surat yang paling sering kamu baca",
+      "map": {
+        "rows": 36,
+        "start": [
+          6,
+          33
+        ],
+        "path": [
+          [
+            6,
+            33
+          ],
+          [
+            6,
+            25
+          ],
+          [
+            2,
+            25
+          ],
+          [
+            2,
+            16
+          ],
+          [
+            6,
+            16
+          ],
+          [
+            6,
+            7
+          ],
+          [
+            10,
+            7
+          ]
+        ],
+        "huts": [
+          [
+            8,
+            28,
+            6
+          ],
+          [
+            1,
+            29,
+            3
+          ],
+          [
+            8,
+            18,
+            5
+          ],
+          [
+            1,
+            10,
+            2
+          ],
+          [
+            9,
+            11,
+            8
+          ]
+        ]
+      },
+      "stops": [
+        {
+          "id": "gerbang5",
+          "type": "scene",
+          "name": "Gerbang Desa",
+          "at": [
+            6,
+            33
+          ],
+          "icon": "gate",
+          "npc": "kakek",
+          "lines": [
+            [
+              "kakek",
+              "{n}, kali ini Kakek mau kamu belajar satu surat yang paling penting. Kamu membacanya di setiap rakaat salat."
+            ],
+            [
+              "kakek",
+              "Ada persimpangan tiga jalan di luar desa. Pak Ustaz menunggumu di mushola di sana. Tidak perlu membawa dagangan kali ini."
+            ],
+            [
+              "kakek",
+              "Bismillah. Semoga Allah memudahkan."
+            ]
+          ]
+        },
+        {
+          "id": "fatihah_1",
+          "type": "learn",
+          "name": "Mushola Persimpangan",
+          "at": [
+            6,
+            28
+          ],
+          "npc": "ustaz",
+          "surah": 1,
+          "part": [
+            1,
+            4
+          ],
+          "teacher": "ustaz",
+          "ask": [
+            [
+              "soleh",
+              "Assalamu'alaikum, Nak. Rombongan kami tersesat di persimpangan ini. Jalan mana yang lurus ke kota?"
+            ],
+            [
+              "ustaz",
+              "Bukan hanya Bapak, kita semua butuh petunjuk setiap hari. Sebelum membahas jalan, mari kita pelajari surat yang selalu kita baca dalam salat: Al-Fatihah."
+            ],
+            [
+              "ustaz",
+              "Surat ini punya dua bagian: pujian kepada Allah, lalu permohonan kita. Kita mulai dari pujian, {n}."
+            ]
+          ],
+          "explain": {
+            "q": "Ayat mana yang menyebut Allah sebagai Pemilik hari pembalasan?",
+            "ayah": 4,
+            "yes": "Betul. Allah Pemilik hari pembalasan."
+          },
+          "done": [
+            [
+              "ustaz",
+              "Alhamdulillah. Pak Soleh menunggu di sana. Ceritakan padanya."
+            ]
+          ]
+        },
+        {
+          "id": "fatihah_t1",
+          "type": "tell",
+          "name": "Pak Soleh dan Rombongan",
+          "at": [
+            2,
+            20
+          ],
+          "npc": "soleh",
+          "lines": [
+            [
+              "soleh",
+              "Jadi bagaimana, Nak? Ada kabar tentang jalan?"
+            ],
+            [
+              "me",
+              "Pak Ustaz mengajariku surat Al-Fatihah. Bagian pertama: {tr:1:1-4}"
+            ],
+            [
+              "soleh",
+              "Indah sekali. Tapi pujian saja… kami sedang butuh petunjuk, Nak."
+            ],
+            [
+              "me",
+              "Bagian kedua surat itu tentang permohonan kita, Pak. Aku pelajari dulu ya."
+            ]
+          ]
+        },
+        {
+          "id": "fatihah_2",
+          "type": "learn",
+          "name": "Mushola Persimpangan",
+          "at": [
+            4,
+            16
+          ],
+          "npc": "ustaz",
+          "surah": 1,
+          "part": [
+            5,
+            7
+          ],
+          "teacher": "ustaz",
+          "whole": true,
+          "wholeE": {
+            "ayah": 5,
+            "q": "Ayat mana yang berbunyi: hanya kepada Engkaulah kami menyembah dan memohon pertolongan?",
+            "yes": "Betul. Itu penghubung antara pujian dan permohonan."
+          },
+          "ask": [
+            [
+              "ustaz",
+              "Bagian kedua Al-Fatihah adalah permohonan: kita meminta pertolongan dan petunjuk. Cocok untuk Pak Soleh."
+            ],
+            [
+              "ustaz",
+              "Ayo kita pelajari."
+            ]
+          ],
+          "explain": {
+            "q": "Ayat mana yang berisi permohonan: tunjukilah kami jalan yang lurus?",
+            "ayah": 6,
+            "yes": "Betul. Setiap hari kita memohon ini dalam salat."
+          },
+          "done": [
+            [
+              "ustaz",
+              "Alhamdulillah, kamu sudah mengulang seluruh Al-Fatihah. Sekarang sampaikan kepada Pak Soleh."
+            ]
+          ]
+        },
+        {
+          "id": "fatihah_t2",
+          "type": "tell",
+          "name": "Pak Soleh dan Rombongan",
+          "at": [
+            6,
+            10
+          ],
+          "npc": "soleh",
+          "lines": [
+            [
+              "soleh",
+              "Nak, sudah selesai belajarnya?"
+            ],
+            [
+              "me",
+              "Artinya: {tr:1:5-7}"
+            ],
+            [
+              "soleh",
+              "Tunjukilah kami jalan yang lurus… Itulah yang kami butuhkan. Mari kita berdoa bersama."
+            ],
+            [
+              "ustaz",
+              "Rasulullah ﷺ bersabda tentang salat tanpa Al-Fatihah, lalu menyampaikan firman Allah tentang pembagian salat antara Allah dan hamba-Nya. Ketuk 'Lihat lengkap' untuk membaca seluruhnya:"
+            ],
+            {
+              "card": "muslim:598"
+            },
+            [
+              "ustaz",
+              "Dan soal jalan ke kota, Pak Soleh: ambil jalan setapak ke kanan, lurus sampai pohon besar. Dari sana kelihatan atap-atap kota."
+            ],
+            [
+              "soleh",
+              "Alhamdulillah! Terima kasih, Nak. Semoga Allah selalu menunjukkan jalan yang lurus untukmu."
+            ],
+            {
+              "coins": 25
+            }
+          ]
+        },
+        {
+          "id": "selesai",
+          "type": "call",
+          "name": "Telepon Kakek",
+          "auto": true,
+          "npc": "kakek",
+          "final": true,
+          "lines": [
+            [
+              "kakek",
+              "Assalamu'alaikum, {n}. Kakek sudah dengar dari Pak Ustaz."
+            ],
+            [
+              "kakek",
+              "Kamu sudah belajar Al-Humazah, Al-'Asr, At-Takatsur, Al-Qari'ah, Al-'Adiyat, dan Al-Fatihah. Dan kamu juga berdagang dengan jujur. Barakallah, cucu Kakek!"
+            ],
+            [
+              "kakek",
+              "Pulanglah kapan pun kamu mau. Kebun dan desa menunggumu."
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "source_rows": [
+    {
+      "id": "muslim:4690",
+      "ref_label": "HR. Muslim no. 4690",
+      "arabic": "حَدَّثَنَا يَحْيَى بْنُ أَيُّوبَ وَقُتَيْبَةُ وَابْنُ حُجْرٍ قَالُوا حَدَّثَنَا إِسْمَعِيلُ عَنْ الْعَلَاءِ عَنْ أَبِيهِ عَنْ أَبِي هُرَيْرَةَأَنَّ رَسُولَ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ قَالَ أَتَدْرُونَ مَا الْغِيبَةُ قَالُوا اللَّهُ وَرَسُولُهُ أَعْلَمُ قَالَ ذِكْرُكَ أَخَاكَ بِمَا يَكْرَهُ قِيلَ أَفَرَأَيْتَ إِنْ كَانَ فِي أَخِي مَا أَقُولُ قَالَ إِنْ كَانَ فِيهِ مَا تَقُولُ فَقَدْ اغْتَبْتَهُ وَإِنْ لَمْ يَكُنْ فِيهِ فَقَدْ بَهَتَّهُ",
+      "indonesian": "Telah menceritakan kepada kami [Yahya bin Ayyub] dan [Qutaibah] dan [Ibnu Hujr] mereka berkata; Telah menceritakan kepada kami [Isma'il] dari [Al A'laa] dari [Bapaknya] dari [Abu Hurairah] bahwa Rasulullah shallallahu 'alaihi wasallam pernah bertanya: \"Tahukah kamu, apakah ghibah itu?\" Para sahabat menjawab; 'Allah dan Rasul-Nya lebih tahu.' Kemudian Rasulullah shallallahu 'alaihi wasallam bersabda: 'Ghibah adalah kamu membicarakan saudaramu mengenai sesuatu yang tidak ia sukai.' Seseorang bertanya; 'Ya Rasulullah, bagaimanakah menurut engkau apabila orang yang saya bicarakan itu memang sesuai dengan yang saya ucapkan? ' Rasulullah shallallahu 'alaihi wasallam berkata: 'Apabila benar apa yang kamu bicarakan itu ada padanya, maka berarti kamu telah menggunjingnya. Dan apabila yang kamu bicarakan itu tidak ada padanya, maka berarti kamu telah membuat-buat kebohongan terhadapnya.'",
+      "attribution": "Terjemah Lidwa Pusaka, penomoran Lidwa (via github.com/gadingnst/hadith-api, MIT)"
+    },
+    {
+      "id": "bukhari:5933",
+      "ref_label": "HR. Bukhari no. 5933",
+      "arabic": "حَدَّثَنَا الْمَكِّيُّ بْنُ إِبْرَاهِيمَ أَخْبَرَنَا عَبْدُ اللَّهِ بْنُ سَعِيدٍ هُوَ ابْنُ أَبِي هِنْدٍ عَنْ أَبِيهِ عَنْ ابْنِ عَبَّاسٍ رَضِيَ اللَّهُ عَنْهُمَا قَالَقَالَ النَّبِيُّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ نِعْمَتَانِ مَغْبُونٌ فِيهِمَا كَثِيرٌ مِنْ النَّاسِ الصِّحَّةُ وَالْفَرَاغُقَالَ عَبَّاسٌ الْعَنْبَرِيُّ حَدَّثَنَا صَفْوَانُ بْنُ عِيسَى عَنْ عَبْدِ اللَّهِ بْنِ سَعِيدِ بْنِ أَبِي هِنْدٍ عَنْ أَبِيهِ سَمِعْتُ ابْنَ عَبَّاسٍ عَنْ النَّبِيِّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ مِثْلَهُ",
+      "indonesian": "Telah menceritakan kepada kami [Al Makki bin Ibrahim] telah mengabarkan kepada kami [Abdullah bin Sa'id] yaitu Ibnu Abu Hind dari [Ayahnya] dari [Ibnu Abbas] radliallahu 'anhuma dia berkata; Nabi shallallahu 'alaihi wasallam bersabda: \"Dua kenikmatan yang sering dilupakan oleh kebanyakan manusia adalah kesehatan dan waktu luang.\" ['Abbas Al 'Anbari] mengatakan; telah menceritakan kepada kami [Shufwan bin Isa] dari [Abdullah bin Sa'id bin Abu Hind] dari [Ayahnya] saya mendengar [Ibnu Abbas] dari Nabi shallallahu 'alaihi wasallam seperti hadits di atas.",
+      "attribution": "Terjemah Lidwa Pusaka, penomoran Lidwa (via github.com/gadingnst/hadith-api, MIT)"
+    },
+    {
+      "id": "muslim:5258",
+      "ref_label": "HR. Muslim no. 5258",
+      "arabic": "حَدَّثَنَا هَدَّابُ بْنُ خَالِدٍ حَدَّثَنَا هَمَّامٌ حَدَّثَنَا قَتَادَةُ عَنْ مُطَرِّفٍ عَنْ أَبِيهِ قَالَأَتَيْتُ النَّبِيَّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ وَهُوَ يَقْرَأُ أَلْهَاكُمْ التَّكَاثُرُ قَالَ يَقُولُ ابْنُ آدَمَ مَالِي مَالِي قَالَ وَهَلْ لَكَ يَا ابْنَ آدَمَ مِنْ مَالِكَ إِلَّا مَا أَكَلْتَ فَأَفْنَيْتَ أَوْ لَبِسْتَ فَأَبْلَيْتَ أَوْ تَصَدَّقْتَ فَأَمْضَيْتَحَدَّثَنَا مُحَمَّدُ بْنُ الْمُثَنَّى وَابْنُ بَشَّارٍ قَالَا حَدَّثَنَا مُحَمَّدُ بْنُ جَعْفَرٍ حَدَّثَنَا شُعْبَةُ وَقَالَا جَمِيعًا حَدَّثَنَا ابْنُ أَبِي عَدِيٍّ عَنْ سَعِيدٍ ح و حَدَّثَنَا ابْنُ الْمُثَنَّى حَدَّثَنَا مُعَاذُ بْنُ هِشَامٍ حَدَّثَنَا أَبِي كُلُّهُمْ عَنْ قَتَادَةَ عَنْ مُطَرِّفٍ عَنْ أَبِيهِ قَالَ انْتَهَيْتُ إِلَى النَّبِيِّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ فَذَكَرَ بِمِثْلِ حَدِيثِ هَمَّامٍ",
+      "indonesian": "Telah menceritakan kepada kami [Haddab bin Khalid] telah menceritakan kepada kami [Hammam] telah menceritakan kepada kami [Qatadah] dari [Mutharrif] dari [ayahnya] berkata: Aku mendatangi nabi Shallallahu 'alaihi wa Salam dan beliau tengah membaca: \"Bermegah-megahan telah melalaikanmu.\" (At Takaatsur: 1), beliau bersabda: \"Anak cucu Adam berkata: 'Hartaku, hartaku'.\" Beliau meneruskan: \"Hartamu wahai anak cucu Adam tidak lain adalah yang kau makan lalu kau habiskan, yang kau kenakan lalu kau usangkan atau yang kau sedekahkan lalu kau habiskan.\" Telah menceritakan kepada kami [Muhammad bin Al Mutsanna] dan [Ibnu Basyar] keduanya berkata: telah menceritakan kepada kami [Muhammad bin Ja'far] telah menceritakan kepada kami [Syu'bah] dan keduanya sama-sama berkata: Telah menceritakan kepada kami [Ibnu Abi Adi] dari [Sa'id]. Telah menceritakan kepada kami [Ibnu Al Mutsanna] telah menceritakan kepada kami [Mu'adz bin Hisyam] telah menceritakan kepada kami [ayahku], semuanya dari [Qatadah] dari [Mutharrif] dari [ayahnya] berkata: Aku tiba dihadapan nabi Shallallahu 'alaihi wa Salam, lalu ia menyebut seperti hadits Hammam.",
+      "attribution": "Terjemah Lidwa Pusaka, penomoran Lidwa (via github.com/gadingnst/hadith-api, MIT)"
+    },
+    {
+      "id": "bukhari:6188",
+      "ref_label": "HR. Bukhari no. 6188",
+      "arabic": "حَدَّثَنَا قُتَيْبَةُ بْنُ سَعِيدٍ حَدَّثَنَا مُحَمَّدُ بْنُ فُضَيْلٍ حَدَّثَنَا عُمَارَةُ بْنُ الْقَعْقَاعِ عَنْ أَبِي زُرْعَةَ عَنْ أَبِي هُرَيْرَةَ قَالَقَالَ رَسُولُ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ كَلِمَتَانِ خَفِيفَتَانِ عَلَى اللِّسَانِ ثَقِيلَتَانِ فِي الْمِيزَانِ حَبِيبَتَانِ إِلَى الرَّحْمَنِ سُبْحَانَ اللَّهِ وَبِحَمْدِهِ سُبْحَانَ اللَّهِ الْعَظِيمِ",
+      "indonesian": "Telah menceritakan kepada kami [Qutaibah bin Sa'id] telah menceritakan kepada kami [Muhammad bin Fudhail] telah menceritakan kepada kami ['Umarah bin Qa'qa'] dari [Abu Zur'ah] dari [Abu Hurairah] menuturkan; Rasulullah Shallallahu'alaihiwasallam bersabda: \"Ada dua kalimat yang ringan di lisan, berat di timbangan, dan disukai Arrahman, Subhanallah wabihamdihi dan Subhaanallahul 'azhiim.\"",
+      "attribution": "Terjemah Lidwa Pusaka, penomoran Lidwa (via github.com/gadingnst/hadith-api, MIT)"
+    },
+    {
+      "id": "quran:14:7",
+      "ref_label": "QS. Ibrahim 14:7",
+      "arabic": "وَإِذْ تَأَذَّنَ رَبُّكُمْ لَئِن شَكَرْتُمْ لَأَزِيدَنَّكُمْ ۖ وَلَئِن كَفَرْتُمْ إِنَّ عَذَابِى لَشَدِيدٌ",
+      "indonesian": "Dan (ingatlah) ketika Tuhanmu memaklumkan, \"Sesungguhnya jika kamu bersyukur, niscaya Aku akan menambah (nikmat) kepadamu, tetapi jika kamu mengingkari (nikmat-Ku), maka pasti azab-Ku sangat berat.\"",
+      "attribution": "Terjemah Kemenag RI (via quran.com, resource 33)"
+    },
+    {
+      "id": "muslim:598",
+      "ref_label": "HR. Muslim no. 598",
+      "arabic": "و حَدَّثَنَاه إِسْحَقُ بْنُ إِبْرَاهِيمَ الْحَنْظَلِيُّ أَخْبَرَنَا سُفْيَانُ بْنُ عُيَيْنَةَ عَنْ الْعَلَاءِ عَنْ أَبِيهِ عَنْ أَبِي هُرَيْرَةَعَنْ النَّبِيِّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ قَالَ مَنْ صَلَّى صَلَاةً لَمْ يَقْرَأْ فِيهَا بِأُمِّ الْقُرْآنِ فَهِيَ خِدَاجٌ ثَلَاثًا غَيْرُ تَمَامٍ فَقِيلَ لِأَبِي هُرَيْرَةَ إِنَّا نَكُونُ وَرَاءَ الْإِمَامِ فَقَالَ اقْرَأْ بِهَا فِي نَفْسِكَ فَإِنِّي سَمِعْتُ رَسُولَ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ يَقُولُ قَالَ اللَّهُ تَعَالَى قَسَمْتُ الصَّلَاةَ بَيْنِي وَبَيْنَ عَبْدِي نِصْفَيْنِ وَلِعَبْدِي مَا سَأَلَ فَإِذَا قَالَ الْعَبْدُ{ الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ }قَالَ اللَّهُ تَعَالَى حَمِدَنِي عَبْدِي وَإِذَا قَالَ{ الرَّحْمَنِ الرَّحِيمِ }قَالَ اللَّهُ تَعَالَى أَثْنَى عَلَيَّ عَبْدِي وَإِذَا قَالَ{ مَالِكِ يَوْمِ الدِّينِ }قَالَ مَجَّدَنِي عَبْدِي وَقَالَ مَرَّةً فَوَّضَ إِلَيَّ عَبْدِي فَإِذَا قَالَ{ إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ }قَالَ هَذَا بَيْنِي وَبَيْنَ عَبْدِي وَلِعَبْدِي مَا سَأَلَ فَإِذَا قَالَ{ اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ }قَالَ هَذَا لِعَبْدِي وَلِعَبْدِي مَا سَأَلَقَالَ سُفْيَانُ حَدَّثَنِي بِهِ الْعَلَاءُ بْنُ عَبْدِ الرَّحْمَنِ بْنِ يَعْقُوبَ دَخَلْتُ عَلَيْهِ وَهُوَ مَرِيضٌ فِي بَيْتِهِ فَسَأَلْتُهُ أَنَا عَنْهُ حَدَّثَنَا قُتَيْبَةُ بْنُ سَعِيدٍ عَنْ مَالِكِ بْنِ أَنَسٍ عَنْ الْعَلَاءِ بْنِ عَبْدِ الرَّحْمَنِ أَنَّهُ سَمِعَ أَبَا السَّائِبِ مَوْلَى هِشَامِ بْنِ زُهْرَةَ يَقُولُ سَمِعْتُ أَبَا هُرَيْرَةَ يَقُولُا قَالَ رَسُولُ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ ح و حَدَّثَنِي مُحَمَّدُ بْنُ رَافِعٍ حَدَّثَنَا عَبْدُ الرَّزَّاقِ أَخْبَرَنَا ابْنُ جُرَيْجٍ أَخْبَرَنِي الْعَلَاءُ بْنُ عَبْدِ الرَّحْمَنِ بْنِ يَعْقُوبَ أَنَّ أَبَا السَّائِبِ مَوْلَى بَنِي عَبْدِ اللَّهِ بْنِ هِشَامِ بْنِ زُهْرَةَ أَخْبَرَهُ أَنَّهُ سَمِعَ أَبَا هُرَيْرَةَ يَقُولُا قَالَ رَسُولُ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ مَنْ صَلَّى صَلَاةً فَلَمْ يَقْرَأْ فِيهَا بِأُمِّ الْقُرْآنِ بِمِثْلِ حَدِيثِ سُفْيَانَ وَفِي حَدِيثِهِمَا قَالَ اللَّهُ تَعَالَى قَسَمْتُ الصَّلَاةَ بَيْنِي وَبَيْنَ عَبْدِي نِصْفَيْنِ فَنِصْفُهَا لِي وَنِصْفُهَا لِعَبْدِي حَدَّثَنِي أَحْمَدُ بْنُ جَعْفَرٍ الْمَعْقِرِيُّ حَدَّثَنَا النَّضْرُ بْنُ مُحَمَّدٍ حَدَّثَنَا أَبُو أُوَيْسٍ أَخْبَرَنِي الْعَلَاءُ قَالَ سَمِعْتُ مِنْ أَبِي وَمِنْ أَبِي السَّائِبِ وَكَانَا جَلِيسَيْ أَبِي هُرَيْرَةَ قَالَا قَالَ أَبُو هُرَيْرَةَ قَالَ رَسُولُ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ مَنْ صَلَّى صَلَاةً لَمْ يَقْرَأْ فِيهَا بِفَاتِحَةِ الْكِتَابِ فَهِيَ خِدَاجٌ يَقُولُهَا ثَلَاثًا بِمِثْلِ حَدِيثِهِمْ",
+      "indonesian": "Dan telah menceritakan kepada kami [Ishaq bin Ibrahim al-Hanzhali] telah mengabarkan kepada kami [Sufyan bin Uyainah] dari [al-Ala'] dari [bapaknya] dari [Abu Hurairah] dari Nabi Shallallahu'alaihiwasallam, beliau bersabda, \"Barangsiapa yang mengerjakan shalat tanpa membaca Ummul Qur'an di dalamnya, maka shalatnya masih mempunyai hutang, tidak sempurna\" Tiga kali. Ditanyakan kepada Abu Hurairah, \" Kami berada di belakang imam?\" Maka dia menjawab, \"Bacalah Ummul Qur'an dalam dirimu, karena aku mendengar Rasulullah bersabda, 'Allah berfirman, 'Aku membagi shalat antara Aku dengan hambaKu, dan hambaku mendapatkan sesuatu yang dia minta. Apabila seorang hamba berkata, 'Segala puji bagi Allah Rabb semesta alam.' Maka Allah berkata, 'HambaKu memujiKu.' Apabila hamba tersebut mengucapkan, 'Yang Maha pengasih lagi Maha Penyayang.' Allah berkata, 'HambaKu memujiKu.' Apabila hamba tersebut mengucapkan, 'Pemilik hari kiamat.' Allah berkata, 'HambaKu memujiku.' Selanjutnya Dia berkata, 'HambaKu menyerahkan urusannya kepadaKu.' Apabila hamba tersebut mengucapkan, 'Hanya kepadaMulah aku menyembah dan hanya kepadaMulah aku memohon pertolongan.' Allah berkata, 'Ini adalah antara Aku dengan hambaKu. Dan hambaKu mendapatkan sesuatu yang dia minta'. Apabila hamba tersebut mengucapkan, 'Berilah kami petunjuk jalan yang lurus, yaitu jalan orang-orang yang Engkau beri nikmat atas mereka, bukan jalan orang-orang yang Engkau murkai dan bukan pula orang-orang yang sesat.' Allah berkata, 'Ini untuk hambaKu, dan hambaKu mendapatkan sesuatu yang dia minta'.\" Berkata [Sufyan] telah menceritakan kepada kami [al-Ala' bin Abdurrahman bin Ya'kub] aku mengunjunginya, sedangkan dia dalam keadaan sakit di rumahnya, lalu aku bertanya kepadanya tentang hadits tersebut, telah menceritakan kepada kami [Qutaibah bin Sa'id] dari [Malik bin Anas] dari [al-Ala' bin Abdurrahman] bahwa dia mendengar [Abu as-Saib, maula Hisyam bin Zuhrah] berkata, saya mendengar [Abu Hurairah] berkata, Rasulullah shallallahu 'alaihi wasallam bersabda, --lewat jalur periwayatan lain--, dan telah menceritakan kepada kami [Muhammad bin Rafi'] telah menceritakan kepada kami [Abdurrazzaq] telah mengabarkan kepada kami [Ibnu Juraij] telah mengabarkan kepada kami [al-Ala' bin Abdurrahman bin Ya'kub] bahwa [Abu as-Saib, maula bani Abdullah bin Hisyam bin Zuhrah] telah mengabarkan kepadanya bahwa dia mendengar [Abu Hurairah] berkata, Rasulullah shallallahu 'alaihi wasallam bersabda, \"Barangsiapa melakukan shalat, dan belum membaca Ummul Qur'an\", sebagaimana hadits Sufyan. Dan dalam hadits keduanya Allah berfirman, 'Aku membagi shalat antara Aku dengan hambaKu dua bagian, setengah untukKu dan setelah lainnya untuk hambaKu.\" Telah menceritakan kepada kami [Ahmad bin Ja'far al-Ma'qiri] telah menceritakan kepada kami [an-Nadhr bin Muhammad] telah menceritakan kepada kami [Abu Uwais] telah mengabarkan kepadaku [al-Ala'] dia berkata, saya mendengar dari [bapakku] dan dari [Abu as-Saib], keduanya adalah teman duduk Abu Hurairah. Keduanya berkata, [Abu Hurairah] berkata, Rasulullah shallallahu 'alaihi wasallam bersabda, \"Barangsiapa yang melakukan shalat yang padanya dia tidak membaca al-Fatihah, maka dia masih mempunyai hutang (kurang).\" Dia mengucapkannya tiga kali seperti hadits mereka.",
+      "attribution": "Terjemah Lidwa Pusaka, penomoran Lidwa (via github.com/gadingnst/hadith-api, MIT)"
+    }
+  ]
+}

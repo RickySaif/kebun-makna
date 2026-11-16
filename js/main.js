@@ -61,6 +61,7 @@ async function bootGame() {
   await prepareScreen(); // the recitation recognizer is downloaded and built before the game starts
   migrate();
   import('./akhlak.js').then(m => m.installAkhlak()).catch(() => {}); // next chapter, only after boss4 + 10 surahs
+  import('./dagang.js').then(m => m.installDagang()).catch(() => {}); // Perjalanan Dagang: same unlock, new surahs
   if (!S.name) onboarding(); else farm();
 }
 

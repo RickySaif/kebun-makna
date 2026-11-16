@@ -101,3 +101,10 @@ body{margin:0}
 .practice.recording .ayahbig{font-size:36px;line-height:2.2;padding:12px 4px}
 .practice.recording.surat .ayahbig{font-size:30px}
 .practice.recording #mic{font-size:22px;padding:16px}
+
+/* Perjalanan Dagang (js/dagang.js): map on top, dialog below, all on one screen */
+.jv{display:flex;flex-direction:column;gap:8px}
+.jv .jtop{display:flex;justify-content:space-between;gap:8px;font-weight:600;font-size:14px;background:#FFFAEA;border:3px solid var(--ink);border-radius:10px;padding:4px 10px}
+.jv .stage canvas{display:block;width:100%;height:auto;aspect-ratio:12/11;image-rendering:pixelated}
+.jv .jdlg{margin-top:0;min-height:112px}
+.jv .jdlg .row.act{display:flex;gap:8px;flex-wrap:wrap}
