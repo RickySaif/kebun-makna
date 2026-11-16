@@ -2,6 +2,9 @@
 
 Live: https://km.generasimerdeka.com/ · (old address https://rickysaif.github.io/kebun-makna/ redirects)
 
+## 2026-11-16 — Easy logout
+- "🚪 Keluar dari akun" button at the bottom of your own **Profil** tab (always in the bottom bar, in the game and in the social pages), with a confirm. Before, logout was only at ⚙ → Pengaturan → Akun. It saves the game first, then signs out. Only checked with `node --check` (no browser run here).
+
 ## 2026-11-14 (evening) — One login for everyone; trial without an account (Ricky)
 - **No parent/child levels in the app (Ricky):** the start screen is now just email + password (or Google), with "Daftar" and "Lupa kata sandi?". Everyone who signs in plays the same way: straight into their own garden, tabs Kebun/Beranda/Grup/Profil. The parent dashboard (family list, child PINs, activity view) is no longer reachable (`js/ortu.js` is unused, not deleted). Backend unchanged: every new account is still `profiles.role='parent'` by the trigger, which is fine.
 - **Trial (Ricky):** "Coba dulu tanpa akun" starts a fresh game that is **never saved** (`setPersist(false)` in `js/state.js`; nothing in localStorage or the cloud). Text "Uji coba. Hasil tidak disimpan." on the start screen, a toast, a thin ribbon at the top of the game (tap = go to login) and in the settings.

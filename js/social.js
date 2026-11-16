@@ -2,7 +2,7 @@
 // children only see children, parents only see parents (plus their own family).
 import { $, esc, root, toast } from './ui.js';
 import { BY, DATA } from './data.js';
-import { sb, session, friendly, logActivity } from './api.js';
+import { sb, session, friendly, logActivity, signOut } from './api.js';
 import { avatarCanvas } from './account.js';
 import { badgeFor, loadTiers } from './badges.js';
 
@@ -333,6 +333,16 @@ export async function profilePage(id) {
   if (!posts || !posts.length) list.append($(`<p class="start-note">Belum ada kiriman.</p>`));
   else for (const el of await postCards(posts)) list.append(el);
   body.append(list);
+  if (isMe) {
+    const out = $(`<div class="row" style="margin-top:16px"><button class="btn ghost" id="logout">🚪 Keluar dari akun</button></div>`);
+    out.querySelector('#logout').onclick = async () => {
+      if (!confirm('Keluar dari akun ini? Progresmu aman tersimpan di akun.')) return;
+      try { (await import('./cloud.js')).flushNow(); } catch (e) {}
+      await new Promise(r => setTimeout(r, 400));
+      await signOut(); location.hash = ''; location.reload();
+    };
+    body.append(out);
+  }
   if (isMe) {
     const { data: following2 } = await c.from('follows').select('followee_id').eq('follower_id', me());
     if (following2 && following2.length) {
