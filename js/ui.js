@@ -24,6 +24,17 @@ export function panel(title,sub,build,onClose){
   return p;
 }
 export function closePanel(){stopAudio();layer.replaceChildren();}
+/** In-app confirmation pop-up that states the consequences. Lives on <body>, so a panel redraw cannot remove it.
+ *  confirmBox({ title, lines: [html strings], ok, danger, onOk, onCancel }) */
+export function confirmBox({title,lines=[],ok='Ya',cancel='Batal',danger=false,onOk,onCancel}){
+  const m=$(`<div class="cbox" role="dialog" aria-modal="true"><div class="cbox-card"><h3>${esc(title)}</h3>${lines.map(l=>`<p>${l}</p>`).join('')}<div class="row"><button class="btn ghost" data-a="n">${esc(cancel)}</button><button class="btn${danger?' danger':' green'}" data-a="y">${esc(ok)}</button></div></div></div>`);
+  const close=()=>m.remove();
+  m.querySelector('[data-a=n]').onclick=()=>{close();onCancel&&onCancel();};
+  m.querySelector('[data-a=y]').onclick=()=>{close();onOk&&onOk();};
+  m.onclick=e=>{if(e.target===m){close();onCancel&&onCancel();}};
+  document.body.append(m); m.querySelector('[data-a=n]').focus();
+  return m;
+}
 
 /* ---------- v4: fit every game screen to the phone's height (no vertical scroll) ----------
    A screen taller than the visible height is scaled down with CSS zoom (text re-wraps, taps keep working).

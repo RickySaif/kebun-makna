@@ -16,7 +16,7 @@ import { CHESTPOS, COLS, ENTRY, FRUIT, GATE, GATE2, ICON, LOTS, OBJ, PLOTS, ROWS
 import { blit, buildGround, butterflySprite, cloudSprite, fenceSprite, gfxLite, glowSprite, hdCanvas, lowerCap, vignetteSprite } from './art.js';
 import { avatarBuilder } from './avatar.js';
 import { S, activeEvent, done, fill, fresh, lv, save, setS, surahDone, words } from './state.js';
-import { $, clockStr, closePanel, comboPop, esc, layer, panel, pick, root, toast } from './ui.js';
+import { $, clockStr, closePanel, comboPop, confirmBox, esc, layer, panel, pick, root, toast } from './ui.js';
 
 export let camX=0,camY=0;
 export let walkers=[];
@@ -453,11 +453,16 @@ export function parentView(){
         <li><b>Bacaan:</b> Syaikh Mishary Rashid Alafasy per ayat (versebyversequran.com). Audio per kata dipotong dari rekaman ayat yang sama; batas kata ditentukan manual mengikuti tajwid.</li>
         <li><b>Suara penyiar</b> ("You win!", "Combo!", "3-2-1"): Kenney Voiceover Pack, kenney.nl, lisensi CC0.</li></ul>
         <p class="small" style="margin:8px 0 0">Bila menemukan arti atau potongan bunyi yang keliru, mohon dicek dengan mushaf terjemah per kata Kemenag atau ustaz/ustazah setempat.</p></div></div>`);
-        b.querySelector('#unl').onchange=e=>{S.unlockAll=e.target.checked;save();};
+        b.querySelector('#unl').onchange=e=>{const box=e.target;
+          if(!box.checked){S.unlockAll=false;save();return;}
+          box.checked=false; // only turns on after the player confirms
+          confirmBox({title:'Buka semua misi?',lines:['Semua misi dan boss langsung terbuka, <b>tanpa urutan cerita</b>. Kamu bisa melewati pelajaran yang seharusnya dipelajari dulu.','Misi yang sudah kamu kerjakan tetap tersimpan. Pilihan ini bisa dimatikan lagi kapan saja.'],ok:'Ya, buka semua',onOk:()=>{box.checked=true;S.unlockAll=true;save();}});};
         b.querySelector('#sfx').onchange=e=>{S.sfx=e.target.checked;save();};
         b.querySelector('#voi').onchange=e=>{S.voice=e.target.checked;save();if(S.voice)voice('ready');};
         b.querySelector('#rn').onclick=()=>{closePanel();onboarding();};
-        b.querySelector('#rs').onclick=()=>{const cf=b.querySelector('#cf');cf.replaceChildren($(`<div class="confirm small">Kebun, koin, dan progres akan hilang. Yakin? <div class="row" style="margin-top:8px"><button class="btn" id="y" style="background:#F8D2C6">Ya, mulai ulang</button><button class="btn ghost" id="n">Batal</button></div></div>`));cf.querySelector('#y').onclick=()=>{setS(fresh());save();closePanel();onboarding();};cf.querySelector('#n').onclick=()=>cf.replaceChildren();};
+        b.querySelector('#rs').onclick=()=>{confirmBox({title:'Mulai ulang dari awal?',danger:true,
+          lines:['Ini akan <b>menghapus semuanya</b>: kebun, koin, XP, rumah, tanaman, surat yang sudah dipelajari, dan piala boss.','Kalau kamu masuk dengan akun, progres di akun juga kembali ke awal. <b>Tidak bisa dikembalikan.</b>'],
+          ok:'Ya, hapus dan mulai ulang',cancel:'Batal, jangan hapus',onOk:()=>{setS(fresh());save();closePanel();onboarding();}});};
         inner.replaceChildren(b); if(hooks.atur) hooks.atur(b);}
     };
     tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;render();}); render();
