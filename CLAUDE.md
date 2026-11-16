@@ -49,6 +49,14 @@ Read `docs/PLAN.md` for the phased work and acceptance criteria. Keep `docs/PROG
   - Hadith `indonesian` text includes the full sanad ("Telah menceritakan kepada kami [...]"). For display to children, show the matn (the part after the chain) when you can split it reliably, and always offer the full text behind "Lihat lengkap".
 - **Supporter payments:** Trakteer or Saweria POSTs to `/functions/v1/payment-webhook?provider=trakteer|saweria`. The supporter writes their username (`#saif`) in the message. The webhook matches `profiles.username`, sums the last 30 days and sets `supporter_tier` on that account. Ricky still has to create the Trakteer and Saweria pages and set the `TRAKTEER_WEBHOOK_TOKEN` and `SAWERIA_STREAM_KEY` secrets. Until then, the support page shows instructions with placeholder links from `js/config.js`.
 
+## Analytics (anonymous stats, added 2026-11-16)
+- Umami, self-hosted by Ricky: dashboard at https://monitor-km.generasimerdeka.com (website "Kebun Makna"). It counts visits, screens, game errors and load speed. Source and hosting notes: the `RickySaif/monitor-km` repo (`.github/MONITOR.md`).
+- `js/stats.js` (a classic script on `index.html`, `privasi.html`, `syarat.html`) loads the tracker only on `km.generasimerdeka.com`, and `kmStatsBeforeSend` rewrites **every** payload before it is sent. `tests/stats.mjs` checks it.
+- **Rule: never send names, usernames, IDs, room or group codes, emails, tokens or any query/hash text to Umami.** Do not add `umami.track(...)` calls with custom data, and do not set `umami.identify`.
+- **When you add a new hash route** (`#/something`), add it to `ROUTES` in `js/stats.js` and a case in `tests/stats.mjs`. Until then it is counted as "/". A route that carries an ID or code must map to `/<route>/detail`.
+- Error messages are redacted in `redact()`; if an error could ever contain user text, extend it.
+- `privasi.html` has a "Statistik anonim" section: keep it true if what is collected changes.
+
 ## The original game (the code in `js/` was split from the original single-file game, removed 2026-11-13)
 - **Inline data:**
   - `DATA`: 10 surahs (114→105) with per-word Arabic, meaning, emoji, audio ids and timing `t`.

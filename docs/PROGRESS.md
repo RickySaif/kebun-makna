@@ -2,6 +2,14 @@
 
 Live: https://km.generasimerdeka.com/ · (old address https://rickysaif.github.io/kebun-makna/ redirects)
 
+## 2026-11-16 — Anonymous stats with Umami (Ricky)
+- **What:** the game now reports visits, screens, game errors and load speed (Web Vitals) to our own Umami at https://monitor-km.generasimerdeka.com (Vercel Hobby, region sin1, + a separate free Supabase project `monitor-km`, Singapore). Repo: `RickySaif/monitor-km` (public snapshot of Umami v3.5.0; a daily GitHub Action syncs 3.x releases, a 2-day keepalive keeps the free database awake).
+- **Privacy:** `js/stats.js` runs only on `km.generasimerdeka.com` and rewrites every payload: the address becomes a fixed list of screens (`/beranda/ikuti`, `/profil`, `/grup/detail` ...), IDs, room codes, tokens, queries and hashes never leave the device, the referrer is cut to its origin, the title is fixed, and error text is redacted. No cookies. `tests/stats.mjs` (10 checks) passes.
+- **Pages:** the script is on `index.html`, `privasi.html` and `syarat.html` only (not the dev pages). `privasi.html` has a new "Statistik anonim" section, updated storage text and an "updated 16 November 2026" date.
+- **Not checked yet / for Ricky:** the live check in a real browser (kebun.js loads, `POST /api/kebun`, paths in the dashboard) is done right after this push; see below if it is filled in.
+- **Questions for Ricky:** (a) `privasi.html` still describes child accounts, a PIN and the parent dashboard, which were retired today. It needs a rewrite of "Data yang kami simpan", "Siapa yang bisa melihat" and "Menghapus data". Shall I do it? (b) The old `/ortu` route is not in the stats allow-list because it no longer exists.
+- **Admin login:** the Umami admin password is not in any repo (Ricky keeps it in a password manager). To stop your own visits being counted, run `localStorage.setItem('umami.disabled','1')` in the browser console on km.generasimerdeka.com.
+
 ## 2026-11-16 — Parent/child accounts, family codes and spouse linking retired for good (Ricky)
 - **Progress copied:** Amtar's save (the further-along child account: 9 surahs, boss1–3, level 10, 2,320 XP) was copied to **amtar.philosophy@hotmail.com** (`game_saves` v399, `farm_public`, avatar). Then both child accounts (`Amtar`, `Amtar P`) were deleted. Amtar P's save (7 surahs) was not kept anywhere, by Ricky's choice.
 - **Backend (applied 2026-11-16, migration `20261116090000_retire_family_and_spouses.sql`):** dropped `families`, `family_members`, `spouses`, `spouse_invites`, `parent_secrets`, `child_secrets` and all their functions (spouse, parent PIN, child PIN, family name). RLS no longer has any "parent of" rule (`is_parent_of`/`is_family` gone). `join_group` no longer checks child/parent audience. `profiles.role` stays (always `'parent'`) because `same_side()` and the feed/race/visit code read it.
