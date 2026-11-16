@@ -22,12 +22,33 @@ for (const n of story.surahs) {
 // story
 const ids = new Set(), cast = story.cast, stops = story.legs.flatMap(l => l.stops);
 ok(stops.length === new Set(stops.map(s => s.id)).size, 'stop ids are unique');
-for (const leg of story.legs) {
-  const set = new Set(); const M = leg.map;
-  for (let i = 0; i < M.path.length - 1; i++) { let [x, y] = M.path[i]; const [x1, y1] = M.path[i + 1]; ok(x === x1 || y === y1, `${leg.id}: path step ${i} is straight`); set.add(x + ',' + y); while (x !== x1 || y !== y1) { x += Math.sign(x1 - x); y += Math.sign(y1 - y); set.add(x + ',' + y); } }
-  for (const st of leg.stops) { if (st.at) ok(set.has(st.at.join(',')), `${leg.id}/${st.id}: stop sits on the path`); else ok(st.auto, `${leg.id}/${st.id}: a stop without a tile is auto`); }
-  for (const h of M.huts) for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) ok(!set.has((h.x ?? h[0]) + a + ',' + ((h[1]) + b)) || true, '');
+// overworld areas (pure grid module, same code the game uses)
+const { buildArea, bfs, exitAt, key } = await import('../js/dunia-grid.js');
+const flat = story.legs.flatMap(l => l.stops), AR = Object.fromEntries(story.areas.map(a => [a.id, a]));
+for (const spec of story.areas) {
+  const g = buildArea(spec, flat), ex = spec.exits || [];
+  ok(g.trees.length > 0 && spec.cols >= 12 && spec.rows >= 12, `${spec.id}: ${spec.cols}x${spec.rows}, ${g.trees.length} forest tiles`);
+  for (const e of ex) { if (e.to !== 'farm') { ok(AR[e.to] && e.spawn, `${spec.id} -> ${e.to}: target exists and has a spawn`); if (AR[e.to]) { const tg = buildArea(AR[e.to], flat); ok(tg.base(...e.spawn) && !exitAt(AR[e.to], tg, ...e.spawn), `${spec.id} -> ${e.to}: spawn ${e.spawn} is walkable and not itself an exit`); } } }
+  const entry = ex.length ? ex.map(e => [e.to, e]) : [];
+  // every walkable tile on an exit edge is reachable from the first exit's tile with all ropes gone
+  const noRope = (x, y) => g.base(x, y), tiles = [];
+  for (let y = 0; y < g.rows; y++) for (let x = 0; x < g.cols; x++) { const e = exitAt(spec, g, x, y); if (e) tiles.push([x, y]); }
+  ok(tiles.length > 0, `${spec.id}: has exit tiles`);
+  for (const [x, y] of tiles.slice(1)) ok(!!bfs(g, noRope, tiles[0], [[x, y]]) || tiles[0][0] === x && tiles[0][1] === y, `${spec.id}: exit tile ${x},${y} is reachable`);
+  // stops of this area: walkable, not on a rope, reachable from every entry with the ropes of later blockers still up
+  const mine = flat.filter(st => st.area === spec.id);
+  for (const st of mine) {
+    ok(g.base(...st.at) && !g.fenceAt.has(key(...st.at)), `${spec.id}/${st.id}: stop tile ${st.at} is walkable and not a rope tile`);
+    const later = new Set(flat.slice(flat.indexOf(st) + 1).filter(s => s.block).map(s => s.id));
+    const okTile = (x, y) => g.base(x, y) && !(g.fenceAt.has(key(x, y)) && later.has(g.fenceAt.get(key(x, y)))) && !(x === st.at[0] && y === st.at[1]);
+    const adj = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([a, b]) => [st.at[0] + a, st.at[1] + b]).filter(([x, y]) => okTile(x, y));
+    for (const e of ex.filter(e => e.to !== 'farm')) { const from = tiles.find(([x, y]) => exitAt(spec, g, x, y) === e); ok(adj.some(t => bfs(g, okTile, from, [t]) !== null), `${spec.id}/${st.id}: reachable from the ${e.edge} entrance`); }
+    if (st.type === 'learn' || st.type === 'customer' || st.type === 'tell' || st.type === 'scene') ok(st.area && st.at, `${st.id}: has area and tile`);
+  }
 }
+ok(flat.every(st => st.auto || (st.area && AR[st.area] && st.at)), 'every non-auto stop sits in a known area');
+ok(AR[story.spawn.area] && buildArea(AR[story.spawn.area], flat).base(story.spawn.x, story.spawn.y), 'spawn from the farm gate is walkable');
+for (const st of flat) if (st.area !== 'desa' && st.area) { let a = st.area, hops = 0; while (a && a !== 'desa' && hops++ < 6) a = AR[a].parent; ok(a === 'desa', `${st.id}: area ${st.area} chains back to the village`); }
 const keys = l => (Array.isArray(l) ? [l[0]] : []);
 const checkTokens = t => [...t.matchAll(/\{tr:(\d+):(\d+)-(\d+)\}/g)].every(([, no, a, b]) => surah[no] && +a >= 1 && +b <= surah[no].ayat.length && +a <= +b);
 for (const st of stops) {

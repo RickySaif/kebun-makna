@@ -197,97 +197,11 @@
       "id": "jalan",
       "title": "Jalan Dagang",
       "sub": "Ke Kota Ramai",
-      "map": {
-        "rows": 44,
-        "start": [
-          3,
-          41
-        ],
-        "path": [
-          [
-            3,
-            41
-          ],
-          [
-            3,
-            34
-          ],
-          [
-            8,
-            34
-          ],
-          [
-            8,
-            27
-          ],
-          [
-            4,
-            27
-          ],
-          [
-            4,
-            20
-          ],
-          [
-            8,
-            20
-          ],
-          [
-            8,
-            12
-          ],
-          [
-            5,
-            12
-          ],
-          [
-            5,
-            4
-          ]
-        ],
-        "huts": [
-          [
-            9,
-            23,
-            0
-          ],
-          [
-            1,
-            23,
-            3
-          ],
-          [
-            6,
-            23,
-            6
-          ],
-          [
-            9,
-            16,
-            2
-          ],
-          [
-            2,
-            15,
-            5
-          ],
-          [
-            6,
-            16,
-            8
-          ]
-        ]
-      },
       "stops": [
         {
           "id": "gerbang1",
           "type": "scene",
           "name": "Gerbang Desa",
-          "at": [
-            3,
-            41
-          ],
-          "icon": "gate",
           "npc": "kakek",
           "lines": [
             [
@@ -313,16 +227,18 @@
               "kakek",
               "Gerobakmu sudah Kakek isi. Gerbang desa terbuka, dan jalan ke wilayah baru menunggumu. Bismillah, berangkatlah!"
             ]
-          ]
+          ],
+          "area": "desa",
+          "at": [
+            4,
+            8
+          ],
+          "onEnter": true
         },
         {
           "id": "sinta",
           "type": "customer",
           "name": "Bu Sinta",
-          "at": [
-            3,
-            36
-          ],
           "npc": "sinta",
           "qn": 2,
           "sell": 2,
@@ -345,16 +261,17 @@
               "sinta",
               "Aku beli sayurmu, ya. Semoga berkah!"
             ]
+          ],
+          "area": "jalan",
+          "at": [
+            6,
+            37
           ]
         },
         {
           "id": "jajang",
           "type": "customer",
           "name": "Pak Jajang",
-          "at": [
-            8,
-            30
-          ],
           "npc": "jajang",
           "qn": 2,
           "sell": 2,
@@ -373,16 +290,17 @@
               "jajang",
               "Pas, seperti sambungan kayu yang rapi! Aku beli sayurmu, ya."
             ]
+          ],
+          "area": "jalan",
+          "at": [
+            3,
+            30
           ]
         },
         {
           "id": "humazah_1",
           "type": "learn",
           "name": "Balai Kota Ramai",
-          "at": [
-            6,
-            27
-          ],
           "npc": "rt",
           "surah": 104,
           "part": [
@@ -422,18 +340,18 @@
               "ustaz",
               "Bagus, {n}. Kamu sudah paham bagian pertama. Sampaikan dengan lembut ya, jangan menggurui. Toko Pak Burhan ada di jalan sebelah sana."
             ]
+          ],
+          "area": "kota",
+          "at": [
+            7,
+            19
           ]
         },
         {
           "id": "humazah_t1",
           "type": "tell",
           "name": "Toko Kain Pak Burhan",
-          "at": [
-            4,
-            23
-          ],
           "npc": "burhan",
-          "block": true,
           "lines": [
             [
               "burhan",
@@ -478,16 +396,18 @@
               "me",
               "Aku belum tahu, Bu. Bagian berikutnya dari surat itu yang menjelaskan. Aku pelajari dulu ya, Bu."
             ]
-          ]
+          ],
+          "area": "kota",
+          "at": [
+            4,
+            15
+          ],
+          "block": true
         },
         {
           "id": "humazah_2",
           "type": "learn",
           "name": "Masjid Kecil",
-          "at": [
-            6,
-            20
-          ],
           "npc": "ustaz",
           "surah": 104,
           "part": [
@@ -521,18 +441,18 @@
               "ustaz",
               "Alhamdulillah, kamu sudah mengulang seluruh suratnya. Sekarang temui Bu Lastri di rumahnya."
             ]
+          ],
+          "area": "kota",
+          "at": [
+            8,
+            12
           ]
         },
         {
           "id": "humazah_t2",
           "type": "tell",
           "name": "Rumah Bu Lastri",
-          "at": [
-            8,
-            15
-          ],
           "npc": "lastri",
-          "block": true,
           "lines": [
             [
               "lastri",
@@ -569,7 +489,13 @@
               "warga",
               "Hati-hati di jalan pulang, ya. Kota Ramai berterima kasih kepadamu!"
             ]
-          ]
+          ],
+          "area": "kota",
+          "at": [
+            12,
+            8
+          ],
+          "block": true
         },
         {
           "id": "telepon1",
@@ -598,65 +524,11 @@
       "id": "pulang",
       "title": "Jalan Pulang",
       "sub": "Menuju desa",
-      "map": {
-        "rows": 28,
-        "start": [
-          6,
-          25
-        ],
-        "path": [
-          [
-            6,
-            25
-          ],
-          [
-            6,
-            18
-          ],
-          [
-            3,
-            18
-          ],
-          [
-            3,
-            10
-          ],
-          [
-            7,
-            10
-          ],
-          [
-            7,
-            3
-          ]
-        ],
-        "huts": [
-          [
-            8,
-            20,
-            4
-          ],
-          [
-            1,
-            21,
-            1
-          ],
-          [
-            9,
-            6,
-            7
-          ]
-        ]
-      },
       "stops": [
         {
           "id": "asr_1",
           "type": "learn",
           "name": "Warung Bu Warti",
-          "at": [
-            6,
-            21
-          ],
           "npc": "warti",
           "surah": 103,
           "part": [
@@ -694,18 +566,18 @@
               "warti",
               "Alhamdulillah. Surat ini pendek, tapi pesannya besar. Mereka ada di tikungan sebelah sana. Hati-hati, ya."
             ]
+          ],
+          "area": "jalan",
+          "at": [
+            8,
+            22
           ]
         },
         {
           "id": "asr_t1",
           "type": "tell",
           "name": "Gerombolan Ujang",
-          "at": [
-            3,
-            13
-          ],
           "npc": "ujang",
-          "block": true,
           "lines": [
             [
               "ujang",
@@ -749,7 +621,13 @@
             {
               "coins": 15
             }
-          ]
+          ],
+          "area": "jalan",
+          "at": [
+            3,
+            30
+          ],
+          "block": true
         }
       ]
     },
@@ -757,67 +635,11 @@
       "id": "desa",
       "title": "Desa Kita",
       "sub": "Alun-alun desa",
-      "map": {
-        "rows": 26,
-        "start": [
-          2,
-          22
-        ],
-        "path": [
-          [
-            2,
-            22
-          ],
-          [
-            2,
-            15
-          ],
-          [
-            9,
-            15
-          ],
-          [
-            9,
-            8
-          ],
-          [
-            4,
-            8
-          ]
-        ],
-        "huts": [
-          [
-            5,
-            18,
-            3
-          ],
-          [
-            10,
-            19,
-            1
-          ],
-          [
-            6,
-            11,
-            5
-          ],
-          [
-            1,
-            10,
-            8
-          ]
-        ]
-      },
       "stops": [
         {
           "id": "pulang",
           "type": "scene",
           "name": "Gerbang Desa",
-          "at": [
-            2,
-            22
-          ],
-          "icon": "gate",
           "npc": "kakek",
           "lines": [
             [
@@ -836,16 +658,18 @@
               "kakek",
               "Hmm. Kakek ingat satu surat yang cocok untuk ini: At-Takatsur. Ayo, {n}, duduk sini. Kakek ceritakan."
             ]
-          ]
+          ],
+          "area": "desa",
+          "at": [
+            4,
+            8
+          ],
+          "onEnter": true
         },
         {
           "id": "takatsur_1",
           "type": "learn",
           "name": "Beranda Rumah Kakek",
-          "at": [
-            2,
-            17
-          ],
           "npc": "kakek",
           "surah": 102,
           "part": [
@@ -873,18 +697,18 @@
               "kakek",
               "Bagus. Sekarang coba sampaikan kepada para saudagar itu. Bicaralah dengan sopan. Mereka ada di alun-alun."
             ]
+          ],
+          "area": "desa",
+          "at": [
+            3,
+            5
           ]
         },
         {
           "id": "takatsur_t1",
           "type": "tell",
           "name": "Rombongan Saudagar",
-          "at": [
-            6,
-            15
-          ],
           "npc": "karto",
-          "block": true,
           "lines": [
             [
               "karto",
@@ -914,16 +738,17 @@
               "me",
               "Aku… belum tahu, Juragan. Surat itu belum selesai kupelajari. Aku tanya Kakek dulu, ya."
             ]
+          ],
+          "area": "desa",
+          "at": [
+            9,
+            6
           ]
         },
         {
           "id": "takatsur_2",
           "type": "learn",
           "name": "Balai Desa",
-          "at": [
-            9,
-            11
-          ],
           "npc": "kakek",
           "surah": 102,
           "part": [
@@ -957,18 +782,18 @@
               "kakek",
               "Alhamdulillah, kamu sudah mengulang seluruh surat. Sekarang kembali ke para saudagar."
             ]
+          ],
+          "area": "desa",
+          "at": [
+            11,
+            9
           ]
         },
         {
           "id": "takatsur_t2",
           "type": "tell",
           "name": "Rombongan Saudagar",
-          "at": [
-            6,
-            8
-          ],
           "npc": "basri",
-          "block": true,
           "lines": [
             [
               "basri",
@@ -1008,6 +833,11 @@
             {
               "coins": 20
             }
+          ],
+          "area": "desa",
+          "at": [
+            9,
+            6
           ]
         }
       ]
@@ -1016,89 +846,11 @@
       "id": "lembah",
       "title": "Lembah Timbangan",
       "sub": "Pasar di seberang bukit",
-      "map": {
-        "rows": 40,
-        "start": [
-          3,
-          37
-        ],
-        "path": [
-          [
-            3,
-            37
-          ],
-          [
-            3,
-            30
-          ],
-          [
-            8,
-            30
-          ],
-          [
-            8,
-            23
-          ],
-          [
-            4,
-            23
-          ],
-          [
-            4,
-            15
-          ],
-          [
-            7,
-            15
-          ],
-          [
-            7,
-            6
-          ]
-        ],
-        "huts": [
-          [
-            9,
-            26,
-            2
-          ],
-          [
-            1,
-            26,
-            4
-          ],
-          [
-            5,
-            26,
-            7
-          ],
-          [
-            9,
-            18,
-            5
-          ],
-          [
-            1,
-            18,
-            0
-          ],
-          [
-            5,
-            18,
-            8
-          ]
-        ]
-      },
       "stops": [
         {
           "id": "gerbang3",
           "type": "scene",
           "name": "Gerbang Desa",
-          "at": [
-            3,
-            37
-          ],
-          "icon": "gate",
           "npc": "kakek",
           "lines": [
             [
@@ -1116,16 +868,18 @@
               "kakek",
               "Hati-hati di jalan. Bismillah!"
             ]
-          ]
+          ],
+          "area": "desa",
+          "at": [
+            4,
+            8
+          ],
+          "onEnter": true
         },
         {
           "id": "anto",
           "type": "customer",
           "name": "Pak Anto",
-          "at": [
-            3,
-            32
-          ],
           "npc": "anto",
           "qn": 2,
           "sell": 2,
@@ -1144,16 +898,17 @@
               "anto",
               "Hebat! Aku beli sayurmu, ya. Teruskan belajarnya, {n}."
             ]
+          ],
+          "area": "lembah",
+          "at": [
+            2,
+            30
           ]
         },
         {
           "id": "qariah_1",
           "type": "learn",
           "name": "Timbangan Pasar",
-          "at": [
-            6,
-            30
-          ],
           "npc": "timbang",
           "surah": 101,
           "part": [
@@ -1189,18 +944,18 @@
               "timbang",
               "Bagus, {n}. Lapak Bu Marni ada di jalan sana. Sampaikan dengan sopan, ya."
             ]
+          ],
+          "area": "lembah",
+          "at": [
+            4,
+            26
           ]
         },
         {
           "id": "qariah_t1",
           "type": "tell",
           "name": "Lapak Kain Bu Marni",
-          "at": [
-            8,
-            26
-          ],
           "npc": "marni",
-          "block": true,
           "lines": [
             [
               "marni",
@@ -1226,16 +981,18 @@
               "me",
               "Aku belum tahu, Bu. Bagian berikutnya yang menjawabnya. Aku pelajari dulu."
             ]
-          ]
+          ],
+          "area": "lembah",
+          "at": [
+            9,
+            17
+          ],
+          "block": true
         },
         {
           "id": "qariah_2",
           "type": "learn",
           "name": "Timbangan Pasar",
-          "at": [
-            6,
-            23
-          ],
           "npc": "timbang",
           "surah": 101,
           "part": [
@@ -1269,18 +1026,18 @@
               "timbang",
               "Alhamdulillah, kamu sudah mengulang seluruh suratnya. Sekarang temui Bu Marni lagi."
             ]
+          ],
+          "area": "lembah",
+          "at": [
+            7,
+            12
           ]
         },
         {
           "id": "qariah_t2",
           "type": "tell",
           "name": "Lapak Kain Bu Marni",
-          "at": [
-            4,
-            18
-          ],
           "npc": "marni",
-          "block": true,
           "lines": [
             [
               "marni",
@@ -1316,7 +1073,13 @@
               "timbang",
               "Semoga Allah memberkahi perjalananmu."
             ]
-          ]
+          ],
+          "area": "lembah",
+          "at": [
+            5,
+            7
+          ],
+          "block": true
         }
       ]
     },
@@ -1324,89 +1087,11 @@
       "id": "padang",
       "title": "Padang Kuda",
       "sub": "Padang luas di barat desa",
-      "map": {
-        "rows": 40,
-        "start": [
-          8,
-          37
-        ],
-        "path": [
-          [
-            8,
-            37
-          ],
-          [
-            8,
-            30
-          ],
-          [
-            3,
-            30
-          ],
-          [
-            3,
-            22
-          ],
-          [
-            8,
-            22
-          ],
-          [
-            8,
-            12
-          ],
-          [
-            5,
-            12
-          ],
-          [
-            5,
-            4
-          ]
-        ],
-        "huts": [
-          [
-            9,
-            25,
-            6
-          ],
-          [
-            1,
-            26,
-            3
-          ],
-          [
-            5,
-            25,
-            1
-          ],
-          [
-            9,
-            16,
-            8
-          ],
-          [
-            1,
-            15,
-            2
-          ],
-          [
-            6,
-            16,
-            5
-          ]
-        ]
-      },
       "stops": [
         {
           "id": "gerbang4",
           "type": "scene",
           "name": "Gerbang Desa",
-          "at": [
-            8,
-            37
-          ],
-          "icon": "gate",
           "npc": "kakek",
           "lines": [
             [
@@ -1424,16 +1109,18 @@
               "kakek",
               "Bismillah, hati-hati!"
             ]
-          ]
+          ],
+          "area": "desa",
+          "at": [
+            4,
+            8
+          ],
+          "onEnter": true
         },
         {
           "id": "ratna",
           "type": "customer",
           "name": "Bu Ratna",
-          "at": [
-            8,
-            32
-          ],
           "npc": "ratna",
           "qn": 2,
           "sell": 2,
@@ -1452,16 +1139,17 @@
               "ratna",
               "Cekatan! Aku beli sayurmu. Pak Haris pasti perlu bertemu denganmu."
             ]
+          ],
+          "area": "padang",
+          "at": [
+            7,
+            4
           ]
         },
         {
           "id": "adiyat_1",
           "type": "learn",
           "name": "Pacuan Pak Haris",
-          "at": [
-            5,
-            30
-          ],
           "npc": "haris",
           "surah": 100,
           "part": [
@@ -1497,18 +1185,18 @@
               "ustaz",
               "Bagus, {n}. Sampaikan kepada Pak Haris. Kuda-kudanya ada di tikungan sana."
             ]
+          ],
+          "area": "padang",
+          "at": [
+            5,
+            8
           ]
         },
         {
           "id": "adiyat_t1",
           "type": "tell",
           "name": "Kandang Kuda",
-          "at": [
-            3,
-            26
-          ],
           "npc": "haris",
-          "block": true,
           "lines": [
             [
               "haris",
@@ -1526,16 +1214,18 @@
               "me",
               "Aku belum tahu, Pak. Bagian berikutnya yang menjelaskan. Aku pelajari dulu."
             ]
-          ]
+          ],
+          "area": "padang",
+          "at": [
+            3,
+            13
+          ],
+          "block": true
         },
         {
           "id": "adiyat_2",
           "type": "learn",
           "name": "Pacuan Pak Haris",
-          "at": [
-            5,
-            22
-          ],
           "npc": "ustaz",
           "surah": 100,
           "part": [
@@ -1569,18 +1259,18 @@
               "ustaz",
               "Alhamdulillah, kamu sudah mengulang seluruh suratnya. Sampaikan kepada Pak Haris dengan lembut."
             ]
+          ],
+          "area": "padang",
+          "at": [
+            6,
+            17
           ]
         },
         {
           "id": "adiyat_t2",
           "type": "tell",
           "name": "Kandang Kuda",
-          "at": [
-            8,
-            16
-          ],
           "npc": "haris",
-          "block": true,
           "lines": [
             [
               "haris",
@@ -1620,7 +1310,13 @@
               "ratna",
               "Semoga Allah memberkahi perjalananmu."
             ]
-          ]
+          ],
+          "area": "padang",
+          "at": [
+            9,
+            22
+          ],
+          "block": true
         }
       ]
     },
@@ -1628,80 +1324,11 @@
       "id": "simpang",
       "title": "Persimpangan Tiga Jalan",
       "sub": "Surat yang paling sering kamu baca",
-      "map": {
-        "rows": 36,
-        "start": [
-          6,
-          33
-        ],
-        "path": [
-          [
-            6,
-            33
-          ],
-          [
-            6,
-            25
-          ],
-          [
-            2,
-            25
-          ],
-          [
-            2,
-            16
-          ],
-          [
-            6,
-            16
-          ],
-          [
-            6,
-            7
-          ],
-          [
-            10,
-            7
-          ]
-        ],
-        "huts": [
-          [
-            8,
-            28,
-            6
-          ],
-          [
-            1,
-            29,
-            3
-          ],
-          [
-            8,
-            18,
-            5
-          ],
-          [
-            1,
-            10,
-            2
-          ],
-          [
-            9,
-            11,
-            8
-          ]
-        ]
-      },
       "stops": [
         {
           "id": "gerbang5",
           "type": "scene",
           "name": "Gerbang Desa",
-          "at": [
-            6,
-            33
-          ],
-          "icon": "gate",
           "npc": "kakek",
           "lines": [
             [
@@ -1716,16 +1343,18 @@
               "kakek",
               "Bismillah. Semoga Allah memudahkan."
             ]
-          ]
+          ],
+          "area": "desa",
+          "at": [
+            4,
+            8
+          ],
+          "onEnter": true
         },
         {
           "id": "fatihah_1",
           "type": "learn",
           "name": "Mushola Persimpangan",
-          "at": [
-            6,
-            28
-          ],
           "npc": "ustaz",
           "surah": 1,
           "part": [
@@ -1757,16 +1386,17 @@
               "ustaz",
               "Alhamdulillah. Pak Soleh menunggu di sana. Ceritakan padanya."
             ]
+          ],
+          "area": "simpang",
+          "at": [
+            6,
+            16
           ]
         },
         {
           "id": "fatihah_t1",
           "type": "tell",
           "name": "Pak Soleh dan Rombongan",
-          "at": [
-            2,
-            20
-          ],
           "npc": "soleh",
           "lines": [
             [
@@ -1785,16 +1415,17 @@
               "me",
               "Bagian kedua surat itu tentang permohonan kita, Pak. Aku pelajari dulu ya."
             ]
+          ],
+          "area": "simpang",
+          "at": [
+            9,
+            12
           ]
         },
         {
           "id": "fatihah_2",
           "type": "learn",
           "name": "Mushola Persimpangan",
-          "at": [
-            4,
-            16
-          ],
           "npc": "ustaz",
           "surah": 1,
           "part": [
@@ -1828,16 +1459,17 @@
               "ustaz",
               "Alhamdulillah, kamu sudah mengulang seluruh Al-Fatihah. Sekarang sampaikan kepada Pak Soleh."
             ]
+          ],
+          "area": "simpang",
+          "at": [
+            12,
+            9
           ]
         },
         {
           "id": "fatihah_t2",
           "type": "tell",
           "name": "Pak Soleh dan Rombongan",
-          "at": [
-            6,
-            10
-          ],
           "npc": "soleh",
           "lines": [
             [
@@ -1870,6 +1502,11 @@
             {
               "coins": 25
             }
+          ],
+          "area": "simpang",
+          "at": [
+            12,
+            6
           ]
         },
         {
@@ -1940,5 +1577,561 @@
       "indonesian": "Dan telah menceritakan kepada kami [Ishaq bin Ibrahim al-Hanzhali] telah mengabarkan kepada kami [Sufyan bin Uyainah] dari [al-Ala'] dari [bapaknya] dari [Abu Hurairah] dari Nabi Shallallahu'alaihiwasallam, beliau bersabda, \"Barangsiapa yang mengerjakan shalat tanpa membaca Ummul Qur'an di dalamnya, maka shalatnya masih mempunyai hutang, tidak sempurna\" Tiga kali. Ditanyakan kepada Abu Hurairah, \" Kami berada di belakang imam?\" Maka dia menjawab, \"Bacalah Ummul Qur'an dalam dirimu, karena aku mendengar Rasulullah bersabda, 'Allah berfirman, 'Aku membagi shalat antara Aku dengan hambaKu, dan hambaku mendapatkan sesuatu yang dia minta. Apabila seorang hamba berkata, 'Segala puji bagi Allah Rabb semesta alam.' Maka Allah berkata, 'HambaKu memujiKu.' Apabila hamba tersebut mengucapkan, 'Yang Maha pengasih lagi Maha Penyayang.' Allah berkata, 'HambaKu memujiKu.' Apabila hamba tersebut mengucapkan, 'Pemilik hari kiamat.' Allah berkata, 'HambaKu memujiku.' Selanjutnya Dia berkata, 'HambaKu menyerahkan urusannya kepadaKu.' Apabila hamba tersebut mengucapkan, 'Hanya kepadaMulah aku menyembah dan hanya kepadaMulah aku memohon pertolongan.' Allah berkata, 'Ini adalah antara Aku dengan hambaKu. Dan hambaKu mendapatkan sesuatu yang dia minta'. Apabila hamba tersebut mengucapkan, 'Berilah kami petunjuk jalan yang lurus, yaitu jalan orang-orang yang Engkau beri nikmat atas mereka, bukan jalan orang-orang yang Engkau murkai dan bukan pula orang-orang yang sesat.' Allah berkata, 'Ini untuk hambaKu, dan hambaKu mendapatkan sesuatu yang dia minta'.\" Berkata [Sufyan] telah menceritakan kepada kami [al-Ala' bin Abdurrahman bin Ya'kub] aku mengunjunginya, sedangkan dia dalam keadaan sakit di rumahnya, lalu aku bertanya kepadanya tentang hadits tersebut, telah menceritakan kepada kami [Qutaibah bin Sa'id] dari [Malik bin Anas] dari [al-Ala' bin Abdurrahman] bahwa dia mendengar [Abu as-Saib, maula Hisyam bin Zuhrah] berkata, saya mendengar [Abu Hurairah] berkata, Rasulullah shallallahu 'alaihi wasallam bersabda, --lewat jalur periwayatan lain--, dan telah menceritakan kepada kami [Muhammad bin Rafi'] telah menceritakan kepada kami [Abdurrazzaq] telah mengabarkan kepada kami [Ibnu Juraij] telah mengabarkan kepada kami [al-Ala' bin Abdurrahman bin Ya'kub] bahwa [Abu as-Saib, maula bani Abdullah bin Hisyam bin Zuhrah] telah mengabarkan kepadanya bahwa dia mendengar [Abu Hurairah] berkata, Rasulullah shallallahu 'alaihi wasallam bersabda, \"Barangsiapa melakukan shalat, dan belum membaca Ummul Qur'an\", sebagaimana hadits Sufyan. Dan dalam hadits keduanya Allah berfirman, 'Aku membagi shalat antara Aku dengan hambaKu dua bagian, setengah untukKu dan setelah lainnya untuk hambaKu.\" Telah menceritakan kepada kami [Ahmad bin Ja'far al-Ma'qiri] telah menceritakan kepada kami [an-Nadhr bin Muhammad] telah menceritakan kepada kami [Abu Uwais] telah mengabarkan kepadaku [al-Ala'] dia berkata, saya mendengar dari [bapakku] dan dari [Abu as-Saib], keduanya adalah teman duduk Abu Hurairah. Keduanya berkata, [Abu Hurairah] berkata, Rasulullah shallallahu 'alaihi wasallam bersabda, \"Barangsiapa yang melakukan shalat yang padanya dia tidak membaca al-Fatihah, maka dia masih mempunyai hutang (kurang).\" Dia mengucapkannya tiga kali seperti hadits mereka.",
       "attribution": "Terjemah Lidwa Pusaka, penomoran Lidwa (via github.com/gadingnst/hadith-api, MIT)"
     }
-  ]
+  ],
+  "areas": [
+    {
+      "id": "desa",
+      "name": "Alun-alun Desa",
+      "cols": 16,
+      "rows": 16,
+      "open": [
+        [
+          1,
+          1,
+          14,
+          14
+        ]
+      ],
+      "paths": [
+        {
+          "pts": [
+            [
+              0,
+              8
+            ],
+            [
+              8,
+              8
+            ]
+          ],
+          "half": 1
+        },
+        {
+          "pts": [
+            [
+              8,
+              0
+            ],
+            [
+              8,
+              15
+            ]
+          ],
+          "half": 1
+        },
+        {
+          "pts": [
+            [
+              8,
+              3
+            ],
+            [
+              15,
+              3
+            ]
+          ],
+          "half": 0
+        },
+        {
+          "pts": [
+            [
+              8,
+              12
+            ],
+            [
+              15,
+              12
+            ]
+          ],
+          "half": 0
+        }
+      ],
+      "huts": [
+        [
+          2,
+          2,
+          4,
+          "Rumah Kakek"
+        ],
+        [
+          11,
+          10,
+          1,
+          "Balai Desa"
+        ],
+        [
+          2,
+          11,
+          7,
+          "Lumbung"
+        ]
+      ],
+      "exits": [
+        {
+          "edge": "W",
+          "to": "farm",
+          "dir": "kebun"
+        },
+        {
+          "edge": "N",
+          "to": "jalan",
+          "spawn": [
+            6,
+            40
+          ],
+          "dir": "utara"
+        },
+        {
+          "edge": "S",
+          "to": "padang",
+          "spawn": [
+            7,
+            1
+          ],
+          "dir": "selatan"
+        },
+        {
+          "edge": "E",
+          "max": 7,
+          "to": "simpang",
+          "spawn": [
+            1,
+            20
+          ],
+          "dir": "timur (jalan atas)"
+        },
+        {
+          "edge": "E",
+          "min": 8,
+          "to": "lembah",
+          "spawn": [
+            1,
+            30
+          ],
+          "dir": "timur (jalan bawah)"
+        }
+      ]
+    },
+    {
+      "id": "jalan",
+      "name": "Jalan Dagang",
+      "cols": 12,
+      "rows": 42,
+      "parent": "desa",
+      "paths": [
+        {
+          "pts": [
+            [
+              6,
+              41
+            ],
+            [
+              6,
+              34
+            ],
+            [
+              3,
+              34
+            ],
+            [
+              3,
+              26
+            ],
+            [
+              8,
+              26
+            ],
+            [
+              8,
+              18
+            ],
+            [
+              5,
+              18
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              6,
+              10
+            ],
+            [
+              6,
+              0
+            ]
+          ],
+          "half": 1
+        }
+      ],
+      "huts": [
+        [
+          10,
+          21,
+          3,
+          "Warung Bu Warti"
+        ]
+      ],
+      "exits": [
+        {
+          "edge": "S",
+          "to": "desa",
+          "spawn": [
+            8,
+            1
+          ],
+          "dir": "selatan (desa)"
+        },
+        {
+          "edge": "N",
+          "to": "kota",
+          "spawn": [
+            10,
+            24
+          ],
+          "dir": "utara (Kota Ramai)"
+        }
+      ]
+    },
+    {
+      "id": "kota",
+      "name": "Kota Ramai",
+      "cols": 20,
+      "rows": 26,
+      "parent": "jalan",
+      "paths": [
+        {
+          "pts": [
+            [
+              10,
+              25
+            ],
+            [
+              10,
+              19
+            ],
+            [
+              4,
+              19
+            ],
+            [
+              4,
+              12
+            ],
+            [
+              12,
+              12
+            ],
+            [
+              12,
+              4
+            ]
+          ],
+          "half": 1
+        }
+      ],
+      "huts": [
+        [
+          6,
+          22,
+          2,
+          "Balai Kota"
+        ],
+        [
+          0,
+          14,
+          0,
+          "Toko Pak Burhan"
+        ],
+        [
+          8,
+          8,
+          5,
+          "Masjid Kecil"
+        ],
+        [
+          16,
+          6,
+          8,
+          "Rumah Bu Lastri"
+        ],
+        [
+          15,
+          17,
+          6,
+          ""
+        ],
+        [
+          0,
+          21,
+          9,
+          ""
+        ]
+      ],
+      "exits": [
+        {
+          "edge": "S",
+          "to": "jalan",
+          "spawn": [
+            6,
+            1
+          ],
+          "dir": "selatan (pulang)"
+        }
+      ]
+    },
+    {
+      "id": "lembah",
+      "name": "Lembah Timbangan",
+      "cols": 14,
+      "rows": 36,
+      "parent": "desa",
+      "paths": [
+        {
+          "pts": [
+            [
+              0,
+              30
+            ],
+            [
+              4,
+              30
+            ],
+            [
+              4,
+              22
+            ],
+            [
+              9,
+              22
+            ],
+            [
+              9,
+              12
+            ],
+            [
+              5,
+              12
+            ],
+            [
+              5,
+              3
+            ]
+          ],
+          "half": 1
+        }
+      ],
+      "huts": [
+        [
+          7,
+          26,
+          3,
+          "Timbangan Pasar"
+        ],
+        [
+          12,
+          17,
+          5,
+          "Lapak Kain"
+        ],
+        [
+          1,
+          16,
+          1,
+          ""
+        ],
+        [
+          11,
+          6,
+          7,
+          ""
+        ]
+      ],
+      "exits": [
+        {
+          "edge": "W",
+          "to": "desa",
+          "spawn": [
+            14,
+            12
+          ],
+          "dir": "barat (desa)"
+        }
+      ]
+    },
+    {
+      "id": "padang",
+      "name": "Padang Kuda",
+      "cols": 14,
+      "rows": 38,
+      "parent": "desa",
+      "paths": [
+        {
+          "pts": [
+            [
+              7,
+              0
+            ],
+            [
+              7,
+              8
+            ],
+            [
+              3,
+              8
+            ],
+            [
+              3,
+              17
+            ],
+            [
+              9,
+              17
+            ],
+            [
+              9,
+              26
+            ],
+            [
+              6,
+              26
+            ],
+            [
+              6,
+              37
+            ]
+          ],
+          "half": 1
+        }
+      ],
+      "huts": [
+        [
+          10,
+          8,
+          6,
+          "Pacuan"
+        ],
+        [
+          12,
+          21,
+          2,
+          "Kandang Kuda"
+        ],
+        [
+          0,
+          24,
+          4,
+          ""
+        ]
+      ],
+      "exits": [
+        {
+          "edge": "N",
+          "to": "desa",
+          "spawn": [
+            8,
+            14
+          ],
+          "dir": "utara (desa)"
+        }
+      ]
+    },
+    {
+      "id": "simpang",
+      "name": "Persimpangan Tiga Jalan",
+      "cols": 18,
+      "rows": 26,
+      "parent": "desa",
+      "paths": [
+        {
+          "pts": [
+            [
+              0,
+              20
+            ],
+            [
+              6,
+              20
+            ],
+            [
+              6,
+              12
+            ],
+            [
+              12,
+              12
+            ],
+            [
+              12,
+              4
+            ]
+          ],
+          "half": 1
+        },
+        {
+          "pts": [
+            [
+              6,
+              20
+            ],
+            [
+              6,
+              25
+            ]
+          ],
+          "half": 0
+        },
+        {
+          "pts": [
+            [
+              12,
+              12
+            ],
+            [
+              17,
+              12
+            ]
+          ],
+          "half": 0
+        }
+      ],
+      "huts": [
+        [
+          9,
+          16,
+          3,
+          "Mushola"
+        ],
+        [
+          1,
+          8,
+          5,
+          ""
+        ],
+        [
+          14,
+          6,
+          8,
+          ""
+        ]
+      ],
+      "exits": [
+        {
+          "edge": "W",
+          "to": "desa",
+          "spawn": [
+            14,
+            3
+          ],
+          "dir": "barat (desa)"
+        }
+      ]
+    }
+  ],
+  "spawn": {
+    "area": "desa",
+    "x": 1,
+    "y": 8
+  }
 }

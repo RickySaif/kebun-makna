@@ -10,8 +10,11 @@ import { $, esc, root, layer, panel, closePanel, toast, shuffle } from './ui.js'
 import { S, save, fill } from './state.js';
 import { AA, BY, DATA, ORDER, QUEST } from './data.js';
 import { lesson, suratUtuh, makeQ, renderQ, celebrate } from './lesson.js';
-import { ICON, T, drawGate, drawHut, drawKid, drawTree, portrait, px } from './render.js';
-import { buildGround, hdCanvas } from './art.js';
+import { ICON, T, drawHut, drawKid, drawTree, portrait, px } from './render.js';
+import { blit, buildGround, fenceSprite, hdCanvas } from './art.js';
+import { buildArea, bfs, exitAt, key } from './dunia-grid.js';
+import { hooks } from './hooks.js';
+import { farm } from './farm.js';
 import { play, sfx, voice, stopAudio } from './audio.js';
 import { addXP, note } from './progress.js';
 import { sourceCard } from './social.js';
@@ -19,7 +22,7 @@ import { logActivity } from './api.js';
 import { unlocked } from './akhlak.js';
 
 const BASE = new URL('../content/dagang/', import.meta.url).href; // js/ → content/dagang/
-const COLS = 12, VR = 11, PRICE = 8;                              // map width in tiles, visible rows, coins per vegetable
+const PRICE = 8;                                                  // coins per vegetable sold
 const HUTROOF = ['#C8463A', '#3A78C9', '#3A9D6A', '#8D5BB5', '#B8862B', '#E0702F', '#5B7FD9', '#E56B8A', '#8E6A3A', '#3AA6A0'];
 let ST = null, V = null;                                           // story, current journey view
 const rowsOf = id => (ST.source_rows || []).find(r => r.id === id);
@@ -30,13 +33,20 @@ async function load() {
   const story = await (await fetch(BASE + 'story.json')).json();
   const surahs = (await Promise.all(story.surahs.map(async n => { try { const r = await fetch(BASE + `surah-${n}.json`); return r.ok ? await r.json() : null; } catch (e) { return null; } }))).filter(Boolean);
   surahs.forEach(e => { if (!BY[e.no]) { DATA.push(e); BY[e.no] = e; } }); // lets lessons, questions and word cards use them
+  story.flat = story.legs.flatMap(l => l.stops);
   return (ST = story);
 }
 
 /* ---------- state ---------- */
-const DEF = () => ({ leg: 0, i: 0, cart: {}, seen: {}, exp: {}, wh: {}, done: {}, arrived: null, fin: false, started: false });
-const D = () => { if (!S.dagang) S.dagang = DEF(); else { const f = DEF(); for (const k in f) if (!(k in S.dagang)) S.dagang[k] = f[k]; } return S.dagang; };
-const legOf = d => ST.legs[d.leg], stopOf = d => (legOf(d) || {}).stops && legOf(d).stops[d.i];
+// d.q = index of the current quest stop in the flat list of all stops (old saves had leg + i: migrated in D())
+const DEF = () => ({ q: 0, cart: {}, seen: {}, exp: {}, wh: {}, done: {}, arrived: null, fin: false, started: false, pos: null });
+const D = () => {
+  if (!S.dagang) S.dagang = DEF(); else { const f = DEF(); for (const k in f) if (!(k in S.dagang)) S.dagang[k] = f[k]; }
+  const d = S.dagang;
+  if (ST && d.leg !== undefined) { d.q = ST.legs.slice(0, d.leg).reduce((n, l) => n + l.stops.length, 0) + (d.i || 0); delete d.leg; delete d.i; }
+  return d;
+};
+const stopOf = d => ST.flat[d.q];
 const cartCount = () => Object.values(D().cart).reduce((a, b) => a + b, 0);
 const cartText = c => Object.entries(c).filter(([, v]) => v > 0).map(([k, v]) => `${v} ${QUEST[k].cropName}`).join(', ');
 const cast = k => k === 'me' ? { npc: S.name || 'Kamu', portrait: portrait(null, S.avatar) } : ST.cast[k] || ST.cast.kakek;
@@ -58,108 +68,153 @@ function sell(n) {
   return { sold, items, coins };
 }
 
-/* ---------- entry button ---------- */
+/* ---------- entry: a gate at the east end of the village road, and a button as a shortcut ---------- */
 export function installDagang() {
+  hooks.worldOpen = () => unlocked();                 // farm: opens the exit tile in the east edge (and its gate)
+  hooks.worldEnter = () => { enterWorld({ fromFarm: true }); };
   const put = () => {
     if (!unlocked()) return;
     const hud = document.querySelector('.hud'); if (!hud || hud.querySelector('#dag')) return;
-    const d = D(), fresh = !d.started;
+    const fresh = !(S.dagang && S.dagang.started);
     const b = $(`<button class="btn ghost icon" id="dag" aria-label="Perjalanan Dagang" style="position:relative">🧭${fresh ? '<span class="newtag" style="position:absolute;top:-8px;right:-10px;font-size:10px;background:#E2483B;color:#fff;padding:1px 4px;border-radius:3px">BARU</span>' : ''}</button>`);
-    b.onclick = openJourney;
+    b.onclick = () => enterWorld({});
     const anchor = hud.querySelector('#akh') || hud.querySelector('#gear'); anchor ? anchor.before(b) : hud.append(b);
-    if (!S.dagangIntro) { S.dagangIntro = true; save(); note('Bab baru: Perjalanan Dagang', 'Kakek Umar punya kabar baru. Ketuk tombol 🧭 untuk berdagang ke wilayah baru dan belajar surat-surat berikutnya.', null); }
+    if (!S.dagangIntro) { S.dagangIntro = true; save(); note('Jalan baru terbuka!', 'Gerbang di ujung timur jalan desa sekarang terbuka. Berjalanlah keluar desa, berdagang, dan belajar surat-surat baru. (Tombol 🧭 juga membawamu ke sana.)', null); }
   };
   new MutationObserver(put).observe(root, { childList: true }); put();
   load().catch(() => {});
 }
-async function openJourney() {
+async function enterWorld({ fromFarm }) {
   try { await load(); } catch (e) { toast('Perjalanan belum bisa dimuat. Cek internet, lalu coba lagi.'); return; }
-  if (D().fin) return summary();
-  journeyView();
+  const d = D();
+  if (d.fin && !fromFarm) return summary();
+  if (fromFarm || !d.pos) d.pos = { a: ST.spawn.area, x: ST.spawn.x, y: ST.spawn.y };
+  worldView();
 }
 
-/* ---------- map ---------- */
-function buildMap(leg) {
-  const M = leg.map, rows = M.rows, set = new Set();
-  const add = (x, y) => set.add(x + ',' + y);
-  for (let i = 0; i < M.path.length - 1; i++) {
-    const [x0, y0] = M.path[i], [x1, y1] = M.path[i + 1]; let x = x0, y = y0; add(x, y);
-    while (x !== x1 || y !== y1) { x += Math.sign(x1 - x); y += Math.sign(y1 - y); add(x, y); }
-  }
-  const huts = M.huts.map(([x, y, r]) => ({ x, y, r })), taken = new Set();
-  huts.forEach(h => { for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) taken.add((h.x + a) + ',' + (h.y + b)); });
-  let seed = 31 + leg.id.length * 17; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const near = (x, y) => { for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) if (set.has((x + a) + ',' + (y + b))) return true; return false; };
-  const trees = [];
-  for (let y = 0; y < rows; y++) for (let x = 0; x < COLS; x++) {
-    const k = x + ',' + y; if (set.has(k) || taken.has(k) || near(x, y)) continue;
-    const edge = x === 0 || x === COLS - 1 || y === 0 || y === rows - 1;
-    if (rnd() < (edge ? .85 : .13)) trees.push({ x, y, v: [0, 2, 3, 0, 2, 1][Math.floor(rnd() * 6)] });
-  }
-  return { set, huts, trees, rows, ground: buildGround(COLS, rows, (x, y) => set.has(x + ',' + y), {}) };
+/* ---------- areas ---------- */
+const AREAS = {};
+const area = id => AREAS[id] || (AREAS[id] = (() => { const spec = ST.areas.find(a => a.id === id), g = buildArea(spec, ST.flat); return { spec, g, ground: buildGround(spec.cols, spec.rows, (x, y) => g.road.has(key(x, y)), {}) }; })());
+// may the player enter this area now? Only areas on the way to the current quest, or ones already visited
+function allowed(id) {
+  const d = D(), st = stopOf(d); if (id === 'desa' || !st || !st.area) return true;
+  const chain = []; for (let a = st.area; a; a = (ST.areas.find(x => x.id === a) || {}).parent) chain.push(a);
+  return chain.includes(id) || ST.flat.some(s => s.area === id && d.done[s.id]);
 }
-const stopTile = (leg, i) => { for (let k = i; k >= 0; k--) if (leg.stops[k].at) return leg.stops[k].at; return leg.map.start; };
-function bfs(set, from, to) {
-  const key = (x, y) => x + ',' + y, q = [from], prev = { [key(...from)]: null };
-  while (q.length) { const [x, y] = q.shift(); if (x === to[0] && y === to[1]) { const p = []; let k = key(x, y); while (k) { p.unshift(k.split(',').map(Number)); k = prev[k]; } return p.slice(1); }
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, k = key(nx, ny); if (!(k in prev) && set.has(k)) { prev[k] = key(x, y); q.push([nx, ny]); } } }
-  return [];
+function routeHint(from, to) {
+  if (from === to) return '';
+  const q = [[from, null]], seen = new Set([from]);
+  while (q.length) { const [a, first] = q.shift(); const sp = ST.areas.find(x => x.id === a); for (const e of sp.exits) { if (e.to === 'farm' || seen.has(e.to)) continue; seen.add(e.to); const f = first || e; if (e.to === to) return ` Jalan ke ${f.dir}.`; q.push([e.to, f]); } }
+  return '';
 }
+
+/* ---------- the overworld: free walking, camera follows ---------- */
+const VW = 12 * T, VH = 11 * T;
+function board(c, X, Y, w, text) { px(c, X, Y, w, 12, '#6E4426'); px(c, X + 1, Y + 1, w - 2, 10, '#C98A52'); px(c, X + 1, Y + 1, w - 2, 1.5, '#E3A96C'); c.fillStyle = '#2B1D12'; c.font = 'bold 5.5px "Fredoka",sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(text, X + w / 2, Y + 6.5); c.textAlign = 'left'; c.textBaseline = 'alphabetic'; }
 function tag(c, X, Y, w, text, dark, light, t) { const b = Math.sin(t / 260) > 0 ? 0 : .5; c.fillStyle = dark; c.fillRect(X + .5, Y + b, w - 1, 9); c.fillRect(X, Y + b + .5, w, 8); c.fillRect(X + w / 2 - 2, Y + b + 9, 4, 1); c.fillRect(X + w / 2 - 1, Y + b + 10, 2, 1);
   c.fillStyle = light; c.fillRect(X + 1, Y + b + 1, w - 2, 7); c.fillStyle = '#fff'; c.font = 'bold 6.5px "Fredoka",sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(text, X + w / 2, Y + b + 4.8); c.textAlign = 'left'; c.textBaseline = 'alphabetic'; }
 
-function startMap(cv, leg) {
-  const d0 = D();
-  const M = buildMap(leg), VW = COLS * T, VH = VR * T;
-  const me = { fx: 0, fy: 0, path: [], dir: 3, onArrive: null }; [me.fx, me.fy] = d0.i === 0 ? leg.map.start : stopTile(leg, d0.i - 1);
-  const view = { me, M, walk(to, then) { me.path = bfs(M.set, [Math.round(me.fx), Math.round(me.fy)], to); const st = leg.stops[D().i]; if (st && st.npc && st.icon !== 'gate' && me.path.length) me.path.pop(); me.onArrive = then; if (!me.path.length) { me.onArrive = null; then && then(); } } };
-  let raf = 0, last = performance.now(), ctx = null;
-  const fit = () => { ctx = hdCanvas(cv, VW, VH); };
-  fit(); window.addEventListener('resize', fit); view.stop = () => { cancelAnimationFrame(raf); window.removeEventListener('resize', fit); };
-  const loop = t => {
-    if (!cv.isConnected) return view.stop(); raf = requestAnimationFrame(loop);
-    const dt = Math.min(100, t - last); last = t; const c = ctx, k = cv._k || 2, d = D();
-    if (me.path.length) { const [nx, ny] = me.path[0], sp = .1 * dt / 16.7, ddx = nx - me.fx, ddy = ny - me.fy; if (ddx || ddy) me.dir = Math.abs(ddx) > Math.abs(ddy) ? (ddx < 0 ? 1 : 3) : (ddy < 0 ? 2 : 0);
-      me.fx += Math.sign(ddx) * Math.min(sp, Math.abs(ddx)); me.fy += Math.sign(ddy) * Math.min(sp, Math.abs(ddy));
-      if (Math.abs(me.fx - nx) < .01 && Math.abs(me.fy - ny) < .01) { me.fx = nx; me.fy = ny; me.path.shift(); if (!me.path.length) { const f = me.onArrive; me.onArrive = null; f && f(); } } }
-    const camY = Math.round(Math.max(0, Math.min(M.rows * T - VH, me.fy * T + 8 - VH / 2)) * k) / k, camX = 0;
-    c.setTransform(k, 0, 0, k, -camX * k, -camY * k); c.imageSmoothingEnabled = false;
-    c.drawImage(M.ground, 0, camY * 2, VW * 2, VH * 2, 0, camY, VW, VH);
-    const vis = (y, h) => y < camY + VH && y + h > camY, items = [], put = (b, f) => items.push({ b, f });
-    M.trees.forEach(tr => { if (vis(tr.y * T - 6, 24)) put(tr.y * T + 15, () => drawTree(c, tr.x * T, tr.y * T, tr.v)); });
-    M.huts.forEach(h => { if (vis(h.y * T - 12, 46)) put(h.y * T + 31, () => drawHut(c, h.x * T, h.y * T, HUTROOF[h.r % 10], null, 0, false)); });
-    const cur = leg.stops[d.i];
-    leg.stops.forEach((st, i) => { if (!st.at || st.auto) return; const [x, y] = st.at, isDone = !!d.done[st.id]; if (!vis(y * T - 14, 40)) return;
-      if (st.icon === 'gate') { put(y * T + 14, () => drawGate(c, x, y, true)); return; }
-      if (st.block && !isDone) put(y * T + 5, () => { px(c, x * T - 1, y * T + 4, 2, 9, '#6E4426'); px(c, x * T + 15, y * T + 4, 2, 9, '#6E4426'); px(c, x * T + 1, y * T + 7, 14, 1, '#C98A52'); });
-      const look = ST.cast[st.npc] && ST.cast[st.npc].look; if (look) put(y * T + 16, () => drawKid(c, (isDone && st.block ? x + 1 : x) * T + 2, y * T, 0, 0, look, isDone && st.block ? 1 : 0)); });
-    const moving = me.path.length > 0, wf = Math.floor(t / 120) % 4;
-    put(me.fy * T + 16.5, () => drawKid(c, Math.round(me.fx * T * 2) / 2 + 2, Math.round(me.fy * T * 2) / 2, S.avatar, moving ? wf : 0, null, me.dir | 0));
-    items.sort((a, b) => a.b - b.b).forEach(it => it.f());
-    if (cur && cur.at && !cur.auto && !moving && !d.arrived) tag(c, cur.at[0] * T + 3, cur.at[1] * T - 13, 10, '!', '#A8362B', '#E2483B', t);
-    c.setTransform(k, 0, 0, k, 0, 0);
-  };
-  raf = requestAnimationFrame(loop);
-  return view;
-}
-
-/* ---------- journey view: map on top, dialog below ---------- */
-async function journeyView(quiet) {
+async function worldView(quiet) {
   await load(); stopAudio();
   const d = D(); d.started = true; save();
-  const leg = legOf(d);
-  if (!leg) return summary();
-  const p = panel(leg.title, leg.sub, body => {
+  const A = area(d.pos.a);
+  const p = panel(A.spec.name, 'Perjalanan Dagang', body => {
     body.append($(`<div class="jv"><div class="jtop"><span>🛒 <b id="jc"></b></span><span><img alt="" src="${ICON.coin}" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:-3px"> <b id="jco"></b></span></div>
-      <div class="stage"><canvas id="jmap" width="${COLS * T * 2}" height="${VR * T * 2}" aria-label="Peta perjalanan"></canvas></div>
+      <div class="stage"><canvas id="jmap" width="${VW * 2}" height="${VH * 2}" aria-label="Peta perjalanan. Ketuk tanah untuk berjalan."></canvas></div>
       <div class="frame dialog jdlg"></div></div>`));
   });
   const cv = p.querySelector('#jmap');
-  V = { p, dlg: p.querySelector('.jdlg'), map: startMap(cv, leg) };
-  chips(); if (!quiet) idle();
+  V = { p, cv, dlg: p.querySelector('.jdlg'), A, busy: !!quiet, me: null, cam: { x: 0, y: 0 } }; // a quiet view is rebuilt by a flow that is still running: no auto-triggers
+  startWorld(); chips();
+  if (!quiet) { banner(A.spec.name); idle(); }
 }
 const chips = () => { if (!V) return; const jc = V.p.querySelector('#jc'), jo = V.p.querySelector('#jco'); if (jc) jc.textContent = cartCount() ? cartText(D().cart) : 'kosong'; if (jo) jo.textContent = S.coins; };
-const ensureView = cb => { if (V && V.p.isConnected && layer.contains(V.p)) cb(); else journeyView(true).then(() => cb()); };
+const ensureView = cb => { if (V && V.p.isConnected && layer.contains(V.p)) cb(); else worldView(true).then(() => cb()); };
+function banner(text) {
+  if (!V) return; V.p.querySelectorAll('.jbanner').forEach(e => e.remove());
+  const b = $(`<div class="jbanner">${esc(text)}</div>`); V.p.querySelector('.stage').append(b); setTimeout(() => b.remove(), 2300);
+}
+
+// is this tile free to step on right now? (forest, huts, the current NPC and unpassed ropes are not)
+function free(x, y) {
+  const d = D(), g = V.A.g; if (!g.base(x, y)) return false;
+  const f = g.fenceAt.get(key(x, y)); if (f && !d.done[f]) return false;
+  const st = stopOf(d); if (st && st.area === V.A.spec.id && st.at && !st.auto && st.at[0] === x && st.at[1] === y) return false;
+  return true;
+}
+function startWorld() {
+  const d = D(), cv = V.cv, g = V.A.g, me = V.me = { x: d.pos.x, y: d.pos.y, fx: d.pos.x, fy: d.pos.y, path: [], dir: 3, onArrive: null };
+  if (!g.base(me.x, me.y)) { me.x = me.fx = ST.spawn.x; me.y = me.fy = ST.spawn.y; }
+  let raf = 0, last = performance.now(), ctx = null;
+  const fit = () => { ctx = hdCanvas(cv, VW, VH); };
+  fit(); window.addEventListener('resize', fit);
+  V.stop = () => { cancelAnimationFrame(raf); window.removeEventListener('resize', fit); window.removeEventListener('keydown', onKey); };
+  const onKey = e => { if (!cv.isConnected || V.busy) return; const dd = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[e.key]; if (!dd) return; e.preventDefault(); if (me.path.length) return; stepTo(me.x + dd[0], me.y + dd[1]); };
+  window.addEventListener('keydown', onKey);
+  cv.onclick = e => {
+    if (V.busy) return; const r = cv.getBoundingClientRect();
+    const tx = Math.floor(((e.clientX - r.left) / r.width * VW + V.cam.x) / T), ty = Math.floor(((e.clientY - r.top) / r.height * VH + V.cam.y) / T);
+    const st = stopOf(D()), npc = st && st.area === V.A.spec.id && st.at && !st.auto && st.at[0] === tx && st.at[1] === ty;
+    const goals = npc ? [[tx + 1, ty], [tx - 1, ty], [tx, ty + 1], [tx, ty - 1]].filter(([x, y]) => free(x, y)) : free(tx, ty) ? [[tx, ty]] : [];
+    if (!goals.length) return;
+    const path = bfs(g, free, [me.x, me.y], goals); if (path) { me.path = path; me.onArrive = null; }
+  };
+  function stepTo(nx, ny) { // one tile with the keyboard
+    if (!free(nx, ny)) return; me.path = [[nx, ny]];
+  }
+  const tick = () => { // called each time the player stands on a new tile
+    d.pos = { a: V.A.spec.id, x: me.x, y: me.y };
+    const ex = exitAt(V.A.spec, g, me.x, me.y);
+    if (ex) return useExit(ex);
+    triggers();
+  };
+  V.tick = tick;
+  const loop = t => {
+    if (!cv.isConnected) return V.stop && V.stop(); raf = requestAnimationFrame(loop);
+    const dt = Math.min(100, t - last); last = t; const c = ctx, k = cv._k || 2;
+    if (me.path.length && !V.busy) {
+      const [nx, ny] = me.path[0], sp = .1 * dt / 16.7, ddx = nx - me.fx, ddy = ny - me.fy;
+      if (!free(nx, ny)) me.path = []; else {
+        if (ddx || ddy) me.dir = Math.abs(ddx) > Math.abs(ddy) ? (ddx < 0 ? 1 : 3) : (ddy < 0 ? 2 : 0);
+        me.fx += Math.sign(ddx) * Math.min(sp, Math.abs(ddx)); me.fy += Math.sign(ddy) * Math.min(sp, Math.abs(ddy));
+        if (Math.abs(me.fx - nx) < .01 && Math.abs(me.fy - ny) < .01) { me.fx = nx; me.fy = ny; me.x = nx; me.y = ny; me.path.shift(); save(); tick(); }
+      }
+    }
+    const A = V.A, d2 = D(), st = stopOf(d2), cam = V.cam;
+    cam.x = Math.round(Math.max(0, Math.min(A.spec.cols * T - VW, me.fx * T + 8 - VW / 2)) * k) / k;
+    cam.y = Math.round(Math.max(0, Math.min(A.spec.rows * T - VH, me.fy * T + 8 - VH / 2)) * k) / k;
+    c.setTransform(k, 0, 0, k, -cam.x * k, -cam.y * k); c.imageSmoothingEnabled = false;
+    c.drawImage(A.ground, cam.x * 2, cam.y * 2, VW * 2, VH * 2, cam.x, cam.y, VW, VH);
+    const vis = (x, y, w, h) => x < cam.x + VW && x + w > cam.x && y < cam.y + VH && y + h > cam.y, items = [], put = (b, f) => items.push({ b, f });
+    A.g.trees.forEach(tr => { if (vis(tr.x * T - 2, tr.y * T - 8, 20, 26)) put(tr.y * T + 15, () => drawTree(c, tr.x * T, tr.y * T, tr.v)); });
+    A.g.huts.forEach((h, i) => { if (vis(h.x * T - 4, h.y * T - 16, 40, 52)) { put(h.y * T + 31, () => drawHut(c, h.x * T, h.y * T, HUTROOF[h.r % 10], null, 0, false)); if (h.label) put(h.y * T + 40, () => board(c, h.x * T + 16 - Math.max(24, h.label.length * 3.1 + 6) / 2, h.y * T + 34, Math.max(24, h.label.length * 3.1 + 6), h.label)); } });
+    A.g.fences.forEach(f => { if (!d2.done[f.stop] && vis(f.x * T, f.y * T - 4, 16, 20)) put(f.y * T + 14, () => blit(c, fenceSprite(), f.x * T, f.y * T)); });
+    if (st && st.area === A.spec.id && st.at && !st.auto) { const [x, y] = st.at, look = ST.cast[st.npc] && ST.cast[st.npc].look; if (look) put(y * T + 16, () => drawKid(c, x * T + 2, y * T, 0, 0, look, y * T > me.fy * T ? 2 : 0)); }
+    const moving = me.path.length > 0, wf = Math.floor(t / 120) % 4;
+    put(me.fy * T + 16.5, () => drawKid(c, Math.round(me.fx * T * 2) / 2 + 2, Math.round(me.fy * T * 2) / 2, S.avatar, moving ? wf : 0, null, me.dir | 0));
+    items.sort((a, b) => a.b - b.b).forEach(it => it.f());
+    if (st && st.area === A.spec.id && st.at && !st.auto && !V.busy && !d2.arrived) tag(c, st.at[0] * T + 3, st.at[1] * T - 13, 10, '!', '#A8362B', '#E2483B', t);
+    c.setTransform(k, 0, 0, k, 0, 0);
+  };
+  raf = requestAnimationFrame(loop);
+  setTimeout(triggers, 400); // a Kakek who waits at the entrance of an area calls out right away
+}
+function useExit(ex) {
+  const me = V.me;
+  if (ex.to === 'farm') { V.stop(); closePanel(); S.pos = { x: 25, y: 4 }; save(); farm(); return; }
+  if (!allowed(ex.to)) { me.path = []; const st = stopOf(D()); say(cast('me'), `Belum waktunya ke sana. Tujuanmu sekarang: ${st.name}.${routeHint(V.A.spec.id, st.area)}`, []); sfx.bad(); const g = V.A.g; // step back inside
+    const back = [[me.x + 1, me.y], [me.x - 1, me.y], [me.x, me.y + 1], [me.x, me.y - 1]].find(([x, y]) => g.base(x, y) && !exitAt(V.A.spec, g, x, y)); if (back) { me.x = me.fx = back[0]; me.y = me.fy = back[1]; D().pos = { a: V.A.spec.id, x: me.x, y: me.y }; } return; }
+  const A2 = area(ex.to), d = D(); d.pos = { a: ex.to, x: ex.spawn[0], y: ex.spawn[1] }; save(); sfx.coin();
+  V.stop(); worldView(true).then(() => { banner(A2.spec.name); setTimeout(idle, 0); });
+}
+// the current quest stop is close (or waits for us at the entrance): start it, Pokémon-trainer style
+function triggers() {
+  if (!V || V.busy) return; const d = D(), st = stopOf(d); if (!st) return;
+  if (st.auto) { V.busy = true; V.me.path = []; return arrive(st); }
+  if (st.area !== V.A.spec.id) return;
+  const me = V.me, dist = Math.abs(me.x - st.at[0]) + Math.abs(me.y - st.at[1]);
+  if (st.onEnter || dist <= 2) { V.busy = true; me.path = []; arrive(st); }
+}
 
 function say(who, text, btns) {
   const el = $(`<div style="display:contents"><img class="portrait" alt="" src="${who.portrait || portrait(who.look, who.av)}"><div class="body"><div class="who">${esc(who.npc)}</div><div class="txt"></div><div class="row act"></div></div></div>`);
@@ -170,15 +225,13 @@ function say(who, text, btns) {
 const trText = t => t.replace(/\{tr:(\d+):(\d+)-(\d+)\}/g, (m, no, a, b) => BY[no].ayat.filter(x => x.n >= +a && x.n <= +b).map(x => x.tr).join(' '));
 const txt = t => fill(trText(t));
 
-// the idle prompt: walk to the next stop, or talk if we already arrived
+// the hint line between conversations: where to go next
 function idle() {
-  const d = D(), leg = legOf(d), st = stopOf(d);
+  const d = D(), st = stopOf(d); if (!V) return; V.busy = false;
   if (!st) return;
-  if (st.auto) return arrive(st);
-  if (d.i === 0 && !d.arrived) return arrive(st); // a leg starts where the player already stands
-  if (d.arrived === st.id) return say(cast(st.npc), `${st.name}. Ketuk untuk melanjutkan percakapan.`, [['Bicara ▸', () => arrive(st), 'green']]);
-  const n = d.i + 1;
-  say(cast('me'), `Berikutnya: ${st.name} (${n} dari ${leg.stops.length}). Jalan terus, ya!`, [['Jalan ▸', () => { V.dlg.replaceChildren(); V.map.walk(st.at, () => arrive(st)); }, 'green']]);
+  const here = V.A.spec.id, there = st.area || here, areaName = ST.areas.find(a => a.id === there)?.name || '';
+  say(cast('me'), here === there ? `Tujuan: ${st.name}. Ketuk tanah untuk berjalan, ketuk orang yang bertanda ! untuk bicara.` : `Tujuan: ${st.name} di ${areaName}.${routeHint(here, there)} Berjalanlah ke tepi peta.`, []);
+  triggers();
 }
 function arrive(st) {
   const d = D(); d.arrived = st.id; save(); sfx.coin();
@@ -187,11 +240,9 @@ function arrive(st) {
   scene(st.lines, () => finishStop(st));
 }
 function finishStop(st) {
-  const d = D(); d.done[st.id] = true; d.arrived = null; d.i++;
-  const legBefore = d.leg; if (d.i >= legOf(d).stops.length) { d.leg++; d.i = 0; }
+  const d = D(); d.done[st.id] = true; d.arrived = null; d.q++;
   save(); logActivity('dagang_stop', { stop: st.id });
   if (st.final) return finale();
-  if (d.leg !== legBefore) { toast('Wilayah baru terbuka!'); return journeyView(); }
   ensureView(idle);
 }
 
@@ -248,7 +299,7 @@ function customer(st, done) {
 /* ---------- learn one part of a surah, then (last part) the whole surah ---------- */
 function learn(st, done) {
   const d = D(), no = st.surah, s = BY[no], [a, b] = st.part, T0 = cast(st.teacher || st.npc);
-  const back = () => journeyView();
+  const back = () => worldView();
   const stage = () => {
     if (!d.seen[st.id]) { d.seen[st.id] = 1; save(); return scene(st.ask, stage); }
     const j = s.ayat.findIndex(x => x.n >= a && x.n <= b && !S.ay[x.a]);
@@ -271,7 +322,7 @@ function explain(st, next) {
       if (o === a) { fin = true; btn.classList.add('good'); sfx.good(); fb.className = 'fb good'; fb.textContent = fill(E.yes); v.querySelector('#nx').hidden = false; }
       else { btn.classList.add('bad'); sfx.bad(); fb.className = 'fb bad'; fb.textContent = 'Hmm, ayat itu membahas hal lain. Coba pilih ayat yang lain.'; setTimeout(() => btn.classList.remove('bad'), 900); } });
     v.querySelector('#nx').onclick = () => next(); body.append(v);
-  }, () => journeyView());
+  }, () => worldView());
 }
 
 /* ---------- the end of the chapter, and a review page ---------- */
@@ -291,3 +342,5 @@ function summary() {
     });
   });
 }
+
+export const _debug = () => V; // for tests (tests/*.mjs read the live view state)

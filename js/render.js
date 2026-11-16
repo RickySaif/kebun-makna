@@ -1,5 +1,6 @@
 // render.js — map logic is verbatim from the classic game (Phase 0). The drawing half was rebuilt in v3:
 // the same function names and classic-pixel coordinates, now backed by the baked HD sprites in art.js.
+import { hooks } from './hooks.js';
 import { BOSS, ORDER, QUEST } from './data.js';
 import { cv, draw, walkers } from './farm.js';
 import { S, activeEvent } from './state.js';
@@ -69,7 +70,9 @@ export function homeOf(no){ const i=ORDER.filter(n=>S.solved[n]).indexOf(no); if
 export function giverNo(e){ if(typeof e==='number') return e; const gv=BOSS[e].giver; const n=ORDER.find(k=>QUEST[k]===gv); return n||null; }
 export const villagers=()=>ORDER.filter(n=>S.solved[n]).map((n,i)=>{const [hx,hy]=LOTS[i];return {no:n,hx,hy,x:hx+(i%2),y:13,away:walkers.some(w=>w.no===n)||isOut(n)};});
 export function isOut(n){ const e=activeEvent(); return !!(e&&typeof e==='string'&&giverNo(e)===n&&S.arrived&&S.arrived[e]); }
+export const WORLD_EXIT_Y=4; // the gate at the east end of the village road (opened by dagang.js once the original game is finished)
 export function blocked(x,y){
+  if(x===COLS-1&&y===WORLD_EXIT_Y&&hooks.worldOpen&&hooks.worldOpen()) return false;
   if(x<=0||y<=0||x>=COLS-1||y>=ROWS-1) return true;
   if(x===11&&y<=10&&!(y===4&&eastOpen())) return true;
   if(isEast(x,y)&&!eastOpen()) return true;

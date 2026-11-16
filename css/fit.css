@@ -108,3 +108,7 @@ body{margin:0}
 .jv .stage canvas{display:block;width:100%;height:auto;aspect-ratio:12/11;image-rendering:pixelated}
 .jv .jdlg{margin-top:0;min-height:112px}
 .jv .jdlg .row.act{display:flex;gap:8px;flex-wrap:wrap}
+.jv .stage{position:relative}
+.jbanner{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:#2B1D12;color:#FFF6CC;font-weight:700;font-size:15px;padding:6px 16px;border-radius:8px;border:2px solid #FFE07A;box-shadow:0 3px 0 rgba(0,0,0,.35);animation:jban 2.3s ease both;pointer-events:none;white-space:nowrap}
+@keyframes jban{0%{opacity:0;transform:translate(-50%,-14px)}12%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+.jv .stage canvas{cursor:pointer;touch-action:manipulation}

@@ -12,7 +12,7 @@ import { cartGame, chase, pestGame, race } from './bosses.js';
 import { AW, BOSS, BY, DATA, EVENTS, HOUSE_TIERS, KAKEK, LV_XP, ORDER, QUEST, SLV_NAMES, seedPrice } from './data.js';
 import { celebrate, lesson, lessonStart, makeQ, renderQ, suratUtuh } from './lesson.js';
 import { addReview, addXP, canBuild, flushNotes, journal, levelView, note, pLevel, perk, renoNext, renoOpen, renoReady, repXP } from './progress.js';
-import { CHESTPOS, COLS, ENTRY, FRUIT, GATE, GATE2, ICON, LOTS, OBJ, PLOTS, ROWS, SPOT, T, VC, VR, adjacent, bfs, blocked, drawChest, drawCrop, drawGate, drawHedge, drawHouse, drawHut, drawKid, drawLot, drawPlotSoil, drawShop, drawSign, drawTree, drawTrophy, drawWell, eastOpen, evLook, evName, farOpen, giverNo, hitObject, homeOf, isNight, npcHere, portrait, px, stageOf, villagers } from './render.js';
+import { CHESTPOS, COLS, WORLD_EXIT_Y, ENTRY, FRUIT, GATE, GATE2, ICON, LOTS, OBJ, PLOTS, ROWS, SPOT, T, VC, VR, adjacent, bfs, blocked, drawChest, drawCrop, drawGate, drawHedge, drawHouse, drawHut, drawKid, drawLot, drawPlotSoil, drawShop, drawSign, drawTree, drawTrophy, drawWell, eastOpen, evLook, evName, farOpen, giverNo, hitObject, homeOf, isNight, npcHere, portrait, px, stageOf, villagers } from './render.js';
 import { blit, buildGround, butterflySprite, cloudSprite, fenceSprite, gfxLite, glowSprite, hdCanvas, lowerCap, vignetteSprite } from './art.js';
 import { avatarBuilder } from './avatar.js';
 import { S, activeEvent, done, fill, fresh, lv, save, setS, surahDone, words } from './state.js';
@@ -97,7 +97,7 @@ export function loop(t){
   const dt=Math.min(100,t-lastT); lastT=t; tickClock(dt);
   if(me.path.length){const [nx,ny]=me.path[0];const sp=(perk(6)?0.18:0.12)*dt/16.7; const ddx=nx-me.fx,ddy=ny-me.fy; if(ddx||ddy) me.dir=Math.abs(ddx)>Math.abs(ddy)?(ddx<0?1:3):(ddy<0?2:0);me.fx+=Math.sign(nx-me.fx)*Math.min(sp,Math.abs(nx-me.fx));me.fy+=Math.sign(ny-me.fy)*Math.min(sp,Math.abs(ny-me.fy));
     if(Math.abs(me.fx-nx)<.01&&Math.abs(me.fy-ny)<.01){me.fx=nx;me.fy=ny;me.x=nx;me.y=ny;me.path.shift();if(t-lastStep>180){sfx.step();lastStep=t;}
-      if(!me.path.length){S.pos={x:me.x,y:me.y};save();const f=me.onArrive;me.onArrive=null;f&&f();}}}
+      if(!me.path.length){S.pos={x:me.x,y:me.y};save(); if(me.x===COLS-1&&me.y===WORLD_EXIT_Y&&hooks.worldEnter&&hooks.worldOpen&&hooks.worldOpen()){me.onArrive=null;hooks.worldEnter();return;} const f=me.onArrive;me.onArrive=null;f&&f();}}}
   walkers.forEach(w=>{ if(!w.path.length) return; const [nx,ny]=w.path[0]; const sp=0.07*dt/16.7; w.fx+=Math.sign(nx-w.fx)*Math.min(sp,Math.abs(nx-w.fx)); w.fy+=Math.sign(ny-w.fy)*Math.min(sp,Math.abs(ny-w.fy)); if(Math.abs(w.fx-nx)<.01&&Math.abs(w.fy-ny)<.01){w.fx=nx;w.fy=ny;w.path.shift(); if(!w.path.length){ walkers=walkers.filter(x=>x!==w); w.done&&w.done(); }} });
   // v3: a full-screen panel (lesson, shop, boss) hides the farm, so don't spend frames on it
   const top=layer.firstElementChild; if(top&&top.classList.contains('panel')) return;
@@ -166,7 +166,8 @@ export function draw(t){
   if(tapFx){ const a=(t-tapFx.t)/450; if(a>=1) tapFx=null; else { const X=tapFx.x*T,Y=tapFx.y*T,o=2+a*3; c.fillStyle=`rgba(255,255,255,${(.85*(1-a)).toFixed(2)})`; [[o,o],[14-o,o],[o,14-o],[14-o,14-o]].forEach(([x,y],q)=>{c.fillRect(X+x-(q%2?2:0),Y+y,3,1);c.fillRect(X+x+(q%2?0:0),Y+y-(q>1?2:0),1,3);}); } }
   // standing things, sorted by their feet
   for(let x=0;x<COLS;x++){ const v=TREEV[(x*5)%6],v2=TREEV[(x*5+3)%6]; if(vis(x*T-1,-6,18,24)) put(15,()=>drawTree(c,x*T,0,v)); if(vis(x*T-1,(ROWS-1)*T-6,18,24)) put(ROWS*T-1,()=>drawTree(c,x*T,(ROWS-1)*T,v2)); }
-  for(let y=1;y<ROWS-1;y++){ const v=TREEV[(y*3)%6],v2=TREEV[(y*3+2)%6]; if(vis(-1,y*T-6,18,24)) put(y*T+15,()=>drawTree(c,0,y*T,v)); if(vis((COLS-1)*T-1,y*T-6,18,24)) put(y*T+15,()=>drawTree(c,(COLS-1)*T,y*T,v2)); }
+  for(let y=1;y<ROWS-1;y++){ const v=TREEV[(y*3)%6],v2=TREEV[(y*3+2)%6]; if(vis(-1,y*T-6,18,24)) put(y*T+15,()=>drawTree(c,0,y*T,v)); if(y===WORLD_EXIT_Y&&hooks.worldOpen&&hooks.worldOpen()) continue; if(vis((COLS-1)*T-1,y*T-6,18,24)) put(y*T+15,()=>drawTree(c,(COLS-1)*T,y*T,v2)); }
+  if(hooks.worldOpen&&hooks.worldOpen()) put(WORLD_EXIT_Y*T+14,()=>drawGate(c,COLS-1,WORLD_EXIT_Y,true));
   for(let y=1;y<=15;y++){ if(y===4) continue; if(y<=10&&vis(11*T,y*T-4,16,20)) put(y*T+14,()=>drawHedge(c,11,y)); if(vis(20*T,y*T-4,16,20)) put(y*T+14,()=>drawHedge(c,20,y)); }
   put(GATE.y*T+14,()=>drawGate(c,GATE.x,GATE.y,east)); put(GATE2.y*T+14,()=>drawGate(c,GATE2.x,GATE2.y,far));
   FRUIT.forEach(([a,b])=>put(b*T+15,()=>drawTree(c,a*T,b*T,4)));
@@ -206,6 +207,7 @@ export function draw(t){
   if(anyNewSeed()) tag(c,8*T+10,1*T-14,28,'BARU','#A8362B','#E2483B',t);
   if(!east) board(c,13*T,2*T,52,'TANAH BARU');
   if(!far) board(c,21*T+2,5*T,74,'TANAH PAK KADES');
+  if(hooks.worldOpen&&hooks.worldOpen()) board(c,(COLS-1)*T-60,WORLD_EXIT_Y*T-30,60,'JALAN DAGANG');
   if(nh){ const X=nh.x*T,Y=nh.y*T,bob=Math.round(Math.sin(t/220)*2)/2, col=typeof nh.e==='string'?'#F4B400':'#FFFFFF'; px(c,X+4.5,Y-13.5+bob,7,10,'#2B1D12'); px(c,X+5,Y-13+bob,6,9,col); px(c,X+7,Y-4+bob,2,1.5,'#2B1D12'); px(c,X+7.5,Y-4+bob,1,1,col); px(c,X+7,Y-11.5+bob,2,4.5,'#C8463A'); px(c,X+7,Y-6+bob,2,1.5,'#C8463A'); }
   // small effects
   const lite=gfxLite()||fxOff;
