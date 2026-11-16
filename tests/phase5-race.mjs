@@ -1,21 +1,11 @@
 // Phase 5: live race. A follows B; B waits on Beranda; A sees B online in the lobby and invites; B gets the banner,
 // joins; both get the same questions; A answers everything right and wins; both log boss_done {mode:'pvp'}.
-// Env: KM_EMAIL, KM_PASS.
-import { BASE, newPage, close, parentClient, childClient, familyFn, assert } from './lib.mjs';
+// Env: KM_EMAIL/KM_PASS and KM_EMAIL2/KM_PASS2. Cleanup: A's follow is deleted.
+import { BASE, newPage, close, userClient, userId, login, assert } from './lib.mjs';
 
-const parent = await parentClient();
-const { data: code } = await parent.rpc('my_family_name'); // family name, e.g. "penguji"
-const tag = Math.random().toString(36).slice(2, 6);
-const kids = [];
-async function login(page, k) {
-  await page.goto(BASE + '/');
-  await page.click('#kid');
-  if (await page.$('#fc')) { await page.fill('#fc', code); await page.click('#go'); }
-  await page.locator('.kidgrid .av', { hasText: k.name }).click();
-  for (const d of k.pin) await page.click(`.pinpad button[data-n="${d}"]`);
-  await page.click('.pinpad button[data-f="ok"]');
-  await page.waitForSelector('#dlg', { timeout: 20000 });
-}
+const ca = await userClient(1), cb = await userClient(2);
+const idA = await userId(ca), idB = await userId(cb);
+const t0 = new Date().toISOString();
 async function answer(page, right) {
   const ar = await page.locator('#stage .ar').innerText();
   const ans = await page.evaluate(async ar => { const { DATA } = await import('./js/data.js'); for (const s of DATA) for (const a of s.ayat) for (const w of a.w) if (w.ar === ar) return w.id; }, ar);
@@ -25,18 +15,13 @@ async function answer(page, right) {
 }
 const errs = [];
 try {
-  for (const [n, pin] of [['A', '8011'], ['B', '8012']]) {
-    const r = await familyFn(parent, { action: 'create', display_name: `Uji ${n} ${tag}`, avatar: n === 'A' ? 0 : 1, pin });
-    kids.push({ id: r.body.child_id, name: `Uji ${n} ${tag}`, pin });
-  }
   const A = await newPage('A'), B = await newPage('B');
-  for (const [p, k] of [[A, kids[0]], [B, kids[1]]]) {
-    await login(p, k);
+  for (const [p, n] of [[A, 1], [B, 2]]) {
+    await login(p, n, '#dlg');
     await p.evaluate(async () => { const s = await import('./js/state.js'); ['114001', '114002', '114003'].forEach(a => s.S.ay[a] = true); s.save(); });
   }
   await A.waitForTimeout(5000);
-  const ca = await childClient(code, kids[0].id, kids[0].pin);
-  await ca.from('follows').insert({ follower_id: kids[0].id, followee_id: kids[1].id });
+  await ca.from('follows').insert({ follower_id: idA, followee_id: idB });
   await B.goto(BASE + '/#/beranda'); await B.reload();
   await B.waitForSelector('.feed', { timeout: 15000 });
   await A.goto(BASE + '/#/lomba'); await A.reload();
@@ -57,12 +42,12 @@ try {
   assert(true, 'A wins, B sees the result');
   await A.screenshot({ path: 'shot-race.png' });
   await A.waitForTimeout(1500);
-  const { data: logs } = await parent.from('activity_log').select('profile_id, detail').eq('kind', 'boss_done').in('profile_id', kids.map(k => k.id));
-  assert(logs.filter(l => l.detail.mode === 'pvp').length === 2, 'both logged boss_done {mode:pvp}');
+  const mine = async (c, id) => ((await c.from('activity_log').select('detail').eq('kind', 'boss_done').eq('profile_id', id).gte('created_at', t0)).data || []).filter(l => l.detail.mode === 'pvp').length;
+  assert((await mine(ca, idA)) >= 1 && (await mine(cb, idB)) >= 1, 'both logged boss_done {mode:pvp}');
   for (const p of [A, B]) errs.push(...p.errors.filter(e => !/status of (400|409|500)/.test(e) && !/group_members|groups\?/.test(e)));
 } catch (e) { console.log('  FAIL exception', e.message.slice(0, 400)); process.exitCode = 1; }
 finally {
-  for (const k of kids) console.log('  cleanup', k.name, (await familyFn(parent, { action: 'delete', child_id: k.id })).status);
+  await ca.from('follows').delete().match({ follower_id: idA, followee_id: idB });
   await close();
 }
 assert(errs.length === 0, 'no console errors ' + errs.join(' | '));

@@ -333,7 +333,7 @@ export async function profilePage(id) {
   else for (const el of await postCards(posts)) list.append(el);
   body.append(list);
   if (isMe) {
-    const out = $(`<div class="row" style="margin-top:16px"><button class="btn ghost" id="logout">🚪 Keluar dari akun</button></div>`);
+    const out = $(`<div class="row" style="margin-top:16px"><a class="btn green" href="#/dukung">💚 Dukung Kebun Makna</a><button class="btn ghost" id="logout">🚪 Keluar dari akun</button></div>`);
     out.querySelector('#logout').onclick = async () => {
       if (!confirm('Keluar dari akun ini? Progresmu aman tersimpan di akun.')) return;
       try { (await import('./cloud.js')).flushNow(); } catch (e) {}

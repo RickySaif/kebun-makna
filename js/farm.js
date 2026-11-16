@@ -72,7 +72,7 @@ export function farm(){
       <button class="chip lvchip" id="lvl" title="Level Petani">Lv ${pLevel()}<span class="minibar"><i style="width:${(()=>{const L=pLevel(),n=LV_XP[L+1];return n?Math.min(100,(S.xp-LV_XP[L])/(n-LV_XP[L])*100):100;})()}%"></i></span></button>
       <button class="btn ghost icon" id="jrn" aria-label="Jurnal Misi">📜</button>
       <button class="btn ghost icon" id="book" aria-label="Buku Kata">📖</button>
-      <button class="btn ghost icon" id="gear" aria-label="Untuk orang tua">⚙</button></div>
+      <button class="btn ghost icon" id="gear" aria-label="Pengaturan">⚙</button></div>
     <div class="hud2"><div class="clock">Hari ${S.day} · <span id="clk">${clockStr()}</span></div>
       <div class="vbar"><span>Desa</span><div class="track"><div class="fillb" style="width:${vp.done/vp.total*100}%"></div></div><span>${vp.done}/${vp.total}</span></div></div>
     <div class="stagebox"><div class="stage"><canvas id="farm" width="${VC*T}" height="${VR*T}" aria-label="Kebunmu. Ketuk tempat untuk berjalan."></canvas></div></div>
@@ -434,7 +434,7 @@ export function intro(){ introActive=true; farm(); }
 /* ---------- parent view ---------- */
 export function parentView(){
   let tab='progres';
-  panel('Untuk Orang Tua','Progres, cek arti, pengaturan',(body)=>{
+  panel('Pengaturan','Progres, cek arti, pengaturan',(body)=>{
     const tabs=$(`<div class="ptab"><button data-t="progres">Progres</button><button data-t="arti">Cek arti per kata</button><button data-t="atur">Pengaturan &amp; sumber</button></div>`); const inner=$(`<div class="sys"></div>`);
     body.append(tabs,inner);
     const render=()=>{ tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));

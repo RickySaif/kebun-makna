@@ -8,12 +8,12 @@
 //                 ffmpeg -i w.aiff -af apad=pad_dur=2.5 -ar 16000 -ac 1 wrong.wav
 // Checks: the model is downloaded and built on the start-up screen · each ayah is read once after Susun · Surat Utuh
 // ends with reading the whole surah at once · "Lanjut" always works (never a requirement) · silence → "Tidak ada suara" · Alafasy's word
-// → 100% · a'uzu → below 100% with only أعوذ red · Alafasy's ayah → 100%. With KM_EMAIL/KM_PASS a signed-in child's
+// → 100% · a'uzu → below 100% with only أعوذ red · Alafasy's ayah → 100%. With KM_EMAIL/KM_PASS a signed-in account's
 // recitation_try row (part, score, ms, wrong) is checked too.
 import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
-import { BASE, INIT, SHORT_SILENCE, driveLessonOnce, assert, parentClient, familyFn } from './lib.mjs';
+import { BASE, INIT, SHORT_SILENCE, driveLessonOnce, assert, userClient, userId } from './lib.mjs';
 
 const tmp = fs.mkdtempSync(path.join(process.cwd(), 'chrome-'));
 const errors = [];
@@ -54,8 +54,9 @@ async function read(page) {
     red: await page.$$eval('.practice .ayahbig span', els => els.map(e => e.style.textDecoration.includes('wavy'))) };
 }
 
-const parent = process.env.KM_EMAIL ? await parentClient() : null;
-let kidId;
+const account = process.env.KM_EMAIL ? await userClient(1) : null;
+const accountId = account ? await userId(account) : null;
+const runStart = new Date().toISOString();
 try {
   // ---- 1. fresh profile: page order, never blocking, silence ----
   let { ctx, page } = await open('silence.wav');
@@ -139,31 +140,22 @@ try {
   assert(r.acc === 'Ketepatan: 100%', 'Alafasy\'s 114:1 scores 100%');
   await page.screenshot({ path: 'shot-practice-ayah.png' });
 
-  // ---- 5. signed-in child: the try is logged ----
-  if (parent) {
-    const { data: fname } = await parent.rpc('my_family_name');
-    const tag = Math.random().toString(36).slice(2, 6);
-    const c = await familyFn(parent, { action: 'create', display_name: `Uji R ${tag}`, avatar: 1, pin: '5813' });
-    kidId = c.body.child_id;
+  // ---- 5. signed-in account: the try is logged ----
+  if (account) {
     await page.evaluate(() => { localStorage.removeItem('kebun-makna-mode'); location.hash = ''; });
     await page.goto(BASE + '/?x=1');
-    await page.click('#kid');
-    if (await page.$('#fc')) { await page.fill('#fc', fname); await page.click('#go'); }
-    await page.locator('.kidgrid .av', { hasText: `Uji R ${tag}` }).click();
-    for (const d of '5813') await page.click(`.pinpad button[data-n="${d}"]`);
-    await page.click('.pinpad button[data-f="ok"]');
-    await page.waitForSelector('#dlg', { timeout: 20000 });
+    await page.fill('#em', process.env.KM_EMAIL); await page.fill('#pw', process.env.KM_PASS); await page.click('#go');
+    await page.waitForSelector('#dlg', { timeout: 30000 });
     await start(page);
-    assert(await until(page, /^Sekarang baca satu ayat$/), 'child reaches the whole-ayah page');
+    assert(await until(page, /^Sekarang baca satu ayat$/), 'the signed-in account reaches the whole-ayah page');
     await ready(page); await read(page); await page.waitForTimeout(1500);
-    const { data: acts } = await parent.from('activity_log').select('kind, detail').eq('profile_id', kidId).eq('kind', 'recitation_try');
+    const { data: acts } = await account.from('activity_log').select('kind, detail').eq('profile_id', accountId).eq('kind', 'recitation_try').gte('created_at', runStart);
     console.log('  activity:', JSON.stringify(acts));
     assert(acts && acts.length >= 1 && acts[0].detail.part === 'ayat' && acts[0].detail.ms > 0 && Array.isArray(acts[0].detail.wrong), 'recitation_try logged with part, ms and wrong words');
-  } else console.log('  (no KM_EMAIL: skipping the signed-in child part)');
+  } else console.log('  (no KM_EMAIL: skipping the signed-in part)');
   await ctx.close();
 } catch (e) { console.log('  FAIL exception', e.message); process.exitCode = 1; }
 finally {
-  if (kidId) console.log('  cleanup', (await familyFn(parent, { action: 'delete', child_id: kidId })).status);
   fs.rmSync(tmp, { recursive: true, force: true });
 }
 assert(errors.length === 0, 'no page errors ' + errors.join(' | '));

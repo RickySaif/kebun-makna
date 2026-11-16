@@ -1,6 +1,9 @@
 // Shared helpers for beta Playwright tests. Run from a folder where `playwright` and
 // `@supabase/supabase-js@2.45.4` are installed. Credentials come from env (never commit them):
-//   KM_EMAIL, KM_PASS   (test parent account)
+//   KM_EMAIL,  KM_PASS    test account 1 ("A")
+//   KM_EMAIL2, KM_PASS2   test account 2 ("B"), only for the two-player tests (feed, visit, race, groups)
+// Both are normal email accounts, created and confirmed once by hand (never sign them up from a test: email limits).
+// They are dedicated to tests: the tests change their saves and clean up what they can (posts, follows, groups).
 //   BASE                (default http://127.0.0.1:8765, serve the repo root)
 import { chromium } from 'playwright';
 import { createClient } from '@supabase/supabase-js';
@@ -34,33 +37,32 @@ export async function newPage(label) {
 
 export const client = () => createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
 
-export async function parentClient() {
+const CRED = n => n === 2 ? [process.env.KM_EMAIL2, process.env.KM_PASS2] : [process.env.KM_EMAIL, process.env.KM_PASS];
+/** A signed-in Supabase client for test account n (1 or 2). */
+export async function userClient(n = 1) {
+  const [email, password] = CRED(n);
+  if (!email || !password) throw new Error(n === 2 ? 'Set KM_EMAIL2 and KM_PASS2' : 'Set KM_EMAIL and KM_PASS');
   const c = client();
-  const { error } = await c.auth.signInWithPassword({ email: process.env.KM_EMAIL, password: process.env.KM_PASS });
+  const { error } = await c.auth.signInWithPassword({ email, password });
   if (error) throw error;
   return c;
 }
+export const userId = async c => (await c.auth.getUser()).data.user.id;
 
-export async function childClient(code, childId, pin) {
-  const r = await fetch(`${SUPABASE_URL}/functions/v1/child-login`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY },
-    body: JSON.stringify({ family_code: code, child_id: childId, pin }),
-  });
-  const j = await r.json();
-  if (!r.ok) throw new Error('child-login ' + r.status + ' ' + JSON.stringify(j));
-  const c = client();
-  const { error } = await c.auth.verifyOtp({ token_hash: j.token_hash, type: 'magiclink' });
-  if (error) throw error;
-  return c;
+/** Sign test account n in through the login form. `ready` is what to wait for: 'nav.tabbar' (tabs) or '#dlg' (the farm). */
+export async function login(page, n = 1, ready = 'nav.tabbar') {
+  const [email, password] = CRED(n);
+  await page.goto(BASE + '/');
+  await page.fill('#em', email); await page.fill('#pw', password); await page.click('#go');
+  await page.waitForSelector(ready, { timeout: 30000 });
 }
 
-export async function familyFn(parent, body) {
-  const { data: { session } } = await parent.auth.getSession();
-  const r = await fetch(`${SUPABASE_URL}/functions/v1/family`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: 'Bearer ' + session.access_token },
-    body: JSON.stringify(body),
-  });
-  return { status: r.status, body: await r.json() };
+/** Signed in: open the support page through the Profil tab (also checks the "Dukung" link is reachable). */
+export async function openSupport(page) {
+  await page.click('nav.tabbar a[data-t="profil"]');
+  await page.waitForSelector('#logout', { timeout: 20000 });
+  await page.click('a[href="#/dukung"]');
+  await page.locator('text=Sahabat Kebun Makna').first().waitFor({ timeout: 15000 });
 }
 
 /** Drive one lesson panel step (Dengar/Kenali/Cocokkan/Susun) or a celebration. Returns a label or null. */

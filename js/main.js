@@ -31,7 +31,7 @@ function accountBox(box) {
   const p = session.profile;
   if (mode === 'player' && p) {
     const b = $(`<div class="box"><h3>Akun</h3><p class="small" style="margin:0 0 8px">Masuk sebagai <b></b>. Progres tersimpan di akun (cloud) dan di perangkat ini, jadi aman walau ganti HP.</p>
-      <div class="row"><button class="btn ghost" id="sw">Keluar</button></div></div>`);
+      <div class="row"><a class="btn green" href="#/dukung">💚 Dukung Kebun Makna</a><button class="btn ghost" id="sw">Keluar</button></div></div>`);
     b.querySelector('b').textContent = p.display_name;
     b.querySelector('#sw').onclick = async () => { flushNow(); await new Promise(r => setTimeout(r, 400)); await signOut(); location.hash = ''; location.reload(); };
     box.prepend(b);
