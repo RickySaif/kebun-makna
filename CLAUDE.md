@@ -7,7 +7,7 @@ Read `docs/PLAN.md` for the phased work and acceptance criteria. Keep `docs/PROG
 ## Non-negotiable rules
 1. **Religious accuracy.** Never invent an ayah, a hadith, a translation or a word meaning. Qur'an and hadith text shown anywhere must come from the `sources` table (or the existing reviewed `DATA` block in the game). Every story or dialogue that relies on a hadith or ayah must cite real rows from `sources`: keep the `sources.id` values in the content file and list them in `docs/CONTENT_REVIEW.md` (a simple list of what each story cites). Story content is built straight into `/beta/` with no status flags or parent-only preview; Ricky's ustaz reviews the whole beta before cutover.
 2. **Word audio** for the existing 10 surahs is cut from Alafasy's continuous recitation (`audio/w`, `audio/a`, `audio/v`). Don't regenerate or replace it with TTS.
-3. **Children's safety.** Children never type an email or password. No free chat or DMs. Posts must cite a source. Comments are short and filtered on the server. Parents see everything their children do. Never show a child's family code to other users.
+3. **Safety.** No free chat or DMs. Posts must cite a source. Comments are short and filtered on the server. Since 2026-11-16 there are no child sub-accounts, family codes or parent dashboards: every player has their own email or Google account (a parent can make one for a child). Moderation is by the author, the word filter, reports (3 distinct auto-hide) and the admin.
 4. **Don't break the live game.** Since the cutover (2026-11-13) the game is the root of the repo and is live at https://km.generasimerdeka.com/ (`index.html`, `js/`, `css/`, `audio/`, `models/`, `content/`). The original single-file game was removed on 2026-11-13 (Ricky); it is in git history before that date. `beta/index.html` only redirects old links to the root. Every push to `main` deploys to players at once.
 5. **No build step.** Plain HTML, CSS and native ES modules. Load libraries from CDN with **exact pinned versions** (for example `https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm`, `@huggingface/transformers@3.8.1`). It must work on iOS Safari 17+ and need nothing installed.
 6. **Secrets.** Only the publishable key goes in the frontend. Never commit a service-role key or a webhook secret.
@@ -21,36 +21,22 @@ Read `docs/PLAN.md` for the phased work and acceptance criteria. Keep `docs/PROG
 - **If you need a schema or function change:** write a new migration file (`supabase/migrations/<timestamp>_<name>.sql`) or edit the function source. Do **not** assume it's applied. List it under "Needs applying" in `docs/PROGRESS.md`, and write the frontend so it degrades gracefully until it's applied. Ricky's local Claude applies these.
 
 ### Auth model
-- **Parent:** normal Supabase email auth (`signUp` / `signInWithPassword` / magic link). A trigger auto-creates `profiles(role='parent')` and `families(code)`, a 6-hex family code. Show it as `KM-XXXXXX`.
-- **Child (sub-account):** created by the parent. `POST /functions/v1/family` with the parent JWT:
-  - `{action:'create', display_name, avatar, pin}` (PIN is 4–6 digits)
-  - `{action:'set_pin', child_id, pin}`
-  - `{action:'delete', child_id}`
-- **Child sign-in** on any device, with no email:
-  1. `POST /functions/v1/child-login {family_code}` returns `{children:[{id,display_name,avatar}]}`.
-  2. Pick the avatar, then `POST {family_code, child_id, pin}`, which returns `{token_hash}`.
-  3. `supabase.auth.verifyOtp({ token_hash, type: 'magiclink' })` gives a normal session.
-  
-  The account locks for 10 minutes after 5 wrong PINs (HTTP 429). Verified end-to-end on 2026-11-09.
-- **Parent override PIN** (for the recitation gate):
-  - The parent calls `rpc('set_parent_pin', {pin})`.
-  - A child session calls `rpc('verify_parent_pin', {pin})`, which returns `'ok'|'wrong'|'locked'|'unset'`. A successful check is logged.
-  - `rpc('has_parent_pin')` returns a boolean.
+- **One kind of account (Ricky, 2026-11-16):** Supabase email auth (`signUp` / `signInWithPassword` / magic link / Google). A trigger auto-creates `profiles(role='parent')` with a unique `username`. `role` is always `'parent'` now; it is kept only because `same_side()` and the feed/race code read it. A trial without an account saves nothing.
+- **Username:** `profiles.username` (3–20 chars, `a-z0-9`, starts with a letter, unique). It is the supporter-payment key (`#saif` in the Trakteer message). Change it on the support page (`rpc('username_available')`, `rpc('set_username')`; `rpc('my_username')` reads it).
+- **Retired for good:** child sub-accounts, `family` / `child-login` edge functions, the family code and name, spouse linking, parent override PIN, `families`, `family_members`, `spouses`, `spouse_invites`, `parent_secrets`, `child_secrets`. Migration `20261116090000_retire_family_and_spouses.sql`. The old code is in git history before this date.
 
 ### Tables (RLS enforced; see the migrations for the exact policies)
 | table | who reads | who writes |
 |---|---|---|
-| `profiles` (id, role, display_name, avatar, supporter_tier) | any signed-in user | self or parent: `display_name` and `avatar` only |
-| `families` (parent_id, code) | the parent only | trigger |
-| `family_members` (child_id, parent_id) | that parent or that child | edge function |
-| `game_saves` (profile_id, state jsonb, version) | self, parent, admin | self |
+| `profiles` (id, role, display_name, avatar, username, supporter_tier) | any signed-in user | self: `display_name` and `avatar` only (`username` only through `set_username`) |
+| `game_saves` (profile_id, state jsonb, version) | self, admin | self |
 | `farm_public` (profile_id, snapshot jsonb, level, surahs_done) | any signed-in user | self (for farm visits) |
-| `activity_log` (profile_id, kind, detail) | self, parent, admin | self (insert) |
-| `farm_interactions` (visitor, owner, kind water/salam, preset) | both parties and their parents | visitor; water is unique per visitor, owner and day |
+| `activity_log` (profile_id, kind, detail) | self, admin | self (insert) |
+| `farm_interactions` (visitor, owner, kind water/salam, preset) | both parties | visitor; water is unique per visitor, owner and day |
 | `sources` (id `quran:S:A` / `bukhari:N` / `muslim:N`, ref_label, arabic, indonesian, attribution, `search` tsvector) | everyone | nobody (read-only library) |
-| `follows` | any signed-in user | follower; the follower's parent can remove |
-| `posts` (author, **source_id required**, body ≤ 500) | everyone, except hidden posts (visible to author, parent, admin) | author. The trigger enforces the word filter and 10 posts a day. Parent or admin can set `hidden`. |
-| `comments` (post, author, body ≤ 280) | same as posts | author (60 a day, filtered). The post author, the commenter's parent, or admin can delete. |
+| `follows` | any signed-in user | follower |
+| `posts` (author, **source_id required**, body ≤ 500) | everyone, except hidden posts (visible to author, admin) | author. The trigger enforces the word filter and 10 posts a day. Admin can set `hidden`. |
+| `comments` (post, author, body ≤ 280) | same as posts | author (60 a day, filtered). The post author, or admin can delete. |
 | `reactions` (preset: masyaallah, jazakallah, aamiin, subhanallah) | any signed-in user | self |
 | `reports` | the reporter and admin | reporter. 3 distinct reports auto-hide the item. |
 | `groups` / `group_members` + `rpc('join_group',{code})` | members | owner creates; join is by code |
@@ -61,7 +47,7 @@ Read `docs/PLAN.md` for the phased work and acceptance criteria. Keep `docs/PROG
   - Lidwa numbers differ from sunnah.com/Fuad Abdul Baqi numbering. Always show the `ref_label` and the `attribution`.
   - Muslim's first entries are muqaddimah (introduction), not hadith in the main collection.
   - Hadith `indonesian` text includes the full sanad ("Telah menceritakan kepada kami [...]"). For display to children, show the matn (the part after the chain) when you can split it reliably, and always offer the full text behind "Lihat lengkap".
-- **Supporter payments:** Trakteer or Saweria POSTs to `/functions/v1/payment-webhook?provider=trakteer|saweria`. The supporter writes their family code (`KM-XXXXXX`) in the message. The webhook matches it, sums the totals and sets `supporter_tier` on the parent and all their children. Ricky still has to create the Trakteer and Saweria pages and set the `TRAKTEER_WEBHOOK_TOKEN` and `SAWERIA_STREAM_KEY` secrets. Until then, the support page shows instructions with placeholder links from `beta/js/config.js`.
+- **Supporter payments:** Trakteer or Saweria POSTs to `/functions/v1/payment-webhook?provider=trakteer|saweria`. The supporter writes their username (`#saif`) in the message. The webhook matches `profiles.username`, sums the last 30 days and sets `supporter_tier` on that account. Ricky still has to create the Trakteer and Saweria pages and set the `TRAKTEER_WEBHOOK_TOKEN` and `SAWERIA_STREAM_KEY` secrets. Until then, the support page shows instructions with placeholder links from `js/config.js`.
 
 ## The original game (the code in `js/` was split from the original single-file game, removed 2026-11-13)
 - **Inline data:**
@@ -85,4 +71,4 @@ Read `docs/PLAN.md` for the phased work and acceptance criteria. Keep `docs/PROG
 ## Working style
 - Ricky wants direct, structured updates: a recommendation plus reasoning. Flag problems instead of smoothing them over. Ask him (in `docs/PROGRESS.md` → "Questions for Ricky") rather than guess on product or religious-content decisions. Keep making progress on everything else.
 - Commit small and often to `main`. Write clear commit messages. Pushing to `main` deploys the live game via GitHub Pages, so it must never be left broken: run the tests (`tests/`, see docs/PROGRESS.md) before pushing.
-- Test what you can: run `node --check` on modules, use headless Chrome/Playwright if available at a mobile viewport (390×844), and run the auth flow against the live backend. Email confirmation is on, so don't create parent accounts with `signUp` in tests (the free-tier email rate limit is low and bounces hurt). Use the test parent credentials given in your task prompt (never commit them). Delete test children you create.
+- Test what you can: run `node --check` on modules, use headless Chrome/Playwright if available at a mobile viewport (390×844), and run the auth flow against the live backend. Email confirmation is on, so don't create parent accounts with `signUp` in tests (the free-tier email rate limit is low and bounces hurt). Use the test account credentials given in your task prompt (never commit them).

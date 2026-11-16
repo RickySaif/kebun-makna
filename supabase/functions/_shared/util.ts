@@ -14,4 +14,3 @@ export const admin = () =>
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-export const childEmail = (id: string) => `child-${id}@kids.kebunmakna.app`;

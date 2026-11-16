@@ -1,12 +1,9 @@
-// account.js — start screen: one login for everyone (email / Google), trial without an account; legacy child PIN login.
+// account.js — start screen: one login for everyone (email / Google), trial without an account.
 import { $, esc, root } from './ui.js';
 import { avatarCanvas, eyesToggle } from './avatar.js';
-import { sb, session, friendly, childList, childSignIn, loadProfile, normFamily, isFamilyName, renderGoogleButton, warmGoogle } from './api.js';
+import { sb, session, friendly, loadProfile, renderGoogleButton, warmGoogle } from './api.js';
 
-const LAST_CODE = 'kebun-makna-last-family';
 const MODE = 'kebun-makna-mode'; // 'guest' remembered on this device
-export const getLastCode = () => { try { return localStorage.getItem(LAST_CODE) || ''; } catch (e) { return ''; } };
-const setLastCode = c => { try { localStorage.setItem(LAST_CODE, c); } catch (e) {} };
 export const rememberGuest = on => { try { on ? localStorage.setItem(MODE, 'guest') : localStorage.removeItem(MODE); } catch (e) {} };
 export const isRememberedGuest = () => { try { return localStorage.getItem(MODE) === 'guest'; } catch (e) { return false; } };
 
@@ -15,87 +12,12 @@ export { avatarCanvas };
 const title = sub => $(`<div class="title"><h1>Kebun Makna</h1><p>${esc(sub)}</p></div>`);
 const busy = (btn, on, label) => { btn.disabled = on; if (label) btn.innerHTML = on ? '<span class="spinner"></span>' : esc(label); };
 
-/** Start screen: one login for everyone (email or Google), or a trial without an account. Calls handlers.{login, child, guest, local}. */
+/** Start screen: one login for everyone (email or Google), or a trial without an account. Calls handlers.{login, guest, local}. */
 export function startScreen(h) { loginScreen(h); }
 
 export function hasLocalSave() {
   for (const k of ['kebun-makna-v3:beta-guest', 'kebun-makna-v3']) { try { const r = JSON.parse(localStorage.getItem(k) || 'null'); if (r && r.name) return r; } catch (e) {} }
   return null;
-}
-
-// ---------- child (older accounts made by a parent; still works, no longer offered for new players) ----------
-function childStart(h, msg) {
-  const last = getLastCode();
-  if (last && !msg) return childPick(h, last);
-  root.replaceChildren(title('Akun anak lama'));
-  const f = $(`<div class="frame"><div class="field"><label for="fc"><b>Nama keluarga</b></label>
-    <input id="fc" inputmode="text" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="contoh: saif" maxlength="20" value="${esc(last && /^[a-z]/.test(last) ? last : '')}"></div>
-    <p class="small" style="margin:0 0 10px">Tanya Ayah atau Ibu nama keluargamu. Nama ini ada di halaman orang tua.</p>
-    <button class="btn green block" id="go">Lanjut ▸</button><p class="err" id="err">${esc(msg || '')}</p>
-    <button class="linkbtn" id="back">◂ Kembali</button></div>`);
-  const go = f.querySelector('#go');
-  go.onclick = () => {
-    const c = normFamily(f.querySelector('#fc').value);
-    if (!isFamilyName(c)) { f.querySelector('#err').textContent = 'Nama keluarga 3–20 huruf kecil/angka, contoh: saif'; return; }
-    childPick(h, c);
-  };
-  const inp = f.querySelector('#fc');
-  inp.oninput = () => { const v = inp.value.toLowerCase().replace(/\s/g, ''); if (v !== inp.value) inp.value = v; };
-  inp.onkeydown = e => { if (e.key === 'Enter') go.click(); };
-  f.querySelector('#back').onclick = () => startScreen(h);
-  root.append(f);
-}
-
-async function childPick(h, code) {
-  root.replaceChildren(title('Siapa kamu?'), $(`<div class="frame"><span class="spinner"></span> Memuat…</div>`));
-  let kids;
-  try { ({ children: kids } = await childList(code)); }
-  catch (e) { return childStart(h, e.status === 404 ? 'Nama keluarga tidak ditemukan. Cek lagi ejaannya, ya.' : friendly(e)); }
-  setLastCode(code);
-  const f = $(`<div class="frame"><p style="margin:0">Ketuk gambarmu.</p><div class="kidgrid"></div>
-    <p class="err" id="err"></p><button class="linkbtn" id="other">Ganti nama keluarga</button> · <button class="linkbtn" id="back">◂ Kembali</button></div>`);
-  const grid = f.querySelector('.kidgrid');
-  if (!kids.length) f.querySelector('#err').textContent = 'Belum ada anak di keluarga ini. Minta Ayah/Ibu menambahkanmu di halaman orang tua.';
-  kids.forEach(k => {
-    const b = $(`<button class="av"><span></span></button>`);
-    b.prepend(avatarCanvas(k.avatar)); b.querySelector('span').textContent = k.display_name;
-    b.onclick = () => pinPad(h, code, k);
-    grid.append(b);
-  });
-  f.querySelector('#other').onclick = () => { setLastCode(''); childStart(h, ' '); };
-  f.querySelector('#back').onclick = () => startScreen(h);
-  root.replaceChildren(title('Siapa kamu?'), f);
-}
-
-function pinPad(h, code, kid) {
-  let pin = '';
-  const f = $(`<div class="frame" style="text-align:center"><div class="head" style="display:flex;justify-content:center;align-items:center;gap:10px"></div>
-    <p style="margin:6px 0 0">Masukkan PIN-mu</p><div class="pinshow"></div>
-    <div class="pinpad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button data-n="${n}">${n}</button>`).join('')}<button class="fn" data-f="del" aria-label="Hapus">⌫</button><button data-n="0">0</button><button class="fn" data-f="ok">Masuk</button></div>
-    <p class="err" id="err"></p><button class="linkbtn" id="back">◂ Bukan aku</button></div>`);
-  const head = f.querySelector('.head'); head.append(avatarCanvas(kid.avatar, 0.5), $(`<b style="font-size:22px">${esc(kid.display_name)}</b>`));
-  const show = f.querySelector('.pinshow'), err = f.querySelector('#err');
-  const draw = () => { show.innerHTML = Array.from({ length: Math.max(4, pin.length) }, (_, i) => `<i class="${i < pin.length ? 'on' : ''}"></i>`).join(''); };
-  let sending = false;
-  const submit = async () => {
-    if (sending) return;
-    if (pin.length < 4) { err.textContent = 'PIN 4 sampai 6 angka.'; return; }
-    sending = true; err.innerHTML = '<span class="spinner"></span>';
-    try { await childSignIn(code, kid.id, pin); rememberGuest(false); h.child(session.profile); }
-    catch (e) {
-      sending = false; pin = ''; draw();
-      err.textContent = e.status === 429 ? 'Terlalu banyak salah. Tunggu 10 menit, atau minta Ayah/Ibu ganti PIN.'
-        : e.status === 401 ? 'PIN salah. Coba lagi, ya.' : friendly(e);
-    }
-  };
-  f.querySelectorAll('.pinpad button').forEach(b => b.onclick = () => {
-    if (b.dataset.n !== undefined) { if (pin.length < 6) pin += b.dataset.n; err.textContent = ''; draw(); }
-    else if (b.dataset.f === 'del') { pin = pin.slice(0, -1); draw(); }
-    else submit();
-  });
-  f.querySelector('#back').onclick = () => childPick(h, code);
-  draw();
-  root.replaceChildren(title('Halo!'), f);
 }
 
 // ---------- login (everyone) ----------
@@ -158,11 +80,9 @@ export function loginScreen(h, mode = 'login', msg = '') {
   // trial without an account: nothing is saved
   const t = $(`<div class="frame trial"><button class="btn ghost block" id="guest">Coba dulu tanpa akun</button>
     <p class="trialnote"><b>Uji coba. Hasil tidak disimpan.</b></p>
-    ${hasLocalSave() ? `<button class="linkbtn" id="old">Lanjutkan kebun lama di perangkat ini</button>` : ''}
-    <button class="linkbtn" id="kid">Akun anak lama? Masuk dengan nama keluarga</button></div>`);
+    ${hasLocalSave() ? `<button class="linkbtn" id="old">Lanjutkan kebun lama di perangkat ini</button>` : ''}</div>`);
   t.querySelector('#guest').onclick = () => { rememberGuest(false); h.guest(); };
   if (t.querySelector('#old')) t.querySelector('#old').onclick = () => h.local();
-  t.querySelector('#kid').onclick = () => childStart(h);
   const eo = $(`<div class="frame eyesframe"><div class="pv"></div></div>`); eo.querySelector('.pv').append(avatarCanvas(0, .5), avatarCanvas(1, .5)); eo.append(eyesToggle());
   root.append(t, eo);
 }

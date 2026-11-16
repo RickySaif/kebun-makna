@@ -1,4 +1,4 @@
-// groups.js — Phase 6 groups (family / class / TPA). Parents create (audience 'child' or 'parent'), members join by code.
+// groups.js — Phase 6 groups (family / class / TPA). Any signed-in user can create one; members join by code.
 // Weekly goal + progress from activity_log ayah_done counts via rpc('group_progress'). Leaderboards only inside a group.
 import { $, esc, root, toast } from './ui.js';
 import { sb, session, friendly } from './api.js';
@@ -24,9 +24,8 @@ export async function groupsPage(id) {
 
 async function groupList() {
   const body = shell('Grup');
-  const parent = session.profile.role === 'parent';
   const c = await sb();
-  const join = $(`<div class="frame" style="margin-bottom:12px"><b>Gabung grup</b><p class="small" style="margin:4px 0">Minta kode grup ke ustaz/ustazah, guru, atau orang tua yang membuat grup.</p>
+  const join = $(`<div class="frame" style="margin-bottom:12px"><b>Gabung grup</b><p class="small" style="margin:4px 0">Minta kode grup ke ustaz/ustazah, guru, atau teman yang membuat grup.</p>
     <div class="formrow"><div class="field"><input id="gc" placeholder="Kode grup (6 huruf/angka)" maxlength="6" autocapitalize="characters" autocomplete="off"></div><button class="btn mini" id="gj">Gabung</button></div><p class="err" id="ge"></p></div>`);
   join.querySelector('#gj').onclick = async () => {
     const v = join.querySelector('#gc').value.trim(); const er = join.querySelector('#ge');
@@ -36,16 +35,15 @@ async function groupList() {
     toast('Berhasil bergabung!'); location.hash = '#/grup/' + data;
   };
   body.append(join);
-  if (parent) {
+  {
     const mk = $(`<div class="frame" style="margin-bottom:12px"><b>Buat grup baru</b>
       <div class="field"><label>Nama grup</label><input id="gn" maxlength="60" placeholder="mis. TPA Al-Ikhlas kelas 2"></div>
-      <div class="field"><label>Untuk siapa?</label><select id="ga"><option value="child">Anak-anak (kelas, TPA, keluarga)</option><option value="parent">Orang tua</option></select></div>
-      <p class="small" style="margin:0 0 8px">Grup anak dikelola oleh Anda tanpa Anda menjadi anggotanya. Anak bergabung dengan kode grup.</p>
+      <p class="small" style="margin:0 0 8px">Bagikan kode grup supaya teman, keluarga atau murid bisa bergabung.</p>
       <button class="btn green block" id="gm">Buat grup</button><p class="err" id="gme"></p></div>`);
     mk.querySelector('#gm').onclick = async () => {
-      const name = mk.querySelector('#gn').value.trim(), audience = mk.querySelector('#ga').value, er = mk.querySelector('#gme');
+      const name = mk.querySelector('#gn').value.trim(), er = mk.querySelector('#gme');
       if (!name) { er.textContent = 'Nama grup wajib diisi.'; return; }
-      const { data, error } = await c.from('groups').insert({ name, owner_id: session.user.id, audience }).select('id').single();
+      const { data, error } = await c.from('groups').insert({ name, owner_id: session.user.id }).select('id').single();
       if (error) { er.textContent = isPendingErr(error) ? PENDING : friendly(error); return; }
       location.hash = '#/grup/' + data.id;
     };
@@ -70,7 +68,7 @@ async function groupDetail(id) {
   const owner = g.owner_id === session.user.id, goal = g.weekly_goal || 50;
   const { data: prog, error: pe } = await c.rpc('group_progress', { g: id });
   const total = (prog || []).reduce((s, m) => s + Number(m.ayat_week || 0), 0);
-  const head = $(`<div class="frame" style="margin-bottom:12px"><b class="nm" style="font-size:22px"></b><div class="small">Grup ${g.audience === 'parent' ? 'orang tua' : 'anak-anak'} · kode <span class="code" style="font-size:16px">${esc(g.join_code)}</span></div>
+  const head = $(`<div class="frame" style="margin-bottom:12px"><b class="nm" style="font-size:22px"></b><div class="small">Grup · kode <span class="code" style="font-size:16px">${esc(g.join_code)}</span></div>
     <div style="margin-top:10px"><b>Target minggu ini: ${goal} ayat</b>
       <div class="minibar" style="height:16px;background:#E8DDBF;border:3px solid var(--ink);border-radius:6px;overflow:hidden;margin-top:6px"><div style="height:100%;width:${Math.min(100, total / goal * 100)}%;background:#7CD35E"></div></div>
       <p class="small" style="margin:4px 0 0">${pe ? 'Progres belum bisa dihitung (menunggu pembaruan server).' : `${total} dari ${goal} ayat selesai bersama sejak Senin.${total >= goal ? ' MasyaAllah, target tercapai! 🎉' : ''}`}</p></div></div>`);

@@ -2,6 +2,16 @@
 
 Live: https://km.generasimerdeka.com/ · (old address https://rickysaif.github.io/kebun-makna/ redirects)
 
+## 2026-11-16 — Parent/child accounts, family codes and spouse linking retired for good (Ricky)
+- **Progress copied:** Amtar's save (the further-along child account: 9 surahs, boss1–3, level 10, 2,320 XP) was copied to **amtar.philosophy@hotmail.com** (`game_saves` v399, `farm_public`, avatar). Then both child accounts (`Amtar`, `Amtar P`) were deleted. Amtar P's save (7 surahs) was not kept anywhere, by Ricky's choice.
+- **Backend (applied 2026-11-16, migration `20261116090000_retire_family_and_spouses.sql`):** dropped `families`, `family_members`, `spouses`, `spouse_invites`, `parent_secrets`, `child_secrets` and all their functions (spouse, parent PIN, child PIN, family name). RLS no longer has any "parent of" rule (`is_parent_of`/`is_family` gone). `join_group` no longer checks child/parent audience. `profiles.role` stays (always `'parent'`) because `same_side()` and the feed/race/visit code read it.
+- **New supporter key = unique username:** `profiles.username` (3–20 chars, `a-z0-9`), copied from the old family names, so `#saif` still works. New accounts get one automatically. Change it on the support page (`#/dukung`, "Ganti nama pengguna"). `payment-webhook` now matches `profiles.username` (KM-XXXXXX codes no longer work). Supporter tier is per account.
+- **Frontend:** removed `js/ortu.js` (parent dashboard), the child sign-in (family name + PIN pad) and the "Akun anak lama" link, the family/child-login helpers in `api.js`, the child/guest audience choice for groups. `main.js` has no child mode.
+- **Edge functions:** `family` and `child-login` are removed from the repo. **Ricky: delete them in the Supabase dashboard** (Edge Functions), the connector can't delete functions; they only return errors now.
+- **Tests:** `tests/phase1-accounts.mjs` and `phase1b-parent.mjs` deleted. `phase2`–`phase6` still create child accounts through `tests/lib.mjs` (`familyFn`/`childClient`) and **no longer work**; they must be rewritten for email test accounts. Not run here (no Playwright).
+- **Not checked:** the app was not run locally (starting a local server was blocked); checked with `node --check` on every module and a look at the live start screen after deploy.
+- **Questions for Ricky:** (a) the ⚙ panel in the game is still called "Untuk Orang Tua" (progress, cek arti, settings). Rename it to "Pengaturan"? (b) `profiles.role` and `same_side()` are now dead weight; remove them later?
+
 ## 2026-11-16 — Easy logout
 - "🚪 Keluar dari akun" button at the bottom of your own **Profil** tab (always in the bottom bar, in the game and in the social pages), with a confirm. Before, logout was only at ⚙ → Pengaturan → Akun. It saves the game first, then signs out. Only checked with `node --check` (no browser run here).
 

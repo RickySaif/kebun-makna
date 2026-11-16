@@ -1,4 +1,4 @@
-// api.js — Supabase client and backend helpers (auth, family, child login, activity log).
+// api.js — Supabase client and backend helpers (auth, username, activity log).
 import { SUPABASE_URL, SUPABASE_KEY, SUPABASE_ESM } from './config.js';
 
 let _sb = null, _loading = null;
@@ -15,10 +15,9 @@ export async function sb() {
   return _loading;
 }
 
-// Family name: lowercase handle such as "saif" or "saif2" (3–20 chars, a-z0-9, starts with a letter).
-// Legacy KM-XXXXXX codes are still accepted by the server; the UI never shows them.
-export const normFamily = c => String(c || '').trim().toLowerCase().replace(/^#/, '').replace(/\s+/g, '');
-export const isFamilyName = n => /^[a-z][a-z0-9]{2,19}$/.test(n) || /^(km-?)?[0-9a-f]{6}$/.test(n);
+// Username: lowercase such as "saif" or "saif2" (3–20 chars, a-z0-9, starts with a letter). It is the supporter-payment key (#saif).
+export const normUsername = c => String(c || '').trim().toLowerCase().replace(/^#/, '').replace(/\s+/g, '');
+export const isUsername = n => /^[a-z][a-z0-9]{2,19}$/.test(n);
 
 // Friendly Indonesian text for backend errors.
 export function friendly(err) {
@@ -46,23 +45,6 @@ export async function signOut() {
   const c = await sb();
   try { await c.auth.signOut(); } catch (e) { /* offline: local session cleared anyway */ }
   session.user = null; session.profile = null;
-}
-
-async function fn(name, body, auth) {
-  const c = await sb();
-  const headers = { 'Content-Type': 'application/json', apikey: SUPABASE_KEY };
-  if (auth) {
-    const { data: { session: s } } = await c.auth.getSession();
-    if (!s) throw new Error('Sesi berakhir. Silakan masuk lagi.');
-    headers.Authorization = 'Bearer ' + s.access_token;
-  } else headers.Authorization = 'Bearer ' + SUPABASE_KEY;
-  let res;
-  try { res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, { method: 'POST', headers, body: JSON.stringify(body) }); }
-  catch (e) { throw new Error(friendly(e)); }
-  let j = {};
-  try { j = await res.json(); } catch (e) { /* empty */ }
-  if (!res.ok) { const er = new Error(j.error || `Gagal (${res.status})`); er.status = res.status; throw er; }
-  return j;
 }
 
 // ---- Google sign-in for parents via Google Identity Services (the chooser shows Kebun Makna, not supabase.co) ----
@@ -124,21 +106,6 @@ export async function renderGoogleButton(el, onDone, onError) {
   g.accounts.id.renderButton(el, { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular', locale: 'id', width: Math.min(320, Math.max(200, el.clientWidth || 300)) });
   return true;
 }
-
-// ---- child login (no email) ----
-export const childList = name => fn('child-login', { family_code: normFamily(name) });
-export async function childSignIn(code, childId, pin) {
-  const { token_hash } = await fn('child-login', { family_code: normFamily(code), child_id: childId, pin });
-  const c = await sb();
-  const { error } = await c.auth.verifyOtp({ token_hash, type: 'magiclink' });
-  if (error) throw error;
-  return loadProfile();
-}
-
-// ---- parent family management ----
-export const familyCreate = (display_name, avatar, pin) => fn('family', { action: 'create', display_name, avatar, pin }, true);
-export const familySetPin = (child_id, pin) => fn('family', { action: 'set_pin', child_id, pin }, true);
-export const familyDelete = child_id => fn('family', { action: 'delete', child_id }, true);
 
 // ---- activity log (silently skipped for guests / offline) ----
 const pending = [];

@@ -20,17 +20,16 @@ const PROFILE_CACHE = 'kebun-makna-profile';
 const cacheProfile = p => { try { localStorage.setItem(PROFILE_CACHE, JSON.stringify(p)); } catch (e) {} };
 const cachedProfile = () => { try { return JSON.parse(localStorage.getItem(PROFILE_CACHE) || 'null'); } catch (e) { return null; } };
 
-let mode = null; // 'start' | 'guest' (trial, nothing saved) | 'local' (old save on this device) | 'child' (older child account) | 'player' (signed in) | 'page' | 'social'
+let mode = null; // 'start' | 'guest' (trial, nothing saved) | 'local' (old save on this device) | 'player' (signed in) | 'page' | 'social'
 const handlers = {
   login: p => { cacheProfile(p); bootPlayer(p); },
-  child: p => { cacheProfile(p); bootPlayer(p); },
   guest: () => bootGuest(),
   local: () => { rememberGuest(true); bootLocal(); },
 };
 
 function accountBox(box) {
   const p = session.profile;
-  if ((mode === 'player' || mode === 'child') && p) {
+  if (mode === 'player' && p) {
     const b = $(`<div class="box"><h3>Akun</h3><p class="small" style="margin:0 0 8px">Masuk sebagai <b></b>. Progres tersimpan di akun (cloud) dan di perangkat ini, jadi aman walau ganti HP.</p>
       <div class="row"><button class="btn ghost" id="sw">Keluar</button></div></div>`);
     b.querySelector('b').textContent = p.display_name;
@@ -52,9 +51,9 @@ function displayBox() {
   b.querySelector('#lite').onchange = e => setGfxLite(e.target.checked);
   return b;
 }
-const inGame = () => mode === 'guest' || mode === 'local' || mode === 'child' || mode === 'player';
+const inGame = () => mode === 'guest' || mode === 'local' || mode === 'player';
 window.addEventListener('km-eyes', () => { if (inGame() && S.name && S.noEyes !== eyesOff()) { S.noEyes = eyesOff(); save(); } });
-window.addEventListener('km-avatar', () => { if (eyesChosen() && S.noEyes !== eyesOff()) { S.noEyes = eyesOff(); save(); } if (mode === 'child' || mode === 'player') updateMyAvatar(S.avatar | 0).catch(() => {}); });
+window.addEventListener('km-avatar', () => { if (eyesChosen() && S.noEyes !== eyesOff()) { S.noEyes = eyesOff(); save(); } if (mode === 'player') updateMyAvatar(S.avatar | 0).catch(() => {}); });
 hooks.atur = box => { accountBox(box); box.prepend(settingsBox()); box.prepend(displayBox()); };
 
 async function bootGame() {
@@ -97,7 +96,7 @@ function hudBadge(p) {
 
 async function bootPlayer(p) {
   hudBadge(p);
-  mode = p.role === 'child' ? 'child' : 'player';
+  mode = 'player';
   addTabs('kebun');
   import('./online.js').then(o => o.joinOnline()).catch(() => {});
   root.replaceChildren($(`<div class="title"><h1>Kebun Makna</h1><p>Memuat kebunmu…</p></div>`));
@@ -118,7 +117,7 @@ async function bootPlayer(p) {
     });
   }
   // v4: the look chosen on the profile is the game's look
-  if (p.role !== 'child' && S.name && typeof p.avatar === 'number' && (S.avatar | 0) !== p.avatar) { S.avatar = p.avatar; save(); }
+  if (S.name && typeof p.avatar === 'number' && (S.avatar | 0) !== p.avatar) { S.avatar = p.avatar; save(); }
   // friends' waterings and salam since the last visit (Phase 4)
   try { const v = await import('./visit.js'); const { note } = await import('./progress.js'); await v.applyVisits(note); } catch (e) {}
   if (!S.name) {
@@ -176,7 +175,7 @@ const SOCIAL = /^#\/(beranda|profil|grup|kunjungi|lomba)/;
 window.addEventListener('hashchange', () => {
   if (!mode || mode === 'start') return;
   if (mode === 'social' && SOCIAL.test(location.hash)) { route(); return; }
-  if (mode === 'child' || mode === 'player') { flushNow(); setTimeout(() => location.reload(), 300); return; }
+  if (mode === 'player') { flushNow(); setTimeout(() => location.reload(), 300); return; }
   location.reload();
 });
 

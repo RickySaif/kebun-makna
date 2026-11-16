@@ -1,5 +1,5 @@
 // social.js — Beranda (feed), composer (source required), profile pages. Role separation is enforced by RLS:
-// children only see children, parents only see parents (plus their own family).
+// everyone is one kind of account (role 'parent' from the signup trigger); same_side() keeps the rule in place.
 import { $, esc, root, toast } from './ui.js';
 import { BY, DATA } from './data.js';
 import { sb, session, friendly, logActivity, signOut } from './api.js';
@@ -120,7 +120,6 @@ export async function postCards(posts, sameRoleOnly = false) {
     c.from('comments').select('post_id').in('post_id', ids),
   ]);
   const A = {}; (authors || []).forEach(a => A[a.id] = a);
-  // parents can also read their own children's posts (RLS); keep each feed to one side
   if (sameRoleOnly) posts = posts.filter(p => A[p.author_id] && A[p.author_id].role === session.profile.role);
   return posts.map(p => postCard(p, A[p.author_id], srcs[p.source_id], (reacts || []).filter(r => r.post_id === p.id), (comms || []).filter(x => x.post_id === p.id).length));
 }
