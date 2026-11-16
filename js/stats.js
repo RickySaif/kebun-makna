@@ -44,7 +44,7 @@
     if (typeof s !== 'string') return s;
     return s
       .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '[id]')
-      .replace(/\bKM-[A-Z0-9-]+/gi, '[kode]')
+      .replace(/\bKM-[A-Z0-9-]{4,}/g, '[kode]')
       .replace(/\beyJ[\w-]+\.[\w-]+\.[\w-]+\b/g, '[token]')
       .replace(/[\w.+-]+@[\w.-]+\.[a-z]{2,}/gi, '[email]')
       .replace(/#\/\S*/g, '#/[rute]')
