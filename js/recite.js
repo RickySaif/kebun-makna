@@ -458,10 +458,10 @@ hooks.afterWhole = ({ body, bar, s, review, next }) => {
 export function settingsBox() {
   const b = $(`<div class="box"><h3>🎙️ Pengenal bacaan</h3>
     <p class="small" style="margin:0 0 8px">Setelah memahami arti setiap ayat, anak membaca ayat itu dengan suaranya; di akhir surat (Surat Utuh) anak membaca suratnya ayat demi ayat. Setiap percobaan menunjukkan <b>ketepatan</b>: berapa banyak huruf yang terbaca benar, supaya artinya tidak berubah (misalnya قلب "hati" dan كلب "anjing"). Tajwid belum dinilai. Ini latihan, bukan syarat untuk lanjut. Pengenal bacaan berjalan di perangkat ini (suara tidak dikirim ke internet) dan disiapkan saat game dibuka (unduhan sekali, ${MODEL_SIZE}).</p>
-    <div id="rs" class="small" style="margin:6px 0"></div>
+    <div id="rstat" class="small" style="margin:6px 0"></div>
     <div class="minibar" style="height:10px;background:#E8DDBF;border:2px solid var(--ink);border-radius:4px;overflow:hidden;margin:6px 0"><div id="rbar" style="height:100%;width:0;background:#7CD35E"></div></div>
     <div class="row"><button class="btn" id="rdl" hidden>🔄 Coba lagi</button></div></div>`);
-  const st = b.querySelector('#rs'), bar = b.querySelector('#rbar'), dl = b.querySelector('#rdl');
+  const st = b.querySelector('#rstat'), bar = b.querySelector('#rbar'), dl = b.querySelector('#rdl');
   const unsub = onModel(m => {
     if (b.dataset.seen && !b.isConnected) return unsub(); // settings closed
     if (b.isConnected) b.dataset.seen = '1';
