@@ -2,6 +2,12 @@
 
 Live: https://km.generasimerdeka.com/ · (old address https://rickysaif.github.io/kebun-makna/ redirects)
 
+## 2026-11-17 — Gerobak yang didorong di Perjalanan Dagang; rancangan rombakan 15 surat
+- **Gerobak (live after push):** in the overworld the player now pushes a wooden cart (in front when walking, behind or beside when talking). The wares sit on it as crop pictures (up to 6). Loading: vegetables fly from Kakek into the cart. Selling: vegetables fly from the cart to the buyer, coins fly back, "+16" floats up, and the cart bounces. The top bar shows crop icons ×count instead of text. Code: `drawCart`, `fly`, `animSell`, `animLoad` in `js/dagang.js`; CSS `.jcart`/`.jveg` in `css/fit.css`. Checked in a 390×844 browser: load, walk right and up, two sales. Not checked on a real iPhone.
+- **Design:** `docs/RANCANGAN_15_SURAT.md` (watering = recitation ladder 1–5, small events between waterings, the game judges readiness itself, 3 regions × 5 surahs, Al-Fatihah as the first quest). Nothing of the overhaul is built yet. Next: Tahap A + A2.
+- **Decisions taken (Ricky asked Claude to judge):** "Siap" = whole surah at ladder level 4–5, ≥ 50% green, at most 1 peek per ayah, 2 meaning questions right; watering continues after Siap; harvest is a reward, not a gate; adult-listens button after 3 harvests without Siap; Amtar's finished surahs count as Siap.
+- **Questions for Ricky:** Al-Fatihah as quest 1 (plan in section 13 of the design); ustaz review of the new part-2 stories once written.
+
 ## 2026-11-16 — Anonymous stats with Umami (Ricky)
 - **What:** the game now reports visits, screens, game errors and load speed (Web Vitals) to our own Umami at https://monitor-km.generasimerdeka.com (Vercel Hobby, region sin1, + a separate free Supabase project `monitor-km`, Singapore). Repo: `RickySaif/monitor-km` (public snapshot of Umami v3.5.0; a daily GitHub Action syncs 3.x releases, a 2-day keepalive keeps the free database awake).
 - **Privacy:** `js/stats.js` runs only on `km.generasimerdeka.com` and rewrites every payload: the address becomes a fixed list of screens (`/beranda/ikuti`, `/profil`, `/grup/detail` ...), IDs, room codes, tokens, queries and hashes never leave the device, the referrer is cut to its origin, the title is fixed, and error text is redacted. No cookies. `tests/stats.mjs` (10 checks) passes.

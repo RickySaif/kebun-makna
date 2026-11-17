@@ -11,7 +11,7 @@ import { S, save, fill } from './state.js';
 import { AA, BY, DATA, ORDER, QUEST } from './data.js';
 import { lesson, suratUtuh, makeQ, renderQ, celebrate } from './lesson.js';
 import { ICON, T, drawHut, drawKid, drawTree, portrait, px } from './render.js';
-import { blit, buildGround, fenceSprite, hdCanvas } from './art.js';
+import { bake, blit, buildGround, fenceSprite, hdCanvas, plantIcon } from './art.js';
 import { buildArea, bfs, exitAt, key } from './dunia-grid.js';
 import { hooks } from './hooks.js';
 import { farm } from './farm.js';
@@ -119,16 +119,16 @@ async function worldView(quiet) {
   const d = D(); d.started = true; save();
   const A = area(d.pos.a);
   const p = panel(A.spec.name, 'Perjalanan Dagang', body => {
-    body.append($(`<div class="jv"><div class="jtop"><span>🛒 <b id="jc"></b></span><span><img alt="" src="${ICON.coin}" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:-3px"> <b id="jco"></b></span></div>
+    body.append($(`<div class="jv"><div class="jtop"><span class="jcart">🛒 <b id="jc"></b></span><span><img alt="" src="${ICON.coin}" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:-3px"> <b id="jco"></b></span></div>
       <div class="stage"><canvas id="jmap" width="${VW * 2}" height="${VH * 2}" aria-label="Peta perjalanan. Ketuk tanah untuk berjalan."></canvas></div>
       <div class="frame dialog jdlg"></div></div>`));
   });
   const cv = p.querySelector('#jmap');
-  V = { p, cv, dlg: p.querySelector('.jdlg'), A, busy: !!quiet, me: null, cam: { x: 0, y: 0 } }; // a quiet view is rebuilt by a flow that is still running: no auto-triggers
+  V = { p, cv, dlg: p.querySelector('.jdlg'), A, busy: !!quiet, me: null, cam: { x: 0, y: 0 }, fx: [], bump: 0, cartXY: null }; // a quiet view is rebuilt by a flow that is still running: no auto-triggers
   startWorld(); chips();
   if (!quiet) { banner(A.spec.name); idle(); }
 }
-const chips = () => { if (!V) return; const jc = V.p.querySelector('#jc'), jo = V.p.querySelector('#jco'); if (jc) jc.textContent = cartCount() ? cartText(D().cart) : 'kosong'; if (jo) jo.textContent = S.coins; };
+const chips = () => { if (!V) return; const jc = V.p.querySelector('#jc'), jo = V.p.querySelector('#jco'); if (jc) jc.innerHTML = cartCount() ? Object.entries(D().cart).filter(([, v]) => v > 0).map(([k, v]) => `<span class="jveg"><img alt="${esc(QUEST[k].cropName)}" src="${ICON.crop(+k)}">×${v}</span>`).join('') : 'kosong'; if (jo) jo.textContent = S.coins; };
 const ensureView = cb => { if (V && V.p.isConnected && layer.contains(V.p)) cb(); else worldView(true).then(() => cb()); };
 function banner(text) {
   if (!V) return; V.p.querySelectorAll('.jbanner').forEach(e => e.remove());
@@ -192,13 +192,72 @@ function startWorld() {
     if (st && st.area === A.spec.id && st.at && !st.auto) { const [x, y] = st.at, look = ST.cast[st.npc] && ST.cast[st.npc].look; if (look) put(y * T + 16, () => drawKid(c, x * T + 2, y * T, 0, 0, look, y * T > me.fy * T ? 2 : 0)); }
     const moving = me.path.length > 0, wf = Math.floor(t / 120) % 4;
     put(me.fy * T + 16.5, () => drawKid(c, Math.round(me.fx * T * 2) / 2 + 2, Math.round(me.fy * T * 2) / 2, S.avatar, moving ? wf : 0, null, me.dir | 0));
+    const cp = V.cartXY = cartAt(me, V.busy); put(cp.y + 14, () => drawCart(c, Math.round(cp.x * 2) / 2, Math.round(cp.y * 2) / 2, cp.dir, t, moving));
     items.sort((a, b) => a.b - b.b).forEach(it => it.f());
+    drawFx(c, t);
     if (st && st.area === A.spec.id && st.at && !st.auto && !V.busy && !d2.arrived) tag(c, st.at[0] * T + 3, st.at[1] * T - 13, 10, '!', '#A8362B', '#E2483B', t);
     c.setTransform(k, 0, 0, k, 0, 0);
   };
   raf = requestAnimationFrame(loop);
   setTimeout(triggers, 400); // a Kakek who waits at the entrance of an area calls out right away
 }
+/* ---------- the cart Amtar pushes, and wares/coins that fly when buying and selling ---------- */
+// dir: 0 down, 1 left, 2 up, 3 right. Walking: the cart is in front (pushed). Talking: it stands behind or beside him.
+const CART_OFF = [[-3, 15], [-21, 2], [-3, -13], [13, 2]];
+const vegPic = k => { const kind = (QUEST[k] || {}).crop || 'carrot'; return bake('picon' + kind, 32, 32, g => plantIcon(g, kind)); };
+function cartAt(me, still) {
+  const d0 = me.dir | 0, dir = !still ? d0 : d0 === 1 ? 3 : d0 === 3 ? 1 : 3, [ox, oy] = CART_OFF[dir]; // talking: behind him, or at his side
+  return { x: me.fx * T + ox, y: me.fy * T + oy, dir };
+}
+// a 22×16 wooden cart with two wheels, the wares piled on top (one picture per vegetable, up to 6)
+function drawCart(c, X, Y, dir, t, moving) {
+  const wob = moving ? (Math.floor(t / 120) % 2) * .5 : 0, now = performance.now();
+  const by = Y - (V.bump > now ? Math.abs(Math.sin((V.bump - now) / 60)) * 2 : 0);
+  const dark = '#2B1D12';
+  // handle on the side Amtar holds
+  if (dir === 3) px(c, X - 4, by + 7, 6, 2, dark); else if (dir === 1) px(c, X + 20, by + 7, 6, 2, dark);
+  else if (dir === 0) { px(c, X + 5, by - 1, 2, 7, dark); px(c, X + 15, by - 1, 2, 7, dark); px(c, X + 5, by - 1, 12, 2, dark); }
+  // wares
+  const pile = Object.entries(D().cart).flatMap(([k, v]) => Array(Math.max(0, Math.min(v, 6))).fill(k)).slice(0, 6);
+  const spots = [[1, 1], [7, 1], [13, 1], [4, -3], [10, -3], [7, -6]];
+  pile.forEach((k, i) => { const [ix, iy] = spots[i]; c.drawImage(vegPic(k).cv, X + ix, by + iy + wob, 8, 8); });
+  // wheels
+  for (const wx of [2, 14]) { px(c, X + wx, by + 11, 6, 6, dark); px(c, X + wx + 1, by + 12, 4, 4, '#8A6A4A'); px(c, X + wx + 2.5, by + 13.5, 1, 1, (Math.floor(t / 90) % 2 && moving) ? '#E8D6A8' : dark); }
+  // the box
+  px(c, X, by + 6 + wob, 22, 7, dark); px(c, X + 1, by + 7 + wob, 20, 5, '#B5793F'); px(c, X + 1, by + 7 + wob, 20, 1, '#D99A5B'); px(c, X + 1, by + 9.5 + wob, 20, .8, '#8A5A2B');
+  for (const sx of [6, 11, 16]) px(c, X + sx, by + 7 + wob, .8, 5, '#8A5A2B');
+  if (dir === 2) { px(c, X + 5, by + 12, 2, 7, dark); px(c, X + 15, by + 12, 2, 7, dark); }
+}
+// where things fly to/from: the current stop's person (or just ahead of Amtar), the cart, Amtar
+function npcXY() { const st = stopOf(D()); return st && st.at && st.area === V.A.spec.id ? { x: st.at[0] * T + 8, y: st.at[1] * T + 4 } : { x: V.me.fx * T + 8, y: V.me.fy * T - 18 }; }
+const cartMid = () => V.cartXY ? { x: V.cartXY.x + 11, y: V.cartXY.y + 4 } : { x: V.me.fx * T + 8, y: V.me.fy * T + 8 };
+function fly(from, to, list, kind, delay = 0) {
+  const now = performance.now();
+  list.forEach((k, i) => V.fx.push({ from, to, t0: now + delay + i * 220, dur: 760, k, kind }));
+  return delay + list.length * 220 + 760;
+}
+function floatText(at, text, delay) { V.fx.push({ from: at, to: { x: at.x, y: at.y - 16 }, t0: performance.now() + delay, dur: 1100, text, kind: 'text' }); }
+function drawFx(c, t) {
+  const now = performance.now();
+  V.fx = V.fx.filter(f => now < f.t0 + f.dur);
+  for (const f of V.fx) {
+    const p = (now - f.t0) / f.dur; if (p < 0) continue;
+    const x = f.from.x + (f.to.x - f.from.x) * p, y = f.from.y + (f.to.y - f.from.y) * p - (f.kind === 'text' ? 0 : Math.sin(p * Math.PI) * 14);
+    if (f.kind === 'veg') c.drawImage(vegPic(f.k).cv, x - 6, y - 6, 12, 12);
+    else if (f.kind === 'coin') { px(c, x - 3, y - 3, 6, 6, '#7A5A10'); px(c, x - 2.5, y - 2.5, 5, 5, '#F4C430'); px(c, x - 1.5, y - 2, 1.5, 1.5, '#FFF6A0'); }
+    else { c.globalAlpha = Math.min(1, 2 - 2 * p); c.font = 'bold 10px "Fredoka",sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.5; c.strokeStyle = '#2B1D12'; c.strokeText(f.text, x, y); c.fillStyle = '#FFD84A'; c.fillText(f.text, x, y); c.textAlign = 'left'; c.globalAlpha = 1; }
+  }
+}
+const vegList = c => Object.entries(c).flatMap(([k, v]) => Array(Math.max(0, v)).fill(k)).slice(0, 10);
+function animSell(r) {
+  if (!V || !V.cartXY || !r.items) return;
+  const end = fly(cartMid(), npcXY(), vegList(r.sold), 'veg');
+  const coins = Math.min(8, r.items); fly(npcXY(), { x: V.me.fx * T + 8, y: V.me.fy * T + 4 }, Array(coins).fill(0), 'coin', end - 300);
+  floatText({ x: V.me.fx * T + 8, y: V.me.fy * T - 4 }, `+${r.coins}`, end + coins * 220);
+  V.bump = performance.now() + end;
+}
+function animLoad() { if (!V || !V.cartXY) return; const end = fly(npcXY(), cartMid(), vegList(D().cart), 'veg'); V.bump = performance.now() + end + 300; }
+
 function useExit(ex) {
   const me = V.me;
   if (ex.to === 'farm') { V.stop(); closePanel(); S.pos = { x: 25, y: 4 }; save(); farm(); return; }
@@ -268,14 +327,14 @@ function card(id, next) {
   el.querySelector('button').onclick = next; V.dlg.replaceChildren(el); sfx.good();
 }
 function loadStep(n, next) {
-  const topped = loadCart(n); sfx.coin(); chips();
+  const topped = loadCart(n); sfx.coin(); chips(); animLoad();
   say(NARR(), `Gerobak berisi: ${cartText(D().cart)}.${topped ? ` (Kakek menambah ${topped} dari lumbung desa karena keranjang panenmu belum cukup.)` : ''}`, [['Lanjut ▸', next, 'green']]);
 }
 function sellStep(n, next) {
-  const r = sell(n); sfx.coin(); chips(); addXP(r.items ? 10 : 0); logActivity('dagang_sale', { items: r.items, coins: r.coins });
+  const r = sell(n); sfx.coin(); chips(); animSell(r); addXP(r.items ? 10 : 0); logActivity('dagang_sale', { items: r.items, coins: r.coins });
   say(NARR(), r.items ? `Terjual: ${cartText(r.sold)}. +${r.coins} Koin Makna!` : 'Gerobakmu sudah kosong.', [['Lanjut ▸', next, 'green']]);
 }
-function coinStep(n, next) { S.coins += n; save(); sfx.coin(); chips(); say(NARR(), `Hadiah terima kasih: +${n} Koin Makna!`, [['Lanjut ▸', next, 'green']]); }
+function coinStep(n, next) { S.coins += n; save(); sfx.coin(); chips(); if (V && V.me) { fly(npcXY(), { x: V.me.fx * T + 8, y: V.me.fy * T + 4 }, Array(Math.min(8, Math.ceil(n / 5))).fill(0), 'coin'); floatText({ x: V.me.fx * T + 8, y: V.me.fy * T - 4 }, `+${n}`, 900); } say(NARR(), `Hadiah terima kasih: +${n} Koin Makna!`, [['Lanjut ▸', next, 'green']]); }
 
 /* ---------- a customer asks about earlier surahs ---------- */
 function customer(st, done) {
