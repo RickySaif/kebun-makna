@@ -1,6 +1,6 @@
 # Rancangan Kebun Makna: 15 surat pertama (usulan, 17 November 2026)
 
-Status: **usulan untuk Ricky dan ustaz**, belum dibangun. Dokumen ini merombak alur game asli. Itu bertentangan dengan aturan nomor 7 di `CLAUDE.md` ("game asli jangan diubah urutan dan alurnya"). Jadi perlu persetujuan Ricky dulu, lalu aturan itu diperbarui.
+Status: **disetujui Ricky (17 November 2026)**. Tahap A dan A2 sudah dibangun (`js/siram.js`); tahap B–E belum.
 
 ## 1. Tujuan
 

@@ -62,6 +62,7 @@ async function bootGame() {
   migrate();
   import('./akhlak.js').then(m => m.installAkhlak()).catch(() => {}); // next chapter, only after boss4 + 10 surahs
   import('./dagang.js').then(m => m.installDagang()).catch(() => {}); // Perjalanan Dagang: same unlock, new surahs
+  import('./siram.js').then(m => m.installSiram()).catch(() => {}); // watering = reading the surah aloud (ladder 1–5) + daily village events
   if (!S.name) onboarding(); else farm();
 }
 

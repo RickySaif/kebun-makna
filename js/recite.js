@@ -321,23 +321,29 @@ function showHeard(el, res) {
  * Show one practice page per item (an item = an array of word objects from a.w) and call next() after the last one.
  * kind: 'kata' | 'bagian' | 'ayat' | 'surat' (used in the title and the activity log). For 'surat', ayat[] holds the ayah of each item.
  */
-function practice({ body, s, a, items, kind, next, ayat }) {
+/*
+ * opt (watering ladder, js/siram.js): {title, lead, nextLabel, hear:false (hide ▶ Dengar), autoplay, mustTry (Lanjut stays
+ * off until one reading was checked, while the recognizer is ready), mask(i,w) → text shown instead of the word (tap = 💡
+ * peek → onPeek(i)), below (an element under the text), list (the ayat these words come from, for kind 'surat'),
+ * onResult({acc, pass, unsure})}.
+ */
+export function practice({ body, s, a, items, kind, next, ayat, opt = {} }) {
   let idx = 0, unsub = () => {};
   const done = () => { unsub(); stopAudio(); next(); };
   const show = () => {
     unsub(); stopAudio();
     const words = items[idx], isLast = idx === items.length - 1, cur = ayat ? ayat[idx] : a, whole = kind === 'ayat' || kind === 'surat';
-    const title = kind === 'kata' ? 'Ayo baca kata ini' : kind === 'bagian' ? 'Ayo baca bagian ini' : kind === 'surat' ? `Baca Surat ${s.name} sekaligus` : 'Sekarang baca satu ayat';
+    const title = opt.title ? opt.title : kind === 'kata' ? 'Ayo baca kata ini' : kind === 'bagian' ? 'Ayo baca bagian ini' : kind === 'surat' ? `Baca Surat ${s.name} sekaligus` : 'Sekarang baca satu ayat';
     const count = items.length > 1 ? `<p class="small" style="margin:0 0 6px">${kind === 'kata' ? 'Kata' : kind === 'surat' ? 'Ayat' : 'Bagian'} ${idx + 1} dari ${items.length}</p>` : '';
     const v = $(`<div class="frame practice ${kind}"><h2>${title}</h2>${count}
-      <p class="lead">Ketuk 🎙️ lalu baca sendiri. Butuh bantuan? Tekan ▶ Dengar dulu. Ini latihan: kamu boleh lanjut kapan saja.</p>
+      <p class="lead">${opt.lead ? esc(opt.lead) : 'Ketuk 🎙️ lalu baca sendiri. Butuh bantuan? Tekan ▶ Dengar dulu. Ini latihan: kamu boleh lanjut kapan saja.'}</p>
       <div class="ayahbig ar" lang="ar"></div>
       ${kind === 'kata' ? `<p class="small" style="text-align:center;margin:4px 0 0">${esc(words[0].emo || '')} ${esc(words[0].id)}</p>` : ''}
       <div class="acc" style="text-align:center;font-weight:700;font-size:20px;min-height:28px;margin-top:6px"></div>
       <div class="fb" aria-live="polite"></div>
-      <div class="row" style="margin-top:10px"><button class="btn blue" id="hear">▶ Dengar</button><button class="btn green" id="mic" style="flex:1">🎙️ Baca</button></div>
+      <div class="row" style="margin-top:10px"><button class="btn blue" id="hear"${opt.hear === false ? ' hidden style="display:none"' : ''}>▶ Dengar</button><button class="btn green" id="mic" style="flex:1">🎙️ Baca</button></div>
       <div class="minibar" style="margin-top:8px;height:8px;background:#E8DDBF;border:2px solid var(--ink);border-radius:4px;overflow:hidden"><div id="lvl" style="height:100%;width:0;background:#7CD35E"></div></div>
-      <button class="btn block" id="next" style="margin-top:14px">${isLast ? 'Lanjut ▸' : (kind === 'kata' ? 'Kata berikutnya ▸' : kind === 'surat' ? 'Ayat berikutnya ▸' : 'Bagian berikutnya ▸')}</button></div>`);
+      <button class="btn block" id="next" style="margin-top:14px">${isLast && opt.nextLabel ? esc(opt.nextLabel) : isLast ? 'Lanjut ▸' : (kind === 'kata' ? 'Kata berikutnya ▸' : kind === 'surat' ? 'Ayat berikutnya ▸' : 'Bagian berikutnya ▸')}</button></div>`);
     // v4 (Ricky): while listening only "Selesai" works; while checking, every button is off and Pak Ustaz thinks.
     const think = $(`<div class="ustaz-think" hidden aria-live="polite"><img class="portrait" alt="Pak Ustaz" src="${portrait(USTAZ.look)}">
       <div><b>Pak Ustaz</b><p><span class="say"></span><span class="dots"><i>.</i><i>.</i><i>.</i></span></p></div></div>`);
@@ -360,22 +366,28 @@ function practice({ body, s, a, items, kind, next, ayat }) {
     const heardEl = $(`<div class="heard" hidden></div>`); accEl.after(heardEl);
     v.querySelector('.fb').before(think);
     let busy = false, stopFn = null, tries = 0;
-    const ends = new Map(); if (kind === 'surat') { let k = -1; s.ayat.forEach(x => { k += x.w.length; ends.set(k, x.n); }); }
-    const paint = res => box.replaceChildren(...words.flatMap((w, i) => {
-      const sp = $(`<span role="button" tabindex="0">${esc(w.ar)}</span>`);
+    const list = opt.list || s.ayat;
+    const ends = new Map(); if (kind === 'surat') { let k = -1; list.forEach(x => { k += x.w.length; ends.set(k, x.n); }); }
+    const shown = new Set(); let lastRes = null;
+    if (opt.below) box.after(opt.below);
+    const paint = res => { lastRes = res; box.replaceChildren(...words.flatMap((w, i) => {
+      const m = !res && opt.mask && !shown.has(i) ? opt.mask(i, w) : null;
+      const sp = $(`<span role="button" tabindex="0"${m ? ' class="mask" aria-label="Intip kata"' : ''}>${esc(m || w.ar)}</span>`);
       sp.style.cursor = 'pointer';
-      sp.onclick = () => { stopAudio(); play(AW(w.a)); };
+      sp.onclick = m ? () => { if (busy) return; shown.add(i); opt.onPeek && opt.onPeek(i); sfx.good(); paint(lastRes); } : () => { stopAudio(); play(AW(w.a)); };
       if (res) { const st = res[i].st; sp.style.borderRadius = '4px'; sp.style.padding = '0 3px'; sp.style.background = COL[st]; if (st !== 'ok') sp.style.textDecoration = 'underline wavy #C0392B'; }
       const end = kind === 'surat' && ends.has(i) ? [document.createTextNode(' '), $(`<i class="aend">${String(ends.get(i)).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d])}</i>`)] : [];
       return (i ? [document.createTextNode(' '), sp] : [sp]).concat(end);
-    }));
+    })); };
     paint(null);
     // (the word pointer was removed: Ricky, "tanda per kata bikin anak bingung")
-    const hear = async () => { stopAudio(); if (kind === 'surat') { for (const x of s.ayat) { if (!v.isConnected) return; await play(AA(x.a)); } return; } if (whole) return play(AA(cur.a)); for (const w of words) { if (!v.isConnected) return; await play(AW(w.a)); } };
+    const hear = async () => { stopAudio(); if (kind === 'surat') { for (const x of list) { if (!v.isConnected) return; await play(AA(x.a)); } return; } if (whole) return play(AA(cur.a)); for (const w of words) { if (!v.isConnected) return; await play(AW(w.a)); } };
     v.querySelector('#hear').onclick = hear;
     v.querySelector('#next').onclick = () => { if (stopFn) stopFn(); idx++; if (idx < items.length) show(); else done(); };
+    const nextBtn = v.querySelector('#next'), gateNext = () => { if (opt.mustTry && isLast) nextBtn.disabled = !tries && model.status === 'ready'; };
     unsub = onModel(m => {
       if (busy) return;
+      gateNext();
       if (m.status === 'ready') { if (mic.disabled) { mic.disabled = false; if (!tries) { fb.className = 'fb'; fb.textContent = ''; } } v.querySelector('#retry')?.remove(); return; }
       mic.disabled = true;
       if (m.status === 'error' || m.status === 'blocked') {
@@ -425,12 +437,15 @@ function practice({ body, s, a, items, kind, next, ayat }) {
         fb.className = 'fb ' + (pass ? 'good' : ''); fb.textContent = verdict(r.acc);
         if (pass) sfx.fanfare(); else sfx.good();
       }
-      if (kind === 'surat') { S.recited = S.recited || {}; s.ayat.forEach(x => S.recited[x.a] = true); save(); }
+      opt.onResult && opt.onResult({ acc: r.acc, pass: !unsure && r.acc >= PASS, unsure });
+      if (kind === 'surat') { S.recited = S.recited || {}; list.forEach(x => S.recited[x.a] = true); save(); }
       else if (whole) { S.recited = S.recited || {}; S.recited[cur.a] = true; save(); }
       logActivity('recitation_try', { ayah: cur.a, part: kind, words: words.map(w => w.a.slice(6)).join(','), score: unsure ? null : +r.acc.toFixed(2), ms, rec_s: +rec.dur.toFixed(1),
         profile: RECITE.id, heard: text.slice(0, 120), wrong: r.res.filter(x => x.st !== 'ok').slice(0, 6).map(x => `${x.word}→${x.heard || '∅'}`) });
     };
     body.replaceChildren(v);
+    gateNext();
+    if (opt.autoplay) setTimeout(() => { if (v.isConnected && !busy) hear(); }, 350);
   };
   show();
 }
@@ -457,7 +472,7 @@ hooks.afterWhole = ({ body, bar, s, review, next }) => {
 // ---------------- settings box (⚙ → Pengaturan): status only, the download is automatic ----------------
 export function settingsBox() {
   const b = $(`<div class="box"><h3>🎙️ Pengenal bacaan</h3>
-    <p class="small" style="margin:0 0 8px">Setelah memahami arti setiap ayat, anak membaca ayat itu dengan suaranya; di akhir surat (Surat Utuh) anak membaca suratnya ayat demi ayat. Setiap percobaan menunjukkan <b>ketepatan</b>: berapa banyak huruf yang terbaca benar, supaya artinya tidak berubah (misalnya قلب "hati" dan كلب "anjing"). Tajwid belum dinilai. Ini latihan, bukan syarat untuk lanjut. Pengenal bacaan berjalan di perangkat ini (suara tidak dikirim ke internet) dan disiapkan saat game dibuka (unduhan sekali, ${MODEL_SIZE}).</p>
+    <p class="small" style="margin:0 0 8px">Setelah memahami arti setiap ayat, anak membaca ayat itu dengan suaranya; di akhir surat (Surat Utuh) anak membaca suratnya ayat demi ayat. Saat menyiram tanaman, anak membaca surat itu dengan bantuan yang makin sedikit (tingkat 1 Tirukan sampai 5 Hafalan). Setiap percobaan menunjukkan <b>ketepatan</b>: berapa banyak huruf yang terbaca benar, supaya artinya tidak berubah (misalnya قلب "hati" dan كلب "anjing"). Tajwid belum dinilai. Ini latihan, bukan syarat untuk lanjut. Pengenal bacaan berjalan di perangkat ini (suara tidak dikirim ke internet) dan disiapkan saat game dibuka (unduhan sekali, ${MODEL_SIZE}).</p>
     <div id="rstat" class="small" style="margin:6px 0"></div>
     <div class="minibar" style="height:10px;background:#E8DDBF;border:2px solid var(--ink);border-radius:4px;overflow:hidden;margin:6px 0"><div id="rbar" style="height:100%;width:0;background:#7CD35E"></div></div>
     <div class="row"><button class="btn" id="rdl" hidden>🔄 Coba lagi</button></div></div>`);

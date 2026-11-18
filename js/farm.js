@@ -304,7 +304,7 @@ export function plotAction(i){
   const p=S.plots[i];
   if(!p){
     if(S.pendingPlant){ const no=S.pendingPlant; S.plots[i]={no,days:(perk(8)&&QUEST[no].days>1)?1:0,watered:false}; S.seeds[no]--; S.pendingPlant=null; save(); sfx.plant();
-      dialog(KAKEK,[`Benih ${QUEST[no].cropName} sudah tertanam! Butuh ${QUEST[no].days} hari untuk panen.`,`Siram setiap hari dengan murajaah: jawab arti kata dari ${BY[no].name}. Tanaman yang disiram tumbuh besok pagi. Tidur di rumah untuk lompat ke pagi.`],[['Siram sekarang',()=>water(i),'blue'],['Nanti',idleDialog,'ghost']]); return; }
+      dialog(KAKEK,[`Benih ${QUEST[no].cropName} sudah tertanam! Butuh ${QUEST[no].days} hari untuk panen.`,(hooks.water?`Siram setiap hari dengan membaca Surat ${BY[no].name}. Makin hari bantuannya makin sedikit, sampai kamu bisa membacanya sendiri. Tanaman yang disiram tumbuh besok pagi.`:`Siram setiap hari dengan murajaah: jawab arti kata dari ${BY[no].name}. Tanaman yang disiram tumbuh besok pagi. Tidur di rumah untuk lompat ke pagi.`)],[['Siram sekarang',()=>water(i),'blue'],['Nanti',idleDialog,'ghost']]); return; }
     const owned=ORDER.filter(n=>S.seeds[n]>0);
     if(owned.length){ dialog(KAKEK,['Petak ini kosong. Mau tanam benih apa?'],owned.map(n=>[`${QUEST[n].cropName} (${S.seeds[n]})`,()=>{S.pendingPlant=n;save();plotAction(i);},'green']).concat([['Batal',idleDialog,'ghost']])); return; }
     dialog(KAKEK,['Petak ini masih kosong. Benih dibeli di Toko Benih dengan Koin Makna.','Koin didapat dengan membantu warga: pelajari arti surat yang menjawab masalah mereka.']); return; }
@@ -313,7 +313,7 @@ export function plotAction(i){
     S.coins+=coins; S.basket[p.no]=(S.basket[p.no]||0)+qty; S.plots[i]=null; save(); sfx.fanfare(); voice('winner',200);
     celebrate(gold?`${Q.cropName} EMAS!`:jumbo?`${Q.cropName} JUMBO!`:`Panen ${Q.cropName}!`,`+${coins} Koin Makna, ${qty} hasil panen${jumbo?' (panen jumbo!)':''}${gold?' (tanaman emas karena kamu Mahir Surat '+BY[p.no].name+')':''}. Beli benih lagi di toko untuk menanam ulang.`,ICON.crop(p.no),()=>{addXP(10);farm();}); return; }
   if(p.watered){ dialog(KAKEK,[`${Q.cropName} sudah disiram hari ini (${p.days}/${Q.days} hari). Besok pagi tumbuh. Tidur di rumah untuk lompat ke pagi.`],[['Pulang tidur',()=>walkTo([OBJ.house.door],house),'green'],['Oke',idleDialog,'ghost']]); return; }
-  dialog(KAKEK,[`${Q.cropName} (${p.days}/${Q.days} hari) belum disiram hari ini. Siram dengan murajaah ${BY[p.no].name}?`],[['Siram',()=>water(i),'blue'],['Nanti',idleDialog,'ghost']]);
+  dialog(KAKEK,[hooks.water?`${Q.cropName} (${p.days}/${Q.days} hari) belum disiram hari ini. Siram dengan membaca Surat ${BY[p.no].name}?`:`${Q.cropName} (${p.days}/${Q.days} hari) belum disiram hari ini. Siram dengan murajaah ${BY[p.no].name}?`],[['Siram',()=>water(i),'blue'],['Nanti',idleDialog,'ghost']]);
 }
 
 export const isNewSeed=no=>!!S.solved[no]&&!(S.bought&&S.bought[no]);
@@ -370,19 +370,26 @@ export function bookView(){
 }
 
 /* ---------- watering = daily murajaah ---------- */
+// js/siram.js sets hooks.water: watering becomes reading the surah aloud (a ladder of less and less help), with a small
+// village event once a day. Without it (or when the recognizer can't run) watering is the classic 3-answer quiz below.
 export function water(i){
-  const p=S.plots[i], no=p.no; let need=3, streak=0, asked=0;
+  const p=S.plots[i], no=p.no;
+  const finish=()=>{ p.watered=true; let extra=0; if(perk(2)) S.plots.forEach(q=>{ if(q&&q!==p&&q.no===no&&!q.watered&&stageOf(q)<4){q.watered=true;extra++;} }); save(); sfx.fanfare(); voice('you_win',150);
+    celebrate('Tanaman disiram!',`${QUEST[no].cropName} akan tumbuh besok pagi (${p.days}/${QUEST[no].days} hari).${extra?` Penyiram Besar ikut menyiram ${extra} petak lain!`:''} Tidur di rumah untuk lompat ke pagi.`,ICON.crop(no),()=>{closePanel();addReview(no);addXP(repXP('water'+no+'_'+i,10)||2);farm();}); };
+  if(hooks.water) return hooks.water({i,p,no,finish,quiz:()=>waterQuiz(no,finish)});
+  waterQuiz(no,finish);
+}
+export function waterQuiz(no,finish){
+  let need=3, streak=0;
   const pn=panel(`Menyiram ${QUEST[no].cropName}`,`Murajaah Surat ${BY[no].name} · 3 jawaban benar = 1 siraman`,()=>{});
-  const body=pn.querySelector('.pbody'); const frame=$(`<div class="frame"><div class="mgbar"><span>💧 <span id="wc">0</span>/3</span><span id="st"></span></div><div class="qh"></div></div>`); body.append(frame);
+  const body=pn.querySelector('.pbody'); const frame=$(`<div class="frame"><div class="mgbar"><span>💧 <span id="wc">0</span>/3</span><span id="st"></span></div><div class="qh"></div></div>`); body.replaceChildren(frame);
   let got=0;
-  const ask=()=>{ const q=makeQ([no],['meaning','meaning','listen','next']); asked++;
+  const ask=()=>{ const q=makeQ([no],['meaning','meaning','listen','next']);
     renderQ(frame.querySelector('.qh'),q,(ok,ms,fb)=>{
       if(ok){got++;streak++;S.lv[q.w.a]=Math.min(3,lv(q.w.a)+1);save();sfx.water();fb.className='fb good';fb.textContent=pick(['Benar!','Hebat!','Pintar!']); if(streak>=3&&streak%3===0){comboPop(streak);voice('combo');}}
       else {streak=0;sfx.bad();fb.className='fb bad';fb.textContent='Tidak apa-apa, lihat jawaban yang hijau.';}
       frame.querySelector('#wc').textContent=got;
       setTimeout(()=>{ if(got>=need) finish(); else ask(); }, ok?700:1400); }); };
-  const finish=()=>{ p.watered=true; let extra=0; if(perk(2)) S.plots.forEach(q=>{ if(q&&q!==p&&q.no===no&&!q.watered&&stageOf(q)<4){q.watered=true;extra++;} }); save(); sfx.fanfare(); voice('you_win',150);
-    celebrate('Tanaman disiram!',`${QUEST[no].cropName} akan tumbuh besok pagi (${p.days}/${QUEST[no].days} hari).${extra?` Penyiram Besar ikut menyiram ${extra} petak lain!`:''} Tidur di rumah untuk lompat ke pagi.`,ICON.crop(no),()=>{closePanel();addReview(no);addXP(repXP('water'+no+'_'+i,10)||2);farm();}); };
   ask();
 }
 

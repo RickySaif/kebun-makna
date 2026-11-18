@@ -116,3 +116,15 @@ body{margin:0}
 .jv .jcart b{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .jv .jveg{display:inline-flex;align-items:center;gap:1px;font-size:14px}
 .jv .jveg img{width:20px;height:20px;image-rendering:pixelated}
+/* watering ladder (js/siram.js) */
+.ayahbig span.mask{color:#8A6A12;background:#FFF1C2;border-bottom:2px dashed #C9A227;border-radius:4px;padding:0 2px}
+.siram-lv{display:flex;align-items:center;gap:4px;margin:0 0 8px;font-size:13px}
+.siram-lv span{width:22px;height:22px;border:2px solid var(--ink);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;background:#F3EBD3;color:#8A7A5A}
+.siram-lv span.past{background:#BFF0B0;color:var(--ink)}
+.siram-lv span.on{background:#F4C430;color:var(--ink)}
+.siram-lv b{margin-left:6px}
+.siram-arti{margin:6px 0 0;padding-left:22px;font-size:14px;color:#5A4A2A}
+.siram-field{position:relative;height:220px;margin-top:8px;border:3px solid var(--ink);border-radius:10px;background:#9BD27A;overflow:hidden;touch-action:manipulation}
+.siram-goat{position:absolute;font-size:40px;background:none;border:0;padding:0;line-height:1;cursor:pointer;transition:left .35s,top .35s}
+.siram-walk{animation:siramwalk 1.3s linear}
+@keyframes siramwalk{from{transform:translateX(-60px)}to{transform:translateX(60px)}}
