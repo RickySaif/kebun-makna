@@ -185,13 +185,15 @@ function goatGame(b, next) {
 /* ---------- the watering itself ---------- */
 function siram({ no, finish, quiz }) {
   migrate();
-  if (!FLAGS.recitationGate || model.status === 'error' || model.status === 'blocked') return quiz();
+  // Even when the recognizer isn't ready on this phone (still downloading, crashed last time, error), the reading page
+  // opens: it says why and offers "Coba lagi". Leaving it without a checked reading waters with the classic quiz.
+  if (!FLAGS.recitationGate) return quiz();
   const st = L(no), ev = eventFor(no), wasSiap = isSiap(no);
   const pn = panel(`Menyiram ${QUEST[no].cropName}`, `Membaca Surat ${BY[no].name} · Tingkat ${st.lv}`, () => {});
   const body = pn.querySelector('.pbody');
   const before = ev && ev.before ? ev.before : (b, n) => n(), after = ev && ev.after ? ev.after : (b, n) => n();
   before(body, () => read(body, no, res => {
-    if (!res) return quiz();
+    if (!res) return talk(body, KAKEK, [model.status === 'ready' ? 'Belum ada bacaan yang diperiksa. Hari ini kita siram dengan menjawab soal arti dulu, ya.' : 'Pak Ustaz belum bisa mendengar bacaan di HP ini. Hari ini kita siram dengan menjawab soal arti dulu, ya.'], 'Jawab soal ▸', quiz);
     pn.scrollTop = 0;
     const msg = res.passed ? (res.newLv > res.lvl ? `Bacaanmu lulus! Siraman berikutnya naik ke tingkat ${res.newLv}: ${LEVELS[res.newLv].name}.` : 'Bacaanmu lulus di tingkat tertinggi. MasyaAllah!')
       : res.newLv < res.lvl ? `Tidak apa-apa. Besok kita latihan di tingkat ${res.newLv} dulu, ya.` : 'Tidak apa-apa, tanamanmu tetap tersiram. Besok coba lagi!';
