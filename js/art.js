@@ -41,6 +41,14 @@ export function bake(key, w, h, fn, plain) {
   if (pad) outline(g, cv.width, cv.height);
   s = { cv, pad, w: cv.width, h: cv.height }; cache.set(key, s); return s;
 }
+/** iOS Safari can drop the backing store of offscreen canvases (memory pressure, long time in the background);
+ *  they then draw as nothing or as black blocks. A tiny probe canvas shows when that happened. */
+let probe = null;
+function probeInit() { try { probe = document.createElement('canvas'); probe.width = probe.height = 2; const g = probe.getContext('2d'); g.fillStyle = '#ff0000'; g.fillRect(0, 0, 2, 2); } catch (e) { probe = null; } }
+probeInit();
+export function canvasesOk() { if (!probe) return true; try { const d = probe.getContext('2d').getImageData(0, 0, 1, 1).data; return d[0] === 255 && d[3] === 255; } catch (e) { return false; } }
+/** Forget every baked sprite; they are drawn again on the next frame that needs them. */
+export function flushSprites() { cache.clear(); probeInit(); }
 /** Draw a baked sprite with its top-left at logical (x,y). */
 export function blit(c, s, x, y) { c.drawImage(s.cv, x - s.pad / Z, y - s.pad / Z, s.w / Z, s.h / Z); }
 

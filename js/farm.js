@@ -13,7 +13,7 @@ import { AW, BOSS, BY, DATA, EVENTS, HOUSE_TIERS, KAKEK, LV_XP, ORDER, QUEST, SL
 import { celebrate, lesson, lessonStart, makeQ, renderQ, suratUtuh } from './lesson.js';
 import { addReview, addXP, canBuild, flushNotes, journal, levelView, note, pLevel, perk, renoNext, renoOpen, renoReady, repXP } from './progress.js';
 import { CHESTPOS, COLS, WORLD_EXIT_Y, ENTRY, FRUIT, GATE, GATE2, ICON, LOTS, OBJ, PLOTS, ROWS, SPOT, T, VC, VR, adjacent, bfs, blocked, drawChest, drawCrop, drawGate, drawHedge, drawHouse, drawHut, drawKid, drawLot, drawPlotSoil, drawShop, drawSign, drawTree, drawTrophy, drawWell, eastOpen, evLook, evName, farOpen, giverNo, hitObject, homeOf, isNight, npcHere, portrait, px, stageOf, villagers } from './render.js';
-import { blit, buildGround, butterflySprite, cloudSprite, fenceSprite, gfxLite, glowSprite, hdCanvas, lowerCap, vignetteSprite } from './art.js';
+import { blit, buildGround, canvasesOk, flushSprites, butterflySprite, cloudSprite, fenceSprite, gfxLite, glowSprite, hdCanvas, lowerCap, vignetteSprite } from './art.js';
 import { avatarBuilder } from './avatar.js';
 import { S, activeEvent, done, fill, fresh, lv, save, setS, surahDone, words } from './state.js';
 import { $, clockStr, closePanel, comboPop, confirmBox, esc, layer, panel, pick, root, toast } from './ui.js';
@@ -101,6 +101,7 @@ export function loop(t){
   walkers.forEach(w=>{ if(!w.path.length) return; const [nx,ny]=w.path[0]; const sp=0.07*dt/16.7; w.fx+=Math.sign(nx-w.fx)*Math.min(sp,Math.abs(nx-w.fx)); w.fy+=Math.sign(ny-w.fy)*Math.min(sp,Math.abs(ny-w.fy)); if(Math.abs(w.fx-nx)<.01&&Math.abs(w.fy-ny)<.01){w.fx=nx;w.fy=ny;w.path.shift(); if(!w.path.length){ walkers=walkers.filter(x=>x!==w); w.done&&w.done(); }} });
   // v3: a full-screen panel (lesson, shop, boss) hides the farm, so don't spend frames on it
   const top=layer.firstElementChild; if(top&&top.classList.contains('panel')) return;
+  if(t-lastProbe>3000){ lastProbe=t; if(!canvasesOk()) healGraphics(); }
   draw(t);
   // v3: if frames stay slow, step the canvas resolution down, then drop the ambient effects
   emaDt+=(dt-emaDt)*.05; if(emaDt>24){ if(++slowFrames>120){ slowFrames=0; emaDt=16; if(lowerCap()) fitCanvas(); else fxOff=true; } } else slowFrames=0;
@@ -143,6 +144,13 @@ export function fitCanvas(){ if(cv&&cv.isConnected){
     const w=Math.max(150,Math.min(r.width,(r.height-b)*VC/VR+b)); if(Math.abs(parseFloat(st.style.width||0)-w)>.5) st.style.width=w+'px'; }
   ctx=hdCanvas(cv,VC*T,VR*T); } }
 const fitObs=new ResizeObserver(()=>fitCanvas());
+// Self-repair: if the browser dropped the cached ground/sprite canvases (iPhone, after the app sat in the background
+// or memory ran low), throw the caches away so everything is drawn again instead of staying blank or black.
+let hiddenAt=0;
+function healGraphics(){ flushSprites(); groundKey=''; ground=null; fitCanvas(); }
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'){ hiddenAt=Date.now(); return; } if(hiddenAt&&Date.now()-hiddenAt>3000||!canvasesOk()) healGraphics(); hiddenAt=0; });
+window.addEventListener('pageshow',e=>{ if(e.persisted||!canvasesOk()) healGraphics(); });
+let lastProbe=0;
 window.addEventListener('resize',fitCanvas); window.addEventListener('km-gfx',()=>{fxOff=false;fitCanvas();}); window.addEventListener('km-eyes',()=>{ if(document.getElementById('farm')&&!dlgBusy&&!introActive) idleDialog(); });
 let fxSeed=7; const fxRnd=()=>(fxSeed=(fxSeed*16807)%2147483647)/2147483647; // own generator: effects must not consume the game's Math.random
 function puff(x,y,n,col,up){ if(parts.length>60) return; for(let i=0;i<n;i++) parts.push({x:x+fxRnd()*4-2,y:y+fxRnd()*2,vx:(fxRnd()-.5)*.012,vy:up?-.012-fxRnd()*.008:-.004,life:0,max:up?1600:420,col,s:up?2:1.5}); }
