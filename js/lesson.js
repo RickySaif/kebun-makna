@@ -161,21 +161,31 @@ export function suratUtuh(no,review,ctx){
     v.querySelector('#nx').onclick=next;
     setTimeout(playNext,300); return v;
   }
+  // Ricky (playtest): ordering more than six ayat is too hard. Longer surahs are split into consecutive parts of at most
+  // six ayat (9 → 5+4, 7 → 4+3); each part is ordered on its own, then "Lanjut" goes to the next part.
   function urutan(next){
-    const v=$(`<div class="frame"><h2>Susun urutan ayat</h2><p class="lead">Ketuk ayat dari yang pertama sampai yang terakhir. Ketuk ▶ untuk mendengar ayatnya dulu.</p><div class="ostack"></div><div class="pool2"></div><div class="fb"></div><button class="btn green block" id="nx" style="margin-top:12px" disabled>Cek urutan</button></div>`);
-    const stack=v.querySelector('.ostack'), pool=v.querySelector('.pool2'), fb=v.querySelector('.fb'), nx=v.querySelector('#nx');
-    const placed=[]; let solved=false; const els=new Map();
-    shuffle(s.ayat.map((a,k)=>({a,k}))).forEach(it=>{ const el=$(`<div class="aytile"><button class="pl" aria-label="Dengar ayat">▶</button><button class="tx ar" lang="ar">${esc(it.a.ar)}</button></div>`);
-      el.querySelector('.pl').onclick=()=>play(AA(it.a.a));
-      el.querySelector('.tx').onclick=()=>{ if(solved||placed.includes(it)) return; placed.push(it); el.classList.add('used'); play(AA(it.a.a)); render(); };
-      els.set(it,el); pool.append(el); });
-    function render(){ stack.replaceChildren(...placed.map((it,i)=>{ const r=$(`<button class="orow"><span class="num">${i+1}</span><span class="ar" lang="ar">${esc(it.a.ar)}</span></button>`); r.onclick=()=>{ if(solved) return; placed.splice(i,1); els.get(it).classList.remove('used'); fb.textContent=''; render(); }; return r; }));
-      if(!placed.length) stack.append($(`<div class="hint" style="padding:8px">Ayat pertama ditaruh di sini…</div>`)); nx.disabled=placed.length<s.ayat.length&&!solved; }
-    render();
-    nx.onclick=()=>{ if(solved){next();return;} const wrong=placed.map((it,i)=>it.k!==i);
-      if(wrong.some(Boolean)){ mist++; sfx.bad(); fb.className='fb bad'; fb.textContent='Ada yang belum di tempatnya (merah). Ketuk untuk mengembalikan, lalu coba lagi.'; [...stack.querySelectorAll('.orow')].forEach((r,i)=>r.classList.toggle('bad',wrong[i])); }
-      else { solved=true; sfx.good(); fb.className='fb good'; fb.textContent='Urutannya benar!'; nx.textContent='Lanjut ▸'; } };
-    return v;
+    const n=s.ayat.length, groups=Math.ceil(n/6), size=Math.ceil(n/groups), chunks=[];
+    for(let i=0;i<n;i+=size) chunks.push(s.ayat.slice(i,i+size).map((a,j)=>({a,k:i+j})));
+    const v=$(`<div class="frame"></div>`);
+    const round=ci=>{
+      const items=chunks[ci], base=items[0].k, last=ci===chunks.length-1;
+      const lead=chunks.length>1?`Bagian ${ci+1} dari ${chunks.length}: ayat ${items[0].a.n}–${items[items.length-1].a.n}. `:'';
+      const f=$(`<div style="display:contents"><h2>Susun urutan ayat</h2><p class="lead">${lead}Ketuk ayat dari yang pertama sampai yang terakhir. Ketuk ▶ untuk mendengar ayatnya dulu.</p><div class="ostack"></div><div class="pool2"></div><div class="fb"></div><button class="btn green block" id="nx" style="margin-top:12px" disabled>Cek urutan</button></div>`);
+      v.replaceChildren(f);
+      const stack=f.querySelector('.ostack'), pool=f.querySelector('.pool2'), fb=f.querySelector('.fb'), nx=f.querySelector('#nx');
+      const placed=[]; let solved=false; const els=new Map();
+      shuffle(items.slice()).forEach(it=>{ const el=$(`<div class="aytile"><button class="pl" aria-label="Dengar ayat">▶</button><button class="tx ar" lang="ar">${esc(it.a.ar)}</button></div>`);
+        el.querySelector('.pl').onclick=()=>play(AA(it.a.a));
+        el.querySelector('.tx').onclick=()=>{ if(solved||placed.includes(it)) return; placed.push(it); el.classList.add('used'); play(AA(it.a.a)); render(); };
+        els.set(it,el); pool.append(el); });
+      function render(){ stack.replaceChildren(...placed.map((it,i)=>{ const r=$(`<button class="orow"><span class="num">${i+1}</span><span class="ar" lang="ar">${esc(it.a.ar)}</span></button>`); r.onclick=()=>{ if(solved) return; placed.splice(i,1); els.get(it).classList.remove('used'); fb.textContent=''; render(); }; return r; }));
+        if(!placed.length) stack.append($(`<div class="hint" style="padding:8px">Ayat pertama ditaruh di sini…</div>`)); nx.disabled=placed.length<items.length&&!solved; }
+      render();
+      nx.onclick=()=>{ if(solved){ if(last) next(); else round(ci+1); return; } const wrong=placed.map((it,i)=>it.k!==base+i);
+        if(wrong.some(Boolean)){ mist++; sfx.bad(); fb.className='fb bad'; fb.textContent='Ada yang belum di tempatnya (merah). Ketuk untuk mengembalikan, lalu coba lagi.'; [...stack.querySelectorAll('.orow')].forEach((r,i)=>r.classList.toggle('bad',wrong[i])); }
+        else { solved=true; sfx.good(); fb.className='fb good'; fb.textContent='Urutannya benar!'; nx.textContent=last?'Lanjut ▸':'Bagian berikutnya ▸'; } };
+    };
+    round(0); return v;
   }
   function jelaskan(next){
     const E=ctx?ctx.E:EXPLAIN[no]; const a=s.ayat[E.ayah-1]; const opts=shuffle([a,...shuffle(s.ayat.filter(x=>x!==a)).slice(0,2)]);
