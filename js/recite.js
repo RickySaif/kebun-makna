@@ -273,6 +273,29 @@ export async function record(ui = {}) {
   return { pcm, dur: pcm.length / 16000, heard };
 }
 
+// ---- how long checking a recording takes (shown as a progress bar) ----
+// Whisper always encodes a full 30 s window, so there is a fixed cost, plus the decoder, which grows with the audio.
+// The first guess is rough; every finished check teaches the app how fast this phone really is (saved on the device).
+const SPEED_KEY = 'km-asr-scale', BASE_MS = 3000, PER_SEC_MS = 600;
+const speedScale = () => Math.min(8, Math.max(.2, parseFloat(lsGet(SPEED_KEY)) || 1));
+/** Estimated milliseconds to check `dur` seconds of recording. Adds the model build time if it is not ready yet. */
+export const estimateCheckMs = dur => (BASE_MS + PER_SEC_MS * Math.min(dur, 60)) * speedScale() + (isReady() ? 0 : (model.ms || 8000));
+/** Call with the measured time of a check that started with the model ready. */
+export function learnCheckSpeed(dur, ms) { const s = ms / (BASE_MS + PER_SEC_MS * Math.min(dur, 60)); lsSet(SPEED_KEY, String(Math.min(8, Math.max(.2, speedScale() * .5 + s * .5)))); }
+/** Fill `bar` (inner element) over the estimated time and write the seconds left in `label`. Returns a function that stops it. */
+export function checkProgress(bar, label, estMs) {
+  const t0 = performance.now(), box = bar.parentElement; let last = -1;
+  box.style.height = '14px'; bar.style.background = '#F4B400'; bar.style.transition = 'width .25s linear';
+  const tick = () => {
+    const e = performance.now() - t0, p = e < estMs ? .9 * e / estMs : .9 + .09 * (1 - Math.exp(-(e - estMs) / estMs));
+    bar.style.width = Math.round(p * 100) + '%';
+    const left = Math.max(0, Math.ceil((estMs - e) / 1000));
+    if (left !== last) { last = left; label.textContent = left > 0 ? `Pak Ustaz mendengarkan rekamanmu… kira-kira ${left} detik lagi` : 'Sebentar lagi selesai…'; }
+  };
+  tick(); const id = setInterval(tick, 250);
+  return () => { clearInterval(id); bar.style.transition = ''; bar.style.width = '0'; bar.style.background = '#7CD35E'; box.style.height = '8px'; };
+}
+
 export async function transcribe(pcm) {
   await loadModel();
   // No language/task options: this fine-tuned model's generation config has no language table (passing language
@@ -416,11 +439,14 @@ export function practice({ body, s, a, items, kind, next, ayat, opt = {} }) {
       if (!v.isConnected) return;
       if (!rec.heard && voicedSeconds(rec.pcm) < (kind === 'kata' ? 0.25 : 0.5)) { restore(); fb.className = 'fb bad'; fb.textContent = 'Tidak ada suara yang terdengar. Dekatkan HP ke mulut dan coba lagi.'; return; }
       mic.disabled = true; mic.textContent = '⏳ Memeriksa…'; fb.textContent = ''; lock('think');
-      const t0 = performance.now(); let text = '';
+      const t0 = performance.now(), wasReady = isReady(); let text = '';
+      const stopBar = checkProgress(lvl, fb, estimateCheckMs(rec.dur));
       try { text = await Promise.race([transcribe(rec.pcm), new Promise((_, no) => setTimeout(() => no(new Error('terlalu lama, coba lagi')), 45000))]); }
-      catch (e) { restore(); fb.className = 'fb bad'; fb.textContent = 'Gagal memeriksa: ' + String(e.message || e).slice(0, 120); return; }
+      catch (e) { stopBar(); restore(); fb.className = 'fb bad'; fb.textContent = 'Gagal memeriksa: ' + String(e.message || e).slice(0, 120); return; }
+      stopBar();
       if (!v.isConnected) return;
-      const ms = Math.round(performance.now() - t0), r = words.length === 1 ? checkWord(words[0].ar, text) : check(words.map(w => w.ar), text), pct = Math.round(r.acc * 100);
+      const ms = Math.round(performance.now() - t0); if (wasReady) learnCheckSpeed(rec.dur, ms);
+      const r = words.length === 1 ? checkWord(words[0].ar, text) : check(words.map(w => w.ar), text), pct = Math.round(r.acc * 100);
       tries++; restore(); v.dataset.heard = text; // what the model heard (tests and debugging)
       // A very short word read on its own (مَا, مِنْ, هُوَ …) is often not heard at all by the model, even from Alafasy.
       // Don't show a false 0%: say it can't be scored here; it is scored inside the parts and the whole ayah.
