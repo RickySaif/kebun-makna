@@ -2,6 +2,7 @@
 import { $, esc, root } from './ui.js';
 import { avatarCanvas, eyesToggle } from './avatar.js';
 import { sb, session, friendly, loadProfile, renderGoogleButton, warmGoogle } from './api.js';
+import { normalizeWhatsapp } from './phone.js';
 
 const MODE = 'kebun-makna-mode'; // 'guest' remembered on this device
 export const rememberGuest = on => { try { on ? localStorage.setItem(MODE, 'guest') : localStorage.removeItem(MODE); } catch (e) {} };
@@ -26,6 +27,7 @@ export function loginScreen(h, mode = 'login', msg = '') {
   root.replaceChildren(title(mode === 'signup' ? 'Buat akun' : mode === 'reset' ? 'Lupa kata sandi' : 'Ayo bangun kebunmu!'));
   const f = $(`<div class="frame">
     ${mode === 'signup' ? `<div class="field"><label for="dn"><b>Nama panggilan</b></label><input id="dn" maxlength="40" autocomplete="nickname" placeholder="mis. Amtar"></div>` : ''}
+    ${mode === 'signup' ? `<div class="field"><label for="wa"><b>Nomor WhatsApp</b></label><input id="wa" type="tel" inputmode="tel" autocomplete="tel" placeholder="mis. 0812 3456 7890"><span class="small">Wajib selama uji coba (beta). Kami akan menghubungi Anda untuk meminta masukan. Tidak ditampilkan ke pemain lain.</span></div>` : ''}
     <div class="field"><label for="em"><b>Email</b></label><input id="em" type="email" autocomplete="email" inputmode="email" autocapitalize="off"></div>
     ${mode !== 'reset' ? `<div class="field"><label for="pw"><b>Kata sandi</b></label><input id="pw" type="password" minlength="8" autocomplete="${mode === 'signup' ? 'new-password' : 'current-password'}"></div>` : ''}
     <button class="btn green block" id="go">${mode === 'signup' ? 'Daftar' : mode === 'reset' ? 'Kirim tautan reset' : 'Masuk'}</button>
@@ -39,6 +41,8 @@ export function loginScreen(h, mode = 'login', msg = '') {
     const email = q('#em').value.trim(), pw = q('#pw') ? q('#pw').value : '';
     if (!/^\S+@\S+\.\S+$/.test(email)) { err.textContent = 'Email belum benar.'; return; }
     if (mode !== 'reset' && pw.length < 8) { err.textContent = 'Kata sandi minimal 8 karakter.'; return; }
+    const wa = mode === 'signup' ? normalizeWhatsapp(q('#wa').value) : null;
+    if (mode === 'signup' && !wa) { err.textContent = 'Nomor WhatsApp wajib diisi dengan benar. Contoh: 0812 3456 7890.'; return; }
     const label = go.textContent; busy(go, true, label); err.textContent = '';
     try {
       const c = await sb();
@@ -51,7 +55,7 @@ export function loginScreen(h, mode = 'login', msg = '') {
         rememberGuest(false); h.login(p);
       } else if (mode === 'signup') {
         const dn = q('#dn').value.trim();
-        const { error } = await c.auth.signUp({ email, password: pw, options: { emailRedirectTo: redirect, data: { display_name: dn } } });
+        const { error } = await c.auth.signUp({ email, password: pw, options: { emailRedirectTo: redirect, data: { display_name: dn, whatsapp: wa } } });
         if (error) throw error;
         root.replaceChildren(title('Cek email Anda'), $(`<div class="frame"><p>Kami mengirim tautan konfirmasi ke <b>${esc(email)}</b>. Ketuk tautannya, lalu kembali ke sini dan masuk.</p></div>`));
         const b = $(`<button class="btn block">Ke halaman masuk</button>`); b.onclick = () => loginScreen(h); root.lastChild.append(b);

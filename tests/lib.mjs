@@ -54,7 +54,9 @@ export async function login(page, n = 1, ready = 'nav.tabbar') {
   const [email, password] = CRED(n);
   await page.goto(BASE + '/');
   await page.fill('#em', email); await page.fill('#pw', password); await page.click('#go');
-  await page.waitForSelector(ready, { timeout: 30000 });
+  // beta: an account without a WhatsApp number gets the number screen once (KM_WA = a test number, default a dummy one)
+  await page.waitForSelector(`${ready}, #wa`, { timeout: 30000 });
+  if (await page.$('#wa')) { await page.fill('#wa', process.env.KM_WA || '0812 0000 0001'); await page.click('#go'); await page.waitForSelector(ready, { timeout: 30000 }); }
 }
 
 /** Signed in: open the support page through the Profil tab (also checks the "Dukung" link is reachable). */

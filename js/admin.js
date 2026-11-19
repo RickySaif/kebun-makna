@@ -2,6 +2,7 @@
 // (rpc admin_link_payment from migration 20261109060000).
 import { $, esc, root, toast } from './ui.js';
 import { sb, session, friendly } from './api.js';
+import { showWhatsapp, isPlaceholderWhatsapp } from './phone.js';
 
 export async function isAdmin() {
   if (!session.user) return false;
@@ -35,4 +36,31 @@ export async function adminPage() {
     list.append(r);
   });
   root.replaceChildren(w);
+  w.querySelector('.start-note').before(await contactsSection(c));
+}
+
+/** Beta testers' WhatsApp numbers (table beta_contacts; RLS lets only admins read everyone's). */
+async function contactsSection(c) {
+  const sec = $(`<div><h2>Admin · Nomor WhatsApp penguji</h2><div class="list"></div></div>`);
+  const list = sec.querySelector('.list');
+  const { data, error } = await c.from('beta_contacts').select('profile_id, whatsapp, created_at').order('created_at', { ascending: false }).limit(500);
+  if (error) { list.append($(`<div class="banner">${esc(/does not exist|schema cache/i.test(error.message) ? 'Tabel beta_contacts belum dipasang di server (migrasi 20261119090000).' : friendly(error))}</div>`)); return sec; }
+  if (!data.length) { list.append($(`<div class="banner">Belum ada nomor.</div>`)); return sec; }
+  const { data: ppl } = await c.from('profiles').select('id, display_name, username').in('id', data.map(x => x.profile_id));
+  const P = {}; (ppl || []).forEach(p => P[p.id] = p);
+  const real = data.filter(x => !isPlaceholderWhatsapp(x.whatsapp)).length;
+  list.append($(`<p class="small" style="color:#fff">${data.length} akun, ${real} dengan nomor asli, ${data.length - real} nomor sementara.</p>`));
+  data.forEach(x => {
+    const p = P[x.profile_id] || {}, ph = isPlaceholderWhatsapp(x.whatsapp);
+    const r = $(`<div class="post"><b class="nm"></b> <span class="small un"></span><br><span class="num"></span> <span class="act"></span></div>`);
+    r.querySelector('.nm').textContent = p.display_name || '(tanpa nama)';
+    r.querySelector('.un').textContent = p.username ? '#' + p.username : '';
+    r.querySelector('.num').textContent = ph ? 'nomor sementara' : showWhatsapp(x.whatsapp);
+    if (!ph) {
+      const a = document.createElement('a'); a.href = 'https://wa.me/' + x.whatsapp; a.target = '_blank'; a.rel = 'noopener'; a.textContent = '💬 Buka WhatsApp';
+      r.querySelector('.act').append(a);
+    }
+    list.append(r);
+  });
+  return sec;
 }

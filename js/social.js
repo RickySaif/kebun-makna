@@ -341,6 +341,7 @@ export async function profilePage(id) {
       await signOut(); location.hash = ''; location.reload();
     };
     body.append(out);
+    import('./whatsapp.js').then(async w => { const b = await w.whatsappBox(); if (b) out.before(b); }).catch(() => {});
   }
   if (isMe) {
     const { data: following2 } = await c.from('follows').select('followee_id').eq('follower_id', me());

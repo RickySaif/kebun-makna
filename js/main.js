@@ -10,6 +10,7 @@ import { eyesToggle } from './avatar.js';
 import { startScreen, hasLocalSave, newPasswordScreen, rememberGuest, isRememberedGuest } from './account.js';
 import { startCloud, importLegacy, flushNow } from './cloud.js';
 import { settingsBox, preloadModel, prepareScreen } from './recite.js';
+import { needsWhatsapp, whatsappScreen } from './whatsapp.js';
 
 /* migration for players from earlier versions (verbatim from the classic game; now run after S is chosen) */
 function migrate(){ if(!S.hv2){ S.house=S.house===1?2:S.house===2?3:S.house||0; S.hv2=true; }
@@ -22,7 +23,7 @@ const cachedProfile = () => { try { return JSON.parse(localStorage.getItem(PROFI
 
 let mode = null; // 'start' | 'guest' (trial, nothing saved) | 'local' (old save on this device) | 'player' (signed in) | 'page' | 'social'
 const handlers = {
-  login: p => { cacheProfile(p); bootPlayer(p); },
+  login: async p => { cacheProfile(p); if (await needsWhatsapp()) { mode = 'start'; return whatsappScreen(() => bootPlayer(p)); } bootPlayer(p); },
   guest: () => bootGuest(),
   local: () => { rememberGuest(true); bootLocal(); },
 };
@@ -144,6 +145,7 @@ async function route() {
   // so it is ready by the first ayah. Download only: it is streamed into storage, the memory-heavy build waits for the
   // start-up screen. Guests get it on that screen.
   if (p) preloadModel();
+  if (p && await needsWhatsapp()) { mode = 'start'; return whatsappScreen(route); } // beta: everyone leaves a WhatsApp number once
   if (h.startsWith('#/tamu')) return bootGuest();
   const soc = h.match(/^#\/(beranda|profil|grup|kunjungi|lomba)(?:\/([^/]+))?/);
   if (soc && p) return socialRoute(soc[1], soc[2]);
