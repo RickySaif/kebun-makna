@@ -9,6 +9,12 @@ export const AW=w=>`audio/w/${w}.mp3`; // word clips re-cut from the ayah record
 export const AA=a=>`audio/a/${a}.mp3`, AV=v=>`audio/v/${v}.mp3`;
 export const BY=Object.fromEntries(DATA.map(s=>[s.no,s]));
 export const ORDER=[114,113,112,111,110,109,108,107,106,105];
+// Ricky (2026-11-21): a new surah is hard to memorise at once. From Al-Kafirun to Al-Fil, a surah with more than 4 ayat is
+// practised in parts of at most 4 ayat (arranging the ayat, reading it aloud, watering). The parts are even
+// (5 → 3+2, 6 → 3+3, 7 → 4+3), so no part is a lone ayah. Other surahs and the trade-route chapter are unchanged.
+export const PART_MAX=4, PART_SURAHS=new Set([109,107,105]);
+export function partsOf(no,ayat){ const a=ayat||BY[no].ayat; if(!PART_SURAHS.has(no)||a.length<=PART_MAX) return [a];
+  const k=Math.ceil(a.length/PART_MAX), out=[]; let i=0; for(let p=0;p<k;p++){ const n=Math.ceil((a.length-i)/(k-p)); out.push(a.slice(i,i+n)); i+=n; } return out; }
 export const CH1=[114,113,112,111,110];
 export const CH2=[109,108,107,106,105];
 export const EVENTS=[114,113,112,'boss1',111,110,'boss2',109,108,107,'boss3',106,105,'boss4'];

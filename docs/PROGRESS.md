@@ -2,6 +2,11 @@
 
 Live: https://km.generasimerdeka.com/ · (old address https://rickysaif.github.io/kebun-makna/ redirects)
 
+## 2026-11-21 — Surat panjang dibagi per bagian (maks. 4 ayat), Al-Kafirun sampai Al-Fil (Ricky)
+- `partsOf(no)` in `js/data.js` splits Al-Kafirun (6 → 3+3), Al-Ma'un (7 → 4+3) and Al-Fil (5 → 3+2) into even parts of at most 4 ayat. Add a surah number to `PART_SURAHS` to extend it (An-Nas, Al-Falaq and Al-Lahab are not included: they come before Al-Kafirun).
+- Used by: "Susun urutan ayat" in Surat Utuh (one page per part), the whole-surah reading after it (`hooks.afterWhole`, one recording per part) and watering (`siram.js` parts, "Siap" needs every part). The per-ayah word arranging was already one ayah at a time.
+- Not run: the browser tests (`siram-ladder.mjs` needs Chrome + the model); only `node --check` and a check of the split. Playtest Al-Kafirun on the phone.
+
 ## 2026-11-19 — WhatsApp number is mandatory during beta (Ricky)
 - **What players see:** the sign-up form has a required "Nomor WhatsApp" field (`0812…`, `+62…`, `62…` and `812…` all work; other countries need a `+`). Anyone who signs in without a number (Google sign-in, accounts made before this change) gets a one-time screen "Satu langkah lagi" before the game, with a "Keluar" link. The own Profil page shows the saved number (only the owner and the admin see it) and an "Ubah" button.
 - **Where it is stored:** new table `beta_contacts(profile_id, whatsapp, created_at, updated_at)`, digits with country code and no "+" (`6281234567890`). It is **not** in `profiles`, because every signed-in player can read `profiles`. RLS: the owner reads and writes their own row, the admin reads all. Email sign-up sends the number in the sign-up metadata and the `handle_new_user` trigger saves it.

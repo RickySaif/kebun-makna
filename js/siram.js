@@ -12,7 +12,7 @@
 import { hooks } from './hooks.js';
 import { $, esc, panel, pick, shuffle } from './ui.js';
 import { S, save, fill } from './state.js';
-import { BY, DATA, KAKEK, ORDER, QUEST } from './data.js';
+import { BY, DATA, KAKEK, ORDER, PART_SURAHS, QUEST, partsOf } from './data.js';
 import { makeQ, renderQ, celebrate } from './lesson.js';
 import { practice, model } from './recite.js';
 import { FLAGS } from './config.js';
@@ -42,8 +42,8 @@ function migrate() {
   ORDER.forEach(n => { if (S.solved && S.solved[n]) S.siap[n] = 'lama'; });
   save();
 }
-// a surah of up to 7 ayat is read whole; a longer one in two halves, alternating
-const chunks = no => { const a = BY[no].ayat; if (a.length <= 7) return [a]; const h = Math.ceil(a.length / 2); return [a.slice(0, h), a.slice(h)]; };
+// Al-Kafirun…Al-Fil: parts of at most 4 ayat (partsOf in data.js); the other surahs of up to 7 ayat are read whole, a longer one in two halves
+const chunks = no => { const a = BY[no].ayat; if (PART_SURAHS.has(no)) return partsOf(no); if (a.length <= 7) return [a]; const h = Math.ceil(a.length / 2); return [a.slice(0, h), a.slice(h)]; };
 
 /* ---------- the masks ---------- */
 const MARK = /[ؐ-ًؚ-ٰٟۖ-ۭ]/;

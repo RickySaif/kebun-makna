@@ -3,7 +3,7 @@
 import { $, esc, root, fitSoon } from './ui.js';
 import { S, save } from './state.js';
 import { sfx, play, stopAudio } from './audio.js';
-import { AA, AW, USTAZ } from './data.js';
+import { AA, AW, USTAZ, partsOf } from './data.js';
 import { portraitURL } from './art.js';
 const portrait = look => portraitURL(look);
 import { check, checkWord, weight } from './match.js';
@@ -492,7 +492,13 @@ hooks.afterWhole = ({ body, bar, s, review, next }) => {
   [...bar.children].forEach(x => x.className = 'past');
   // Ricky (2026-11-14): each ayah was already read after its lesson, so here the whole surah is read at once:
   // one page, one recording (longer limit, and a pause between ayat does not stop it)
-  practice({ body, s, a: s.ayat[0], items: [s.ayat.flatMap(x => x.w)], kind: 'surat', next });
+  const parts = partsOf(s.no);
+  if (parts.length === 1) return practice({ body, s, a: s.ayat[0], items: [s.ayat.flatMap(x => x.w)], kind: 'surat', next });
+  // Ricky (2026-11-21): a longer surah is read in parts of at most 4 ayat, one recording per part
+  const one = k => { const list = parts[k], last = k === parts.length - 1;
+    practice({ body, s, a: list[0], items: [list.flatMap(x => x.w)], kind: 'surat', next: last ? next : () => one(k + 1),
+      opt: { list, title: `Baca Surat ${s.name}, bagian ${k + 1} dari ${parts.length} (ayat ${list[0].n}–${list[list.length - 1].n})`, nextLabel: last ? 'Lanjut ▸' : 'Bagian berikutnya ▸' } }); };
+  one(0);
 };
 
 // ---------------- settings box (⚙ → Pengaturan): status only, the download is automatic ----------------

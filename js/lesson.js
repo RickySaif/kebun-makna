@@ -1,7 +1,7 @@
 // lesson.js — split verbatim from the classic single-file game (Phase 0).
 import { hooks } from './hooks.js';
 import { play, sfx, stopAudio, voice } from './audio.js';
-import { AA, AW, BY, COIN_PER_AYAH, DATA, EXPLAIN, QUEST } from './data.js';
+import { AA, AW, BY, COIN_PER_AYAH, DATA, EXPLAIN, QUEST, PART_SURAHS, partsOf } from './data.js';
 import { dialog, farm, idleDialog, shop, well } from './farm.js';
 import { addReview, addXP, checkSurahLevels, repXP } from './progress.js';
 import { SPOT, portrait, px } from './render.js';
@@ -164,8 +164,10 @@ export function suratUtuh(no,review,ctx){
   // Ricky (playtest): ordering more than six ayat is too hard. Longer surahs are split into consecutive parts of at most
   // six ayat (9 → 5+4, 7 → 4+3); each part is ordered on its own, then "Lanjut" goes to the next part.
   function urutan(next){
-    const n=s.ayat.length, groups=Math.ceil(n/6), size=Math.ceil(n/groups), chunks=[];
-    for(let i=0;i<n;i+=size) chunks.push(s.ayat.slice(i,i+size).map((a,j)=>({a,k:i+j})));
+    // Al-Kafirun…Al-Fil (Ricky, 2026-11-21): parts of at most 4 ayat (partsOf); other surahs keep the limit of 6
+    const n=s.ayat.length, chunks=[]; let i=0;
+    if(!ctx&&PART_SURAHS.has(no)) partsOf(no).forEach(p=>{ chunks.push(p.map((a,j)=>({a,k:i+j}))); i+=p.length; });
+    else { const groups=Math.ceil(n/6), size=Math.ceil(n/groups); for(i=0;i<n;i+=size) chunks.push(s.ayat.slice(i,i+size).map((a,j)=>({a,k:i+j}))); }
     const v=$(`<div class="frame"></div>`);
     const round=ci=>{
       const items=chunks[ci], base=items[0].k, last=ci===chunks.length-1;
