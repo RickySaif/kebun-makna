@@ -1,8 +1,11 @@
-// account.js — start screen: one login for everyone (email / Google), trial without an account.
+// account.js — start screen: one login for everyone (Google), trial without an account.
 import { $, esc, root } from './ui.js';
 import { avatarCanvas, eyesToggle } from './avatar.js';
 import { sb, session, friendly, loadProfile, renderGoogleButton, warmGoogle } from './api.js';
 import { normalizeWhatsapp } from './phone.js';
+
+// Google is the only sign-in shown (Ricky, 2026-11-23). Set to false to bring back the email form.
+const ONLY_GOOGLE = true;
 
 const MODE = 'kebun-makna-mode'; // 'guest' remembered on this device
 export const rememberGuest = on => { try { on ? localStorage.setItem(MODE, 'guest') : localStorage.removeItem(MODE); } catch (e) {} };
@@ -13,8 +16,10 @@ export { avatarCanvas };
 const title = sub => $(`<div class="title"><h1>Kebun Makna</h1><p>${esc(sub)}</p></div>`);
 const busy = (btn, on, label) => { btn.disabled = on; if (label) btn.innerHTML = on ? '<span class="spinner"></span>' : esc(label); };
 
-/** Start screen: one login for everyone (email or Google), or a trial without an account. Calls handlers.{login, guest, local}. */
-export function startScreen(h) { loginScreen(h); }
+/** Start screen. Calls handlers.{login, guest, local}. */
+export function startScreen(h) {
+  loginScreen(h, ONLY_GOOGLE ? 'google' : 'login');
+}
 
 export function hasLocalSave() {
   for (const k of ['kebun-makna-v3:beta-guest', 'kebun-makna-v3']) { try { const r = JSON.parse(localStorage.getItem(k) || 'null'); if (r && r.name) return r; } catch (e) {} }
@@ -23,8 +28,39 @@ export function hasLocalSave() {
 
 // ---------- login (everyone) ----------
 export function loginScreen(h, mode = 'login', msg = '') {
+  if (ONLY_GOOGLE && mode !== 'reset') mode = 'google';
   warmGoogle();
   root.replaceChildren(title(mode === 'signup' ? 'Buat akun' : mode === 'reset' ? 'Lupa kata sandi' : 'Ayo bangun kebunmu!'));
+  // Google-only mode: the Google button is the whole screen; the email form below is hidden.
+  if (mode === 'google') {
+    const f = $(`<div class="frame">
+      <div id="gbtn" style="display:flex;justify-content:center;min-height:44px"></div>
+      <p class="err" id="err" style="text-align:center">${esc(msg)}</p>
+      <p class="small" id="ghelp" hidden style="text-align:center;margin:10px 0 0">Tombol Google belum bisa dimuat. Periksa sambungan internet, lalu muat ulang halaman ini.</p>
+      <button class="linkbtn" id="reload" hidden style="display:block;margin:8px auto 0">Muat ulang</button></div>`);
+    const err = f.querySelector('#err');
+    root.append(f);
+    const gbtn = f.querySelector('#gbtn');
+    const googleFailed = () => {
+      gbtn.remove();
+      f.querySelector('#ghelp').hidden = false;
+      const rb = f.querySelector('#reload'); rb.hidden = false; rb.onclick = () => location.reload();
+    };
+    renderGoogleButton(gbtn, p => {
+      if (!p) { err.className = 'err'; err.textContent = 'Profil tidak ditemukan.'; return; }
+      rememberGuest(false); h.login(p);
+    }, e => { err.className = 'err'; err.textContent = friendly(e); })
+      .then(ok => { if (!ok) googleFailed(); }, googleFailed); // no GIS / provider off -> say so instead of a blank card
+    // trial without an account: nothing is saved
+    const t = $(`<div class="frame trial"><button class="btn ghost block" id="guest">Coba dulu tanpa akun</button>
+      <p class="trialnote"><b>Uji coba. Hasil tidak disimpan.</b></p>
+      ${hasLocalSave() ? `<button class="linkbtn" id="old">Lanjutkan kebun lama di perangkat ini</button>` : ''}</div>`);
+    t.querySelector('#guest').onclick = () => { rememberGuest(false); h.guest(); };
+    if (t.querySelector('#old')) t.querySelector('#old').onclick = () => h.local();
+    const eo = $(`<div class="frame eyesframe"><div class="pv"></div></div>`); eo.querySelector('.pv').append(avatarCanvas(0, .5), avatarCanvas(1, .5)); eo.append(eyesToggle());
+    root.append(t, eo);
+    return;
+  }
   const f = $(`<div class="frame">
     ${mode === 'signup' ? `<div class="field"><label for="dn"><b>Nama panggilan</b></label><input id="dn" maxlength="40" autocomplete="nickname" placeholder="mis. Amtar"></div>` : ''}
     ${mode === 'signup' ? `<div class="field"><label for="wa"><b>Nomor WhatsApp</b></label><input id="wa" type="tel" inputmode="tel" autocomplete="tel" placeholder="mis. 0812 3456 7890"><span class="small">Wajib selama uji coba (beta). Kami akan menghubungi Anda untuk meminta masukan. Tidak ditampilkan ke pemain lain.</span></div>` : ''}

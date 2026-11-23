@@ -2,6 +2,14 @@
 
 Live: https://km.generasimerdeka.com/ · (old address https://rickysaif.github.io/kebun-makna/ redirects)
 
+## 2026-11-23 — Google is the only login (Ricky)
+- **What players see:** the start screen is just the Google button, "Coba dulu tanpa akun" and the avatar toggle. The email/password form, "Belum punya akun? Daftar" and "Lupa kata sandi?" are hidden. The account box for a trial player now says "Masuk dengan Google".
+- **How:** `ONLY_GOOGLE = true` in `js/account.js`; the Google-only screen is one small branch (button, trial card, avatar toggle). The email code is still in the file, unchanged and unused, behind that flag — flip it to `false` to bring the form back.
+- **If Google cannot load:** the button area is replaced by "Tombol Google belum bisa dimuat…" and a "Muat ulang" button (the old code silently removed the button and left only the email form, which is now hidden, so the card would have been blank). Checked with Google's script blocked.
+- **Tests:** `tests/phase1c-google.mjs` rewritten (button rendered inside 390px, no `#em`/`#pw`, trial still offered, fallback text + reload button without GIS). `tests/phase1-account.mjs` updated (start screen waits for `#gbtn`). `tests/lib.mjs` `login()` now signs in with the app's own Supabase client and reloads, since the form is hidden; every test that used it keeps working. `phase1c-google` passes (all 7 checks) and a guest-start check (trial → naming screen, no console errors) passes. `check-syntax js` passes.
+- **Not run:** the signed-in tests (`phase1-account`, `phase3+`) need `KM_EMAIL`/`KM_PASS`, which were not in this session.
+- **Note for Ricky:** new players now sign up with Google, so the sign-up form's "Nama panggilan" and WhatsApp fields never show. The trigger fills `display_name` from the Google name and the number comes from the one-time "Satu langkah lagi" screen after login, so nothing is lost.
+
 ## 2026-11-21 — Surat panjang dibagi per bagian (maks. 4 ayat), Al-Kafirun sampai Al-Fil (Ricky)
 - `partsOf(no)` in `js/data.js` splits Al-Kafirun (6 → 3+3), Al-Ma'un (7 → 4+3) and Al-Fil (5 → 3+2) into even parts of at most 4 ayat. Add a surah number to `PART_SURAHS` to extend it (An-Nas, Al-Falaq and Al-Lahab are not included: they come before Al-Kafirun).
 - Used by: "Susun urutan ayat" in Surat Utuh (one page per part), the whole-surah reading after it (`hooks.afterWhole`, one recording per part) and watering (`siram.js` parts, "Siap" needs every part). The per-ayah word arranging was already one ayah at a time.

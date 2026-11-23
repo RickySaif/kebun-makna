@@ -49,11 +49,20 @@ export async function userClient(n = 1) {
 }
 export const userId = async c => (await c.auth.getUser()).data.user.id;
 
-/** Sign test account n in through the login form. `ready` is what to wait for: 'nav.tabbar' (tabs) or '#dlg' (the farm). */
+/** Sign test account n in. Google is the only sign-in on screen (js/account.js), so the test signs in with the same
+ *  Supabase client the app uses (session lands in the app's own storage) and reloads. `ready` is what to wait for:
+ *  'nav.tabbar' (tabs) or '#dlg' (the farm). */
 export async function login(page, n = 1, ready = 'nav.tabbar') {
   const [email, password] = CRED(n);
   await page.goto(BASE + '/');
-  await page.fill('#em', email); await page.fill('#pw', password); await page.click('#go');
+  const err = await page.evaluate(async ([email, password]) => {
+    const { sb } = await import('./js/api.js');
+    const c = await sb();
+    const { error } = await c.auth.signInWithPassword({ email, password });
+    return error ? error.message : null;
+  }, [email, password]);
+  if (err) throw new Error('login failed: ' + err);
+  await page.reload();
   // beta: an account without a WhatsApp number gets the number screen once (KM_WA = a test number, default a dummy one)
   await page.waitForSelector(`${ready}, #wa`, { timeout: 30000 });
   if (await page.$('#wa')) { await page.fill('#wa', process.env.KM_WA || '0812 0000 0001'); await page.click('#go'); await page.waitForSelector(ready, { timeout: 30000 }); }

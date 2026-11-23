@@ -38,7 +38,7 @@ function accountBox(box) {
     box.prepend(b);
   } else if (mode === 'guest' || mode === 'local') {
     const b = $(`<div class="box" style="background:#FFF6CC"><h3>${mode === 'guest' ? 'Uji coba' : 'Belum masuk'}</h3><p class="small" style="margin:0 0 8px">${mode === 'guest' ? '<b>Uji coba. Hasil tidak disimpan.</b> Masuk atau buat akun supaya progres tersimpan, bisa main di perangkat lain, dan bisa ikut Beranda.' : 'Progres hanya tersimpan di browser ini. Masuk atau buat akun supaya progres aman, bisa main di perangkat lain, dan bisa ikut Beranda. Progres di perangkat ini bisa dipindahkan ke akunmu.'}</p>
-      <div class="row"><button class="btn ghost" id="ac">Masuk / buat akun</button></div></div>`);
+      <div class="row"><button class="btn ghost" id="ac">Masuk dengan Google</button></div></div>`);
     b.querySelector('#ac').onclick = () => { rememberGuest(false); location.hash = ''; location.reload(); };
     box.prepend(b);
   }
