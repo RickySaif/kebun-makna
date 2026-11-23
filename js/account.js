@@ -37,14 +37,15 @@ export function loginScreen(h, mode = 'login', msg = '') {
       <div id="gbtn" style="display:flex;justify-content:center;min-height:44px"></div>
       <p class="err" id="err" style="text-align:center">${esc(msg)}</p>
       <p class="small" id="ghelp" hidden style="text-align:center;margin:10px 0 0">Tombol Google belum bisa dimuat. Periksa sambungan internet, lalu muat ulang halaman ini.</p>
-      <button class="linkbtn" id="reload" hidden style="display:block;margin:8px auto 0">Muat ulang</button></div>`);
+      <button class="linkbtn" id="reload" hidden>Muat ulang</button></div>`);
     const err = f.querySelector('#err');
     root.append(f);
     const gbtn = f.querySelector('#gbtn');
     const googleFailed = () => {
       gbtn.remove();
       f.querySelector('#ghelp').hidden = false;
-      const rb = f.querySelector('#reload'); rb.hidden = false; rb.onclick = () => location.reload();
+      // no inline display in the markup: an inline `display` would override `hidden` and show this link all the time
+      const rb = f.querySelector('#reload'); rb.hidden = false; Object.assign(rb.style, { display: 'block', margin: '8px auto 0' }); rb.onclick = () => location.reload();
     };
     renderGoogleButton(gbtn, p => {
       if (!p) { err.className = 'err'; err.textContent = 'Profil tidak ditemukan.'; return; }

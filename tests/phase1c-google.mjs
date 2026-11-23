@@ -13,6 +13,8 @@ try {
   await P.screenshot({ path: 'shot-google.png' });
   assert(await P.locator('#em').count() === 0 && await P.locator('#pw').count() === 0, 'email form is hidden (Google only)');
   assert(await P.locator('#guest').count() === 1, 'trial without an account is still offered');
+  assert(await P.locator('#reload').count() === 0 || !(await P.locator('#reload').isVisible()), 'fallback "Muat ulang" is not shown when Google works');
+  assert(await P.locator('#ghelp').isVisible() === false, 'fallback help text is not shown when Google works');
   const Q = await newPage('nogis');
   await Q.route('https://accounts.google.com/**', r => r.abort());
   await Q.goto(BASE + '/');
