@@ -289,3 +289,25 @@ body{font-weight:500;letter-spacing:.1px}
 .small,.hint,.lead{font-weight:400}
 .title h1{font-weight:700;letter-spacing:.5px}
 .hud .grow{letter-spacing:.2px}
+
+/* Papan Hafalan (js/kanban.js): four columns; on a phone they scroll sideways and snap */
+.kb-board{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 12px;margin:0 -2px;-webkit-overflow-scrolling:touch}
+.kb-col{flex:0 0 82%;scroll-snap-align:start;background:rgba(255,255,255,.55);border:3px solid var(--ink);border-radius:6px;padding:8px;min-width:0}
+.kb-col header{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:4px 8px;border:2px solid var(--ink);border-radius:4px;background:var(--kb,#fff)}
+.kb-col header b{font-size:16px}.kb-col header em{font-style:normal;font-weight:700;background:var(--paper);border:2px solid var(--ink);border-radius:999px;min-width:26px;text-align:center;padding:0 6px}
+.kb-mulai{--kb:#E8DDBF}.kb-belajar{--kb:#BFE3F7}.kb-hafal{--kb:#FFE08A}.kb-siap{--kb:#B6E8A0}
+.kb-note{margin:6px 2px 8px;font-size:13px;color:var(--ink-soft)}
+.kb-list{display:grid;gap:8px}
+.kb-card{display:block;width:100%;text-align:left;font:inherit;color:var(--ink);background:#fff;border:3px solid var(--ink);border-radius:4px;padding:8px 10px;box-shadow:0 3px 0 rgba(0,0,0,.25);cursor:pointer}
+.kb-card.lock{opacity:.7;background:#F3EEDD}
+.kb-top{display:flex;align-items:center;gap:8px}
+.kb-top img{width:32px;height:32px;image-rendering:pixelated;flex:none}
+.kb-nm{flex:1;min-width:0}.kb-nm b{display:block;font-size:17px}.kb-nm span{font-size:13px;color:var(--ink-soft)}
+.kb-ar{font-family:'Scheherazade New',serif;font-size:24px;line-height:1.2;flex:none}
+.kb-dots,.kb-lad{display:flex;gap:3px;margin-top:8px}
+.kb-dots i,.kb-lad i{flex:1;height:8px;border:2px solid var(--ink);border-radius:2px;background:var(--paper);max-width:28px}
+.kb-dots i.on{background:#7CD35E}.kb-lad i.past{background:#7CD35E}.kb-lad i.on{background:var(--gold)}
+.kb-line{margin-top:6px;font-size:14px;font-weight:600}
+.kb-next{margin-top:6px;padding-top:6px;border-top:2px dashed #C9B98F;font-size:14px;font-weight:400}
+.kb-empty{padding:14px 8px;text-align:center;color:var(--ink-soft);border:2px dashed #C9B98F;border-radius:4px;font-size:14px}
+@media (min-width:760px){.kb-board{overflow:visible}.kb-col{flex:1 1 0}}

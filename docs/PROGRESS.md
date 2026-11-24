@@ -277,6 +277,12 @@ Ricky: the first version felt like extra quests in a panel, not a map. Now:
 ### Family names + Google Identity Services (backend cb13349/e977e8d) (done)
 - See Decisions. Tests updated to use the family name (`rpc my_family_name`). `phase1c-google.mjs` checks the GIS button at 390 px and the no-GIS fallback.
 
+### Papan Hafalan (kanban) (2026-11-24, not committed yet; Ricky is trying it on localhost)
+- `js/kanban.js`, opened by the 📋 button in the farm HUD. One card per surah in four columns: Belum mulai → Belajar ayat → Menghafal → Siap. Phone: columns scroll sideways and snap; tap a card for its next step.
+- Columns are **read from the save** (`S.ay`, `S.whole`, `S.bought`, `S.ladder`, `S.siap`/`S.solved`), not dragged by hand, so "Siap" stays the game's judgement (RANCANGAN bagian 5). No new save fields, no backend, no new hash route (so nothing for `js/stats.js`).
+- Try without an account on localhost: `python3 -m http.server 8765`, then open `http://localhost:8765/#/tamu/demo` (sample progress in every column, skips the model download). The demo path exists only on `localhost`/`127.0.0.1`. A plain `#/tamu` trial starts empty.
+- Question for Ricky: should children also be able to move cards by hand (for example a "Mau hafal minggu ini" column), or is the automatic board enough?
+
 ## Next
 All planned phases are built. What remains is Ricky's: the ustaz review of the whole beta, measuring recitation timing on Amtar's iPhone (dashboard → Percobaan membaca), and the cutover.
 

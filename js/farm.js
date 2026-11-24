@@ -71,6 +71,7 @@ export function farm(){
       <div class="chip" title="Koin Makna"><img alt="" src="${ICON.coin}"><span id="coins">${S.coins}</span></div>
       <button class="chip lvchip" id="lvl" title="Level Petani">Lv ${pLevel()}<span class="minibar"><i style="width:${(()=>{const L=pLevel(),n=LV_XP[L+1];return n?Math.min(100,(S.xp-LV_XP[L])/(n-LV_XP[L])*100):100;})()}%"></i></span></button>
       <button class="btn ghost icon" id="jrn" aria-label="Jurnal Misi">📜</button>
+      <button class="btn ghost icon" id="kbn" aria-label="Papan Hafalan">📋</button>
       <button class="btn ghost icon" id="book" aria-label="Buku Kata">📖</button>
       <button class="btn ghost icon" id="gear" aria-label="Pengaturan">⚙</button></div>
     <div class="hud2"><div class="clock">Hari ${S.day} · <span id="clk">${clockStr()}</span></div>
@@ -82,6 +83,7 @@ export function farm(){
   cv.onclick=onTap;
   document.getElementById('gear').onclick=parentView;
   document.getElementById('book').onclick=bookView;
+  document.getElementById('kbn').onclick=()=>import('./kanban.js').then(m=>m.kanbanBoard()); // Papan Hafalan: kanban of the surahs
   document.getElementById('jrn').onclick=journal; document.getElementById('lvl').onclick=levelView; // v4: Lv → Level Petani, 📜 → missions
   setTimeout(flushNotes,700);
   if(introActive) introDialog(); else idleDialog();

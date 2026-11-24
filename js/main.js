@@ -57,9 +57,9 @@ window.addEventListener('km-eyes', () => { if (inGame() && S.name && S.noEyes !=
 window.addEventListener('km-avatar', () => { if (eyesChosen() && S.noEyes !== eyesOff()) { S.noEyes = eyesOff(); save(); } if (mode === 'player') updateMyAvatar(S.avatar | 0).catch(() => {}); });
 hooks.atur = box => { accountBox(box); box.prepend(settingsBox()); box.prepend(displayBox()); };
 
-async function bootGame() {
+async function bootGame(skipModel) {
   if (!eyesChosen() && typeof S.noEyes === 'boolean') setEyesOff(S.noEyes, false); // adopt the account's choice on a new device
-  await prepareScreen(); // the recitation recognizer is downloaded and built before the game starts
+  if (!skipModel) await prepareScreen(); // the recitation recognizer is downloaded and built before the game starts
   migrate();
   import('./akhlak.js').then(m => m.installAkhlak()).catch(() => {}); // next chapter, only after boss4 + 10 surahs
   import('./dagang.js').then(m => m.installDagang()).catch(() => {}); // Perjalanan Dagang: same unlock, new surahs
@@ -68,11 +68,14 @@ async function bootGame() {
 }
 
 // Trial: a fresh game that is never written to the device or the cloud.
-function bootGuest() {
+// On localhost only, `#/tamu/demo` starts the trial with sample progress in every column of the Papan Hafalan and skips the model download.
+const isLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
+async function bootGuest() {
   mode = 'guest';
-  setS(fresh()); normalize(); setPersist(false);
+  const demo = isLocal && /^#\/tamu\/demo/.test(location.hash) ? (await import('./kanban.js')).demoState() : null;
+  setS(demo ? Object.assign(fresh(), demo) : fresh()); normalize(); setPersist(false);
   trialRibbon();
-  bootGame();
+  bootGame(!!demo);
   setTimeout(() => toast('Uji coba. Hasil tidak disimpan.'), 1200);
 }
 // The old save on this device (players from before accounts): kept and saved as before, until they sign in and import it.
